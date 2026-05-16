@@ -35,27 +35,33 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         objective: str,
         run_config: dict[str, Any] | None = None,
     ) -> tuple[ResearchRunState, list[dict[str, Any]]]:
-        config = {**(run_config or {}), "agent_framework": "langgraph"}
+        raw_config = run_config or {}
+        self._progress_callback = raw_config.get("_progress_callback")
+        config = {key: value for key, value in raw_config.items() if not key.startswith("_")}
+        config = {**config, "agent_framework": "langgraph"}
         state = ResearchRunState(run_id=run_id, objective_id=objective_id, objective=objective)
         trace: list[dict[str, Any]] = []
-        self._record(
-            trace,
-            "framework_runtime",
-            "INITIALIZE_FRAMEWORK",
-            {"objective": objective, "run_config": config},
-            {
-                "framework": "langgraph",
-                "available": self.langgraph_available,
-                "mode": "state_graph" if self.langgraph_available else "sequential_node_fallback",
-                "node_count": len(self._node_sequence()),
-            },
-        )
+        try:
+            self._record(
+                trace,
+                "framework_runtime",
+                "INITIALIZE_FRAMEWORK",
+                {"objective": objective, "run_config": config},
+                {
+                    "framework": "langgraph",
+                    "available": self.langgraph_available,
+                    "mode": "state_graph" if self.langgraph_available else "sequential_node_fallback",
+                    "node_count": len(self._node_sequence()),
+                },
+            )
 
-        if self.langgraph_available:
-            state = self._run_langgraph(state, trace, config)
-        else:
-            state = self._run_sequential(state, trace, config)
-        return state, trace
+            if self.langgraph_available:
+                state = self._run_langgraph(state, trace, config)
+            else:
+                state = self._run_sequential(state, trace, config)
+            return state, trace
+        finally:
+            self._progress_callback = None
 
     def _run_langgraph(
         self,
@@ -128,15 +134,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         input_payload: dict[str, Any],
         output: dict[str, Any],
     ) -> None:
-        trace.append(
-            {
-                "agent_name": agent,
-                "state_name": state_name,
-                "input": input_payload,
-                "output": output,
-                "completed_at": datetime.utcnow().isoformat(),
-            }
-        )
+        trace_item = {
+            "agent_name": agent,
+            "state_name": state_name,
+            "input": input_payload,
+            "output": output,
+            "completed_at": datetime.utcnow().isoformat(),
+        }
+        trace.append(trace_item)
+        callback = getattr(self, "_progress_callback", None)
+        if callable(callback):
+            callback(trace_item)
 
     def _plan_research(
         self,

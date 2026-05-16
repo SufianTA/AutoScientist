@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.local_runner import format_result, run_question
+from app.services.local_runner import format_result, optimized_agent_count, render_progress_event, run_question
 
 
 client = TestClient(app)
@@ -79,6 +79,19 @@ def test_cli_runner_returns_full_provenance() -> None:
         call["tool_name"] == "acvr1_target_profile_tool"
         for call in result["provenance"]["tool_calls"]
     )
+
+
+def test_interactive_helpers_choose_agents_and_render_progress() -> None:
+    assert optimized_agent_count("ACVR1 FOP therapeutic compound pathway safety literature experiment") >= 6
+    event = {
+        "state_name": "FIND_TOOLS",
+        "agent_name": "finder_agent",
+        "output": {"selected_tools": ["acvr1_target_profile_tool", "fop_disease_profile_tool"]},
+    }
+    rendered = render_progress_event(event)
+    assert "FIND_TOOLS" in rendered
+    assert "queued tools" in rendered
+    assert "acvr1_target_profile_tool" in rendered
 
 
 def test_demo_run_generates_report() -> None:

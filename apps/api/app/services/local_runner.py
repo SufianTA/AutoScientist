@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from app.db.models import AgentStep, Objective, ToolCall
 from app.db.session import SessionLocal, init_db
@@ -10,7 +11,11 @@ from app.routes.reports import build_report, render_markdown_report
 from app.services.run_executor import create_run_record, execute_run, normalize_run_config
 
 
-def run_question(question: str, config: dict | None = None) -> dict:
+def run_question(
+    question: str,
+    config: dict | None = None,
+    progress_callback: Any | None = None,
+) -> dict:
     init_db()
     db = SessionLocal()
     try:
@@ -26,7 +31,7 @@ def run_question(question: str, config: dict | None = None) -> dict:
         run = create_run_record(db, objective, run_config)
         run.payment_status = "not_required"
         db.commit()
-        run = execute_run(db, run, objective)
+        run = execute_run(db, run, objective, progress_callback=progress_callback)
         report = build_report(run.id, db)
         steps = db.query(AgentStep).filter(AgentStep.run_id == run.id).order_by(AgentStep.started_at.asc()).all()
         tool_calls = db.query(ToolCall).filter(ToolCall.run_id == run.id).order_by(ToolCall.created_at.asc()).all()
@@ -99,9 +104,143 @@ def format_result(result: dict, output_format: str) -> str:
     return "\n".join(lines)
 
 
+def optimized_agent_count(question: str) -> int:
+    text = question.lower()
+    score = 4
+    complexity_terms = [
+        "compound",
+        "molecule",
+        "omics",
+        "pathway",
+        "literature",
+        "safety",
+        "clinical",
+        "experiment",
+        "drug",
+        "therapeutic",
+    ]
+    score += min(4, sum(1 for term in complexity_terms if term in text) // 2)
+    if len(question) > 300:
+        score += 1
+    return max(3, min(score, 8))
+
+
+def render_progress_event(event: dict[str, Any]) -> str:
+    state_name = event["state_name"]
+    agent_name = event["agent_name"]
+    output = event.get("output", {})
+    lines = [f"[{state_name}] {agent_name}"]
+    if "framework" in output:
+        lines.append(f"  runtime: {output['framework']} ({output.get('mode')})")
+    if "plan" in output:
+        lines.append(f"  plan steps: {len(output['plan'])}")
+    if "selected_tools" in output:
+        lines.append(f"  queued tools: {', '.join(output['selected_tools'])}")
+    if "tool_output_count" in output:
+        lines.append(
+            f"  tool calls completed: {output['tool_output_count']} "
+            f"(custom models: {output.get('custom_model_tool_count', 0)})"
+        )
+    if "scored_evidence" in output:
+        labels = [item.get("score", {}).get("label", "unscored") for item in output["scored_evidence"]]
+        lines.append(f"  evidence scored: {', '.join(labels)}")
+    if "hypothesis_card" in output:
+        card = output["hypothesis_card"]
+        lines.append(f"  hypothesis: {card.get('title')}")
+        lines.append(f"  confidence: {card.get('confidence')}")
+    if "critique" in output:
+        lines.append(f"  critique: {output['critique']}")
+    if "experiments" in output:
+        lines.append(f"  experiments proposed: {len(output['experiments'])}")
+    if "report" in output:
+        lines.append(f"  report confidence: {output['report'].get('confidence')}")
+    return "\n".join(lines)
+
+
+def prompt_multiline_objective() -> str:
+    print("Paste your scientific problem. Press Enter on a blank line to run.")
+    lines = []
+    while True:
+        line = input("> ")
+        if not line.strip():
+            break
+        lines.append(line)
+    objective = "\n".join(lines).strip()
+    if objective:
+        return objective
+    return "Generate a therapeutic hypothesis for ACVR1-driven Fibrodysplasia Ossificans Progressiva and propose validation experiments."
+
+
+def prompt_agent_count(question: str) -> int:
+    recommended = optimized_agent_count(question)
+    raw = input(f"Agents to use [optimized={recommended}, or enter 1-12]: ").strip().lower()
+    if raw in {"", "optimized", "opt", "o"}:
+        return recommended
+    try:
+        return max(1, min(int(raw), 12))
+    except ValueError:
+        print(f"Using optimized agent count: {recommended}")
+        return recommended
+
+
+def run_interactive() -> None:
+    print("BioAutoScientist interactive local run")
+    question = prompt_multiline_objective()
+    agents = prompt_agent_count(question)
+    strictness = input("Evidence strictness [balanced/exploratory/strict, default balanced]: ").strip().lower()
+    if strictness not in {"balanced", "exploratory", "strict"}:
+        strictness = "balanced"
+    output_file = input("Markdown output file [outputs/interactive_report.md]: ").strip() or "outputs/interactive_report.md"
+    provenance_file = (
+        input("Provenance JSON file [outputs/interactive_provenance.json]: ").strip()
+        or "outputs/interactive_provenance.json"
+    )
+    print("")
+    print(f"Queued {agents} agents with {strictness} evidence strictness.")
+    print("Running local scientist loop...\n")
+
+    def progress(event: dict[str, Any]) -> None:
+        print(render_progress_event(event))
+        print("")
+
+    result = run_question(
+        question,
+        {
+            "agent_count": agents,
+            "max_runtime_minutes": 30,
+            "evidence_strictness": strictness,
+            "llm_provider": "mock",
+            "llm_model": "mock-scientist",
+        },
+        progress_callback=progress,
+    )
+    report_text = format_result(result, "markdown")
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_file).write_text(report_text, encoding="utf-8")
+    Path(provenance_file).parent.mkdir(parents=True, exist_ok=True)
+    Path(provenance_file).write_text(
+        json.dumps(
+            {
+                "run_id": result["run_id"],
+                "status": result["status"],
+                "trace_summary": result["trace_summary"],
+                "provenance": result["provenance"],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    print("Final answer")
+    print(format_result(result, "summary"))
+    print("")
+    print(f"Markdown report: {output_file}")
+    print(f"Provenance JSON: {provenance_file}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a local BioAutoScientist question.")
-    parser.add_argument("question", help="Scientific question or objective")
+    parser.add_argument("question", nargs="?", help="Scientific question or objective")
+    parser.add_argument("--interactive", action="store_true", help="Prompt for agents and scientific problem")
     parser.add_argument("--agents", type=int, default=6)
     parser.add_argument("--runtime", type=int, default=30)
     parser.add_argument("--strictness", choices=["exploratory", "balanced", "strict"], default="balanced")
@@ -117,6 +256,11 @@ def main() -> None:
     parser.add_argument("--output-file", help="Optional path to write the formatted output")
     parser.add_argument("--provenance-file", help="Optional path to write full JSON trace and tool provenance")
     args = parser.parse_args()
+    if args.interactive:
+        run_interactive()
+        return
+    if not args.question:
+        parser.error("question is required unless --interactive is set")
     result = run_question(
         args.question,
         {

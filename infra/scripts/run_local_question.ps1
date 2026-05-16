@@ -1,6 +1,7 @@
 param(
-  [Parameter(Mandatory = $true)]
+  [Parameter(Mandatory = $false)]
   [string]$Question,
+  [switch]$Interactive,
   [int]$Agents = 6,
   [int]$Runtime = 30,
   [ValidateSet("exploratory", "balanced", "strict")]
@@ -15,11 +16,19 @@ param(
 )
 
 $repoRoot = Resolve-Path "$PSScriptRoot\..\.."
-$env:PYTHONPATH = $repoRoot.Path
-Push-Location "$repoRoot\apps\api"
+$apiRoot = Resolve-Path "$repoRoot\apps\api"
+$env:PYTHONPATH = "$($repoRoot.Path);$($apiRoot.Path)"
+Push-Location $repoRoot.Path
 try {
-  $args = @(
-    $Question,
+  $args = @()
+  if ($Interactive) {
+    $args += "--interactive"
+  } elseif ($Question) {
+    $args += $Question
+  } else {
+    throw "Provide -Question or use -Interactive."
+  }
+  $args += @(
     "--agents", $Agents,
     "--runtime", $Runtime,
     "--strictness", $Strictness,

@@ -69,6 +69,14 @@ Run one scientific question locally without opening the web UI:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
+Launch the interactive CLI workbench:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Interactive
+```
+
+Interactive mode asks for the scientific problem, lets you choose an exact agent count or optimized agent count, streams each agent state as it runs, and writes both a Markdown report and JSON provenance trace.
+
 Write a command-line report artifact:
 
 ```powershell

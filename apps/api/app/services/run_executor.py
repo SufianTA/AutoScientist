@@ -109,7 +109,12 @@ def execute_run_by_id(run_id: str) -> None:
         db.close()
 
 
-def execute_run(db: Session, run: Run, objective: Objective) -> Run:
+def execute_run(
+    db: Session,
+    run: Run,
+    objective: Objective,
+    progress_callback: Any | None = None,
+) -> Run:
     run.status = "running"
     run.started_at = run.started_at or datetime.utcnow()
     run.run_config_json = resolve_model_tool_configs(db, run.run_config_json)
@@ -120,7 +125,7 @@ def execute_run(db: Session, run: Run, objective: Objective) -> Run:
             run.id,
             objective.id,
             objective.objective_text,
-            run_config=run.run_config_json,
+            run_config={**run.run_config_json, "_progress_callback": progress_callback},
         )
         persist_orchestrator_result(db, run, state, trace)
         run.status = "completed"

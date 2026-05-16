@@ -15,6 +15,20 @@ Core idea:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
+Interactive launcher:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Interactive
+```
+
+Flow:
+
+1. Paste the scientific problem.
+2. Choose optimized agent count or enter a number from 1-12.
+3. Choose evidence strictness.
+4. Watch realtime agent-state events, queued tools, tool-call counts, evidence scores, critique, and report confidence.
+5. Receive the final summary plus Markdown and provenance JSON files.
+
 Output modes:
 
 ```powershell
