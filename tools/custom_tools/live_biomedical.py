@@ -9,6 +9,27 @@ from urllib.request import urlopen
 from tools.custom_tools.base import ScientificTool, ToolResult
 
 
+def ascii_safe(text: Any) -> Any:
+    if not isinstance(text, str):
+        return text
+    replacements = {
+        "α": "alpha",
+        "β": "beta",
+        "γ": "gamma",
+        "δ": "delta",
+        "κ": "kappa",
+        "μ": "mu",
+        "–": "-",
+        "—": "-",
+        "“": '"',
+        "”": '"',
+        "’": "'",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text.encode("ascii", errors="ignore").decode("ascii")
+
+
 def fetch_json(url: str, timeout: int = 20) -> dict[str, Any]:
     last_error: Exception | None = None
     for attempt in range(3):
@@ -127,9 +148,9 @@ class PubMedLiteratureSearchTool(ScientificTool):
             articles.append(
                 {
                     "pmid": pmid,
-                    "title": item.get("title"),
-                    "journal": item.get("fulljournalname") or item.get("source"),
-                    "pubdate": item.get("pubdate"),
+                    "title": ascii_safe(item.get("title")),
+                    "journal": ascii_safe(item.get("fulljournalname") or item.get("source")),
+                    "pubdate": ascii_safe(item.get("pubdate")),
                     "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
                 }
             )

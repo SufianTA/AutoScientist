@@ -404,9 +404,21 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.critique = {
             "critique_type": "translation_gap",
             "severity": "medium",
-            "critique": "The mechanism is plausible, but mock evidence is not sufficient to rank clinical candidates or claim efficacy.",
-            "recommended_fix": "Replace mock profiles with ToolUniverse target-disease, literature, ChEMBL, and safety calls before escalation.",
+            "critique": (
+                "The mechanism is plausible, and live public evidence supports ACVR1/FOP grounding, but the run "
+                "still cannot claim clinical efficacy or safety. Retrieved safety/intervention literature should "
+                "lower confidence in any molecule-specific recommendation until direct preclinical and clinical "
+                "evidence is reviewed."
+                if config.get("real_data_enabled")
+                else "The mechanism is plausible, but mock evidence is not sufficient to rank clinical candidates or claim efficacy."
+            ),
+            "recommended_fix": (
+                "Add curated target-disease associations, compound potency/selectivity, ADMET, and safety review before molecule ranking."
+                if config.get("real_data_enabled")
+                else "Replace mock profiles with ToolUniverse target-disease, literature, ChEMBL, and safety calls before escalation."
+            ),
             "abstention_required": False,
+            "claim_boundary": "candidate hypothesis; no clinical efficacy or safety claim",
         }
         self._record(
             trace,

@@ -86,10 +86,29 @@ class ToolUniverseAdapter:
                     "notes": str(exc),
                 }
             ]
-        return [self._normalize_tooluniverse_spec(spec) for spec in specs]
+        normalized = []
+        for spec in specs:
+            try:
+                normalized.append(self._normalize_tooluniverse_spec(spec))
+            except Exception as exc:
+                normalized.append(
+                    {
+                        "name": spec.get("name", "unnamed_tooluniverse_tool"),
+                        "description": spec.get("description", ""),
+                        "input_schema": {"type": "object"},
+                        "output_schema": {"type": "object"},
+                        "example_input": {},
+                        "source": "tooluniverse",
+                        "status": "schema_normalization_error",
+                        "notes": str(exc),
+                    }
+                )
+        return normalized
 
     def _normalize_tooluniverse_spec(self, spec: dict[str, Any]) -> dict[str, Any]:
         input_schema = spec.get("parameter") or spec.get("input_schema") or {"type": "object"}
+        if not isinstance(input_schema, dict):
+            input_schema = {"type": "object", "raw_schema": input_schema}
         return {
             "name": spec.get("name", "unnamed_tooluniverse_tool"),
             "description": spec.get("description", ""),
@@ -112,7 +131,9 @@ class ToolUniverseAdapter:
         return "; ".join(parts)
 
     def _example_from_schema(self, schema: dict[str, Any]) -> dict[str, Any]:
-        properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
+        properties = schema.get("properties") if isinstance(schema, dict) else {}
+        if not isinstance(properties, dict):
+            properties = {}
         example: dict[str, Any] = {}
         for key, value in properties.items():
             if not isinstance(value, dict):

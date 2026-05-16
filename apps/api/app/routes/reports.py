@@ -9,6 +9,26 @@ from app.db.session import get_db
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
+def ascii_safe(value: object) -> str:
+    text = str(value)
+    replacements = {
+        "α": "alpha",
+        "β": "beta",
+        "γ": "gamma",
+        "δ": "delta",
+        "κ": "kappa",
+        "μ": "mu",
+        "–": "-",
+        "—": "-",
+        "“": '"',
+        "”": '"',
+        "’": "'",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text.encode("ascii", errors="ignore").decode("ascii")
+
+
 @router.get("/{run_id}")
 def get_report(run_id: str, db: Session = Depends(get_db)) -> dict:
     return build_report(run_id, db)
@@ -56,6 +76,7 @@ def build_report(run_id: str, db: Session) -> dict:
             {
                 "source": item.source,
                 "text": item.evidence_text,
+                "structured": item.structured_json,
                 "support_label": item.support_label,
                 "support_score": item.support_score,
             }
@@ -79,26 +100,62 @@ def build_report(run_id: str, db: Session) -> dict:
 
 def render_markdown_report(report: dict) -> str:
     hypothesis = report["hypothesis"]
+    hypothesis_post = next(
+        (post["content"] for post in report["board_posts"] if post["post_type"] == "hypothesis"),
+        {},
+    )
     lines = [
         f"# {hypothesis['title']}",
         "",
         f"Run: `{report['run']['id']}`",
         f"Status: `{report['run']['status']}`",
         f"Confidence: `{hypothesis['confidence']}`",
+        f"Confidence interpretation: `{hypothesis_post.get('confidence_interpretation', 'not available')}`",
         "",
         "## Candidate Hypothesis",
         "",
         hypothesis["text"] or "No hypothesis text generated.",
         "",
-        "## Evidence",
+        "## Scientific Assessment",
         "",
-        "| Source | Label | Score | Evidence |",
-        "| --- | --- | --- | --- |",
     ]
+    for item in hypothesis_post.get("scientific_assessment", []):
+        lines.append(f"- {item}")
+    lines.extend(
+        [
+            "",
+            "## Candidate Intervention Summary",
+            "",
+            hypothesis_post.get("candidate_intervention_summary", "No candidate intervention summary generated."),
+            "",
+            "## Evidence",
+            "",
+            "| Source | Label | Score | Evidence |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
     for item in report["evidence"]:
-        text = str(item["text"]).replace("|", "\\|").replace("\n", " ")
+        text = ascii_safe(item["text"]).replace("|", "\\|").replace("\n", " ")
         lines.append(
             f"| {item['source']} | {item['support_label']} | {item['support_score']} | {text} |"
+        )
+    lines.extend(["", "## Citations And Retrieved Records", ""])
+    for citation in hypothesis_post.get("citations", []):
+        label = ascii_safe(citation.get("title") or citation.get("source"))
+        url = citation.get("url", "")
+        details = []
+        for key in ("pmid", "cid", "gene_id", "journal", "pubdate"):
+            if citation.get(key):
+                details.append(f"{key}: {citation[key]}")
+        suffix = f" ({'; '.join(details)})" if details else ""
+        lines.append(f"- [{label}]({url}){suffix}")
+    lines.extend(["", "## Limitations", ""])
+    for limitation in hypothesis_post.get("limitations", []):
+        lines.append(f"- {limitation}")
+    lines.extend(["", "## Proposed Next Experiments", ""])
+    for experiment in hypothesis_post.get("next_experiments", []):
+        lines.append(
+            f"- {experiment.get('name')} [{experiment.get('type')}; feasibility: {experiment.get('feasibility')}; information gain: {experiment.get('expected_information_gain')}]"
         )
     lines.extend(["", "## Research Board Posts", ""])
     for post in report["board_posts"]:

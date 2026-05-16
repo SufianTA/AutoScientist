@@ -19,6 +19,8 @@ param(
 $repoRoot = Resolve-Path "$PSScriptRoot\..\.."
 $apiRoot = Resolve-Path "$repoRoot\apps\api"
 $env:PYTHONPATH = "$($repoRoot.Path);$($apiRoot.Path)"
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
 Push-Location $repoRoot.Path
 try {
   $args = @()

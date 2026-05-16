@@ -98,7 +98,7 @@ Run the non-interactive CLI with live public data:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -RealData -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_real_report.md -ProvenanceFile .\outputs\acvr1_fop_real_provenance.json
 ```
 
-Live-data mode currently calls NCBI Gene, PubMed, and PubChem. ToolUniverse is installed locally, but the editable checkout currently fails during import with a circular import; `/tools/health` reports that instead of hiding it.
+Live-data mode currently calls NCBI Gene, PubMed, and PubChem. ToolUniverse health is available at `/tools/health`; the local environment was fixed by replacing the broken editable ToolUniverse checkout with a clean `tooluniverse==1.0.4` install.
 
 Write both a report and full provenance trace:
 

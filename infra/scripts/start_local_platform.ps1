@@ -19,7 +19,7 @@ if (-not (Test-PortListening -Port 8000)) {
     "-ExecutionPolicy",
     "Bypass",
     "-Command",
-    "`$env:PYTHONPATH='$pythonPath'; python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 *> '$outputRoot\api_server.log'"
+    "`$env:PYTHONPATH='$pythonPath'; `$env:PYTHONUTF8='1'; `$env:PYTHONIOENCODING='utf-8'; python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 *> '$outputRoot\api_server.log'"
   )
   Write-Host "Started API on http://127.0.0.1:8000"
 } else {
