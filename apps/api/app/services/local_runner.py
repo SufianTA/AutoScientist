@@ -11,6 +11,39 @@ from app.routes.reports import build_report, render_markdown_report
 from app.services.run_executor import create_run_record, execute_run, normalize_run_config
 
 
+ANSI = {
+    "reset": "\033[0m",
+    "dim": "\033[2m",
+    "bold": "\033[1m",
+    "cyan": "\033[36m",
+    "blue": "\033[34m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "magenta": "\033[35m",
+    "red": "\033[31m",
+    "white": "\033[37m",
+}
+
+
+STATE_COLORS = {
+    "INITIALIZE_FRAMEWORK": "cyan",
+    "PLAN_RESEARCH": "blue",
+    "FIND_TOOLS": "magenta",
+    "EXECUTE_EVIDENCE_COLLECTION": "green",
+    "SCORE_EVIDENCE": "yellow",
+    "GENERATE_HYPOTHESES": "blue",
+    "CRITIQUE_AND_REFINE": "red",
+    "PROPOSE_EXPERIMENTS": "magenta",
+    "GENERATE_REPORT": "cyan",
+}
+
+
+def paint(text: str, color: str, enabled: bool = True) -> str:
+    if not enabled:
+        return text
+    return f"{ANSI.get(color, '')}{text}{ANSI['reset']}"
+
+
 def run_question(
     question: str,
     config: dict | None = None,
@@ -129,15 +162,36 @@ def optimized_agent_count(question: str) -> int:
     return max(3, min(score, 8))
 
 
-def render_progress_event(event: dict[str, Any]) -> str:
+def render_progress_event(event: dict[str, Any], color: bool = True) -> str:
     state_name = event["state_name"]
     agent_name = event["agent_name"]
     output = event.get("output", {})
-    lines = [f"[{state_name}] {agent_name}"]
+    state_color = STATE_COLORS.get(state_name, "white")
+    lines = [paint(f"[{state_name}]", state_color, color) + f" {paint(agent_name, 'bold', color)}"]
     if "framework" in output:
         lines.append(f"  runtime: {output['framework']} ({output.get('mode')})")
+        roster = output.get("agent_roster", [])
+        if roster:
+            lines.append(paint("  agents initialized:", "cyan", color))
+            for agent in roster:
+                lines.append(
+                    f"    {agent.get('slot')}. {paint(agent.get('agent_name', ''), 'bold', color)}"
+                    f" - {agent.get('responsibility')}"
+                )
     if "plan" in output:
         lines.append(f"  plan steps: {len(output['plan'])}")
+        for index, step in enumerate(output["plan"][:6], start=1):
+            lines.append(f"    {index}. {step}")
+    if "biomedical_context" in output:
+        context = output["biomedical_context"]
+        if context.get("primary_genes"):
+            lines.append(f"  targets: {', '.join(context['primary_genes'])}")
+        if context.get("diseases"):
+            lines.append(f"  diseases: {', '.join(context['diseases'])}")
+        if context.get("candidate_interventions"):
+            lines.append(f"  candidates: {', '.join(context['candidate_interventions'][:6])}")
+        if context.get("pubmed_queries"):
+            lines.append(f"  literature queries: {len(context['pubmed_queries'])}")
     if "selected_tools" in output:
         lines.append(f"  queued tools: {', '.join(output['selected_tools'])}")
     if "tool_output_count" in output:
@@ -148,9 +202,11 @@ def render_progress_event(event: dict[str, Any]) -> str:
             f"tooluniverse: {output.get('tooluniverse_tool_count', 0)})"
         )
     if "agent_tool_assignments" in output:
-        for assignment in output["agent_tool_assignments"][:8]:
+        for assignment in output["agent_tool_assignments"][:10]:
+            status_color = "green" if assignment["status"] == "success" else "yellow"
             lines.append(
-                f"  {assignment['agent_name']} -> {assignment['tool_name']}: {assignment['status']}"
+                f"  {assignment['agent_name']} -> {assignment['tool_name']}: "
+                f"{paint(assignment['status'], status_color, color)}"
             )
     if "scored_evidence" in output:
         labels = [item.get("score", {}).get("label", "unscored") for item in output["scored_evidence"]]
@@ -158,7 +214,7 @@ def render_progress_event(event: dict[str, Any]) -> str:
     if "llm_calls" in output and output["llm_calls"]:
         latest = output["llm_calls"][-1]
         lines.append(
-            f"  llm: {latest.get('agent_name')} {latest.get('task')} "
+            f"  {paint('llm', 'magenta', color)}: {latest.get('agent_name')} {latest.get('task')} "
             f"via {latest.get('provider')}/{latest.get('model')} ({latest.get('latency_ms')} ms)"
         )
     if "hypothesis_card" in output:
@@ -298,12 +354,27 @@ def main() -> None:
     )
     parser.add_argument("--output-file", help="Optional path to write the formatted output")
     parser.add_argument("--provenance-file", help="Optional path to write full JSON trace and tool provenance")
+    parser.add_argument("--stream-progress", action="store_true", help="Stream agent, LLM, and tool activity as it runs")
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI colors in streamed progress")
     args = parser.parse_args()
     if args.interactive:
         run_interactive()
         return
     if not args.question:
         parser.error("question is required unless --interactive is set")
+    def progress(event: dict[str, Any]) -> None:
+        print(render_progress_event(event, color=not args.no_color), flush=True)
+        print("", flush=True)
+
+    if args.stream_progress:
+        print(
+            paint("BioAutoScientist strict local run", "bold", not args.no_color),
+            flush=True,
+        )
+        print(f"Question: {args.question}", flush=True)
+        print(f"Agents: {args.agents} | Strictness: {args.strictness} | Provider: {args.llm_provider}/{args.llm_model}", flush=True)
+        print("", flush=True)
+
     result = run_question(
         args.question,
         {
@@ -318,6 +389,7 @@ def main() -> None:
             "model_tool_names": args.model_tool,
             "real_data_enabled": args.real_data,
         },
+        progress_callback=progress if args.stream_progress else None,
     )
     formatted = format_result(result, args.output_format)
     if args.provenance_file:

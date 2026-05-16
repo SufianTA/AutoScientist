@@ -13,6 +13,8 @@ param(
   [string]$LlmApiKeyEnvVar = "",
   [string]$LlmBaseUrl = "",
   [switch]$RequireRealLlm,
+  [switch]$StreamProgress,
+  [switch]$NoColor,
   [ValidateSet("summary", "json", "markdown")]
   [string]$OutputFormat = "summary",
   [string]$OutputFile = "",
@@ -50,6 +52,12 @@ try {
   }
   if ($RequireRealLlm) {
     $args += "--require-real-llm"
+  }
+  if ($StreamProgress) {
+    $args += "--stream-progress"
+  }
+  if ($NoColor) {
+    $args += "--no-color"
   }
   foreach ($modelTool in $ModelTools) {
     $args += @("--model-tool", $modelTool)
