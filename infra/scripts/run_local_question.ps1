@@ -6,15 +6,26 @@ param(
   [ValidateSet("exploratory", "balanced", "strict")]
   [string]$Strictness = "balanced",
   [string]$LlmProvider = "mock",
-  [string]$LlmModel = "mock-scientist"
+  [string]$LlmModel = "mock-scientist",
+  [string[]]$ModelTools = @()
 )
 
 $repoRoot = Resolve-Path "$PSScriptRoot\..\.."
 $env:PYTHONPATH = $repoRoot.Path
 Push-Location "$repoRoot\apps\api"
 try {
-  python -m app.services.local_runner $Question --agents $Agents --runtime $Runtime --strictness $Strictness --llm-provider $LlmProvider --llm-model $LlmModel
+  $args = @(
+    $Question,
+    "--agents", $Agents,
+    "--runtime", $Runtime,
+    "--strictness", $Strictness,
+    "--llm-provider", $LlmProvider,
+    "--llm-model", $LlmModel
+  )
+  foreach ($modelTool in $ModelTools) {
+    $args += @("--model-tool", $modelTool)
+  }
+  python -m app.services.local_runner @args
 } finally {
   Pop-Location
 }
-

@@ -185,6 +185,46 @@ def test_model_tool_onboarding_generates_tooluniverse_config() -> None:
     assert any(tool["name"] == "test_evidence_ranker" for tool in listed.json()["model_tools"])
 
 
+def test_onboarded_mock_model_tool_executes_inside_run() -> None:
+    registered = client.post(
+        "/models",
+        json={
+            "name": "mock_acvr1_evidence_model",
+            "description": "Mock local evidence scorer used as an onboarded model tool.",
+            "provider": "mock",
+        },
+    )
+    assert registered.status_code == 200
+    objective = client.post(
+        "/objectives",
+        json={
+            "title": "Custom model assisted ACVR1/FOP run",
+            "objective": "Generate a therapeutic hypothesis for ACVR1-driven FOP with a custom evidence model.",
+            "constraints": {"require_critic": True},
+        },
+    )
+    run = client.post(
+        "/runs",
+        json={
+            "objective_id": objective.json()["id"],
+            "execute_demo": True,
+            "run_config": {
+                "execution_mode": "inline",
+                "model_tool_names": ["mock_acvr1_evidence_model"],
+            },
+        },
+    )
+    assert run.status_code == 200
+    assert run.json()["run_config"]["model_tool_resolution"]["resolved"] == ["mock_acvr1_evidence_model"]
+    trace = client.get(f"/runs/{run.json()['id']}/trace")
+    assert trace.status_code == 200
+    model_calls = [
+        call for call in trace.json()["tool_calls"] if call["tool_name"] == "mock_acvr1_evidence_model"
+    ]
+    assert model_calls
+    assert model_calls[0]["status"] == "success"
+
+
 def test_framework_and_provider_metadata() -> None:
     runtimes = client.get("/framework/agent-runtimes")
     assert runtimes.status_code == 200

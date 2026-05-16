@@ -26,6 +26,21 @@ Use `/models` or the Models UI to register:
 
 Each registration produces a ToolUniverse-style config object. That config is the bridge between the agent framework and specialized scientific models.
 
+Executable providers in the local prototype:
+
+- `mock`: deterministic local model response for testing onboarding and provenance.
+- `local_http`: POSTs the model payload to `endpoint_url` and expects a JSON object response.
+
+Other providers can be registered as metadata and exported as ToolUniverse-style configs, but the local runner marks them as partial until a constrained executor is added.
+
+Run integration:
+
+1. Register a model in `/models`.
+2. Select it on `/objectives/new`, or pass `"model_tool_names": ["your_model_name"]` in `run_config`.
+3. The API resolves the names to stored configs.
+4. LangGraph includes the model in `FIND_TOOLS`.
+5. `EXECUTE_EVIDENCE_COLLECTION` invokes the model and records the normalized result in `tool_calls`, trace output, and evidence.
+
 ## Agent Runtime
 
 Default:

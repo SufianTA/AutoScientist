@@ -44,6 +44,7 @@ def main() -> None:
     parser.add_argument("--strictness", choices=["exploratory", "balanced", "strict"], default="balanced")
     parser.add_argument("--llm-provider", default="mock")
     parser.add_argument("--llm-model", default="mock-scientist")
+    parser.add_argument("--model-tool", action="append", default=[], help="Registered custom model tool name")
     args = parser.parse_args()
     result = run_question(
         args.question,
@@ -53,6 +54,7 @@ def main() -> None:
             "evidence_strictness": args.strictness,
             "llm_provider": args.llm_provider,
             "llm_model": args.llm_model,
+            "model_tool_names": args.model_tool,
         },
     )
     print(json.dumps(result, indent=2))
@@ -60,4 +62,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

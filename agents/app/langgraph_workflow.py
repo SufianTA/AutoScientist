@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Callable
 
 from agents.app.graph import AgentOrchestrator
+from agents.app.model_tool_runner import execute_model_tool
 from agents.app.state import AgentStateName, ResearchRunState
 
 
@@ -180,7 +181,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "evidence_quality_scorer_tool",
             "hypothesis_card_generator_tool",
             "experiment_recommendation_tool",
-            *config.get("model_tool_names", []),
+            *[tool["name"] for tool in config.get("model_tool_configs", [])],
         ]
         self._record(
             trace,
@@ -208,6 +209,24 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 {"tool_name": "fop_disease_profile_tool", "result": fop},
             ]
         )
+        model_tool_outputs = []
+        for model_tool in config.get("model_tool_configs", []):
+            model_result = execute_model_tool(
+                model_tool,
+                {
+                    "hypothesis": "Modulating ACVR1-linked BMP signaling may reduce FOP-relevant osteogenic signaling.",
+                    "evidence_text": "ACVR1 and FOP evidence collection includes target, disease, and pathway context.",
+                    "entity_context": {"gene": "ACVR1", "disease": "FOP"},
+                },
+            )
+            state.tool_outputs.append(
+                {
+                    "tool_name": model_tool["name"],
+                    "tool_source": "custom_model",
+                    "result": model_result,
+                }
+            )
+            model_tool_outputs.append({"tool_name": model_tool["name"], "result": model_result})
         state.evidence = [
             {
                 "source": "acvr1_target_profile_tool",
@@ -220,12 +239,26 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "structured": fop["output"],
             },
         ]
+        for model_output in model_tool_outputs:
+            result = model_output["result"]
+            if result["status"] in {"success", "partial"}:
+                state.evidence.append(
+                    {
+                        "source": model_output["tool_name"],
+                        "text": result["output"].get("rationale", "Custom model produced a structured evidence assessment."),
+                        "structured": result["output"],
+                    }
+                )
         self._record(
             trace,
             "mechanism_agent",
             state.current_state.value,
             {"selected_tools": state.selected_tools},
-            {"evidence": state.evidence, "tool_output_count": len(state.tool_outputs)},
+            {
+                "evidence": state.evidence,
+                "tool_output_count": len(state.tool_outputs),
+                "custom_model_tool_count": len(model_tool_outputs),
+            },
         )
         return state
 

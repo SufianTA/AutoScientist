@@ -5,7 +5,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, Objective, Run, ToolCall
+from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, ModelTool, Objective, Run, ToolCall
 from app.db.session import SessionLocal
 from agents.app.runtime import build_agent_runtime
 
@@ -112,6 +112,7 @@ def execute_run_by_id(run_id: str) -> None:
 def execute_run(db: Session, run: Run, objective: Objective) -> Run:
     run.status = "running"
     run.started_at = run.started_at or datetime.utcnow()
+    run.run_config_json = resolve_model_tool_configs(db, run.run_config_json)
     db.commit()
     try:
         orchestrator = build_agent_runtime(run.run_config_json)
@@ -163,7 +164,7 @@ def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[d
             ToolCall(
                 run_id=run.id,
                 tool_name=output["tool_name"],
-                tool_source="custom",
+                tool_source=output.get("tool_source", "custom"),
                 input_json=result["input"],
                 output_json=result,
                 status=result["status"],
@@ -212,3 +213,29 @@ def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[d
             content_json=state.critique,
         )
     )
+
+
+def resolve_model_tool_configs(db: Session, config: dict[str, Any]) -> dict[str, Any]:
+    names = config.get("model_tool_names", [])
+    if not names:
+        return {**config, "model_tool_configs": []}
+    model_tools = db.query(ModelTool).filter(ModelTool.name.in_(names)).all()
+    configs = []
+    for model_tool in model_tools:
+        tool_config = dict(model_tool.tooluniverse_config_json)
+        tool_config["name"] = model_tool.name
+        tool_config["provider"] = model_tool.provider
+        tool_config["endpoint_url"] = model_tool.endpoint_url
+        tool_config["api_key_env_var"] = model_tool.api_key_env_var
+        configs.append(tool_config)
+    found = {tool["name"] for tool in configs}
+    missing = sorted(set(names) - found)
+    return {
+        **config,
+        "model_tool_configs": configs,
+        "model_tool_resolution": {
+            "requested": names,
+            "resolved": sorted(found),
+            "missing": missing,
+        },
+    }

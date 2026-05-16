@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
-import { apiPost } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 
 const preset = "Generate a therapeutic hypothesis for ACVR1-driven Fibrodysplasia Ossificans Progressiva and identify candidate small molecules or intervention strategies. Use ToolUniverse tools where available, collect evidence, critique the hypothesis, and propose validation experiments.";
+
+type ModelTool = {
+  name: string;
+  description: string;
+  provider: string;
+  status: string;
+};
 
 export default function NewObjectivePage() {
   const [title, setTitle] = useState("ACVR1/FOP therapeutic hypothesis generation");
@@ -18,6 +25,8 @@ export default function NewObjectivePage() {
   const [llmProvider, setLlmProvider] = useState("mock");
   const [llmModel, setLlmModel] = useState("mock-scientist");
   const [llmApiKeyEnvVar, setLlmApiKeyEnvVar] = useState("");
+  const [modelTools, setModelTools] = useState<ModelTool[]>([]);
+  const [selectedModelTools, setSelectedModelTools] = useState<string[]>([]);
   const [estimate, setEstimate] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,8 +44,20 @@ export default function NewObjectivePage() {
     llm_provider: llmProvider,
     llm_model: llmModel,
     llm_api_key_env_var: llmApiKeyEnvVar,
-    model_tool_names: []
+    model_tool_names: selectedModelTools
   };
+
+  useEffect(() => {
+    apiGet<{ model_tools: ModelTool[] }>("/models")
+      .then((data) => setModelTools(data.model_tools))
+      .catch(() => setModelTools([]));
+  }, []);
+
+  function toggleModelTool(name: string) {
+    setSelectedModelTools((current) => (
+      current.includes(name) ? current.filter((item) => item !== name) : [...current, name]
+    ));
+  }
 
   async function estimateRun() {
     const result = await apiPost<{ estimated_cost_usd: number }>("/runs/estimate", { run_config: runConfig });
@@ -118,6 +139,7 @@ export default function NewObjectivePage() {
               <option value="anthropic">Anthropic</option>
               <option value="gemini">Gemini</option>
               <option value="openai_compatible">OpenAI-compatible local</option>
+              <option value="local_http">Local HTTP</option>
             </select>
           </label>
           <label>
@@ -137,6 +159,27 @@ export default function NewObjectivePage() {
             </select>
           </label>
         </div>
+        {modelTools.length > 0 && (
+          <>
+            <div style={{ height: 16 }} />
+            <div className="label">Custom model tools</div>
+            <div className="grid compactGrid">
+              {modelTools.map((tool) => (
+                <label className="selectCard" key={tool.name}>
+                  <input
+                    type="checkbox"
+                    checked={selectedModelTools.includes(tool.name)}
+                    onChange={() => toggleModelTool(tool.name)}
+                  />
+                  <span>
+                    <strong>{tool.name}</strong>
+                    <small>{tool.provider} · {tool.status}</small>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </>
+        )}
         <div style={{ height: 16 }} />
         <div className="actions">
           <button type="button" onClick={estimateRun}>Estimate run</button>

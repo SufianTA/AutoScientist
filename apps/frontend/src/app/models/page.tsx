@@ -55,6 +55,7 @@ export default function ModelsPage() {
           <label>
             <span className="label">Provider</span>
             <select value={provider} onChange={(event) => setProvider(event.target.value)}>
+              <option value="mock">Mock local</option>
               <option value="local_http">Local HTTP</option>
               <option value="openai_compatible">OpenAI-compatible</option>
               <option value="huggingface">Hugging Face</option>
@@ -93,4 +94,3 @@ export default function ModelsPage() {
     </main>
   );
 }
-
