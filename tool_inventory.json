@@ -1,0 +1,63 @@
+[
+  {
+    "tool_name": "acvr1_target_profile_tool",
+    "description": "Returns a curated mock ACVR1 target profile with disease links and pathway notes.",
+    "input_schema": {"type": "object", "required": ["gene_symbol"], "properties": {"gene_symbol": {"type": "string"}}},
+    "output_schema": {"type": "object"},
+    "example_input": {"gene_symbol": "ACVR1"},
+    "status": "working",
+    "latency": "sub-10ms local",
+    "notes": "Mock mode. Replace with ToolUniverse/OpenTargets/ClinVar-backed implementation."
+  },
+  {
+    "tool_name": "fop_disease_profile_tool",
+    "description": "Returns a curated mock Fibrodysplasia Ossificans Progressiva disease profile.",
+    "input_schema": {"type": "object"},
+    "output_schema": {"type": "object"},
+    "example_input": {"disease_name": "Fibrodysplasia Ossificans Progressiva"},
+    "status": "working",
+    "latency": "sub-10ms local",
+    "notes": "Mock mode. Replace with disease ontology and literature retrieval tools."
+  },
+  {
+    "tool_name": "rdkit_descriptor_tool",
+    "description": "Mock RDKit-compatible descriptor tool.",
+    "input_schema": {"type": "object", "required": ["smiles"], "properties": {"smiles": {"type": "array", "items": {"type": "string"}}}},
+    "output_schema": {"type": "object"},
+    "example_input": {"smiles": ["CC(=O)O", "C1=CC=CC=C1"]},
+    "status": "working",
+    "latency": "sub-10ms local",
+    "notes": "Uses heuristic descriptors until RDKit is installed."
+  },
+  {
+    "tool_name": "evidence_quality_scorer_tool",
+    "description": "Scores whether evidence supports, contradicts, or is irrelevant to a therapeutic hypothesis.",
+    "input_schema": {"type": "object"},
+    "output_schema": {"type": "object"},
+    "example_input": {"hypothesis": "Inhibiting ACVR1 may reduce aberrant osteogenic signaling in FOP.", "evidence_text": "ACVR1 variants activate BMP signaling in FOP models."},
+    "status": "working",
+    "latency": "sub-10ms local",
+    "notes": "Rule-based prototype. Replace with biomedical classifier in Milestone 5."
+  },
+  {
+    "tool_name": "hypothesis_card_generator_tool",
+    "description": "Creates a structured candidate hypothesis card.",
+    "input_schema": {"type": "object"},
+    "output_schema": {"type": "object"},
+    "example_input": {"target": "ACVR1", "disease": "FOP", "evidence": []},
+    "status": "working",
+    "latency": "sub-10ms local",
+    "notes": "Mock structured synthesis tool."
+  },
+  {
+    "tool_name": "experiment_recommendation_tool",
+    "description": "Ranks computational and wet-lab validation steps for a hypothesis card.",
+    "input_schema": {"type": "object"},
+    "output_schema": {"type": "object"},
+    "example_input": {"hypothesis_card": {"title": "ACVR1 modulation in FOP"}},
+    "status": "working",
+    "latency": "sub-10ms local",
+    "notes": "Mock experiment designer."
+  }
+]
+
