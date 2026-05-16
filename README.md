@@ -25,6 +25,14 @@ API: http://localhost:8000
 
 Frontend: http://localhost:3000
 
+Start both local dev servers without Docker:
+
+```powershell
+.\infra\scripts\start_local_platform.ps1
+```
+
+Then open http://127.0.0.1:3000 and launch a run from **New Objective**.
+
 ## Local API Development
 
 ```powershell

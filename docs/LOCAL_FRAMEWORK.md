@@ -11,6 +11,14 @@ Core idea:
 
 ## Local Run
 
+Start the local platform:
+
+```powershell
+.\infra\scripts\start_local_platform.ps1
+```
+
+Open http://127.0.0.1:3000 for the browser workbench.
+
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
