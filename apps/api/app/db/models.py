@@ -160,3 +160,19 @@ class CheckoutSession(Base):
     status: Mapped[str] = mapped_column(String(40), default="created")
     checkout_url: Mapped[str] = mapped_column(String(512))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ModelTool(Base):
+    __tablename__ = "model_tools"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("modeltool"))
+    name: Mapped[str] = mapped_column(String(160), unique=True)
+    description: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(String(80))
+    endpoint_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    api_key_env_var: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    input_schema_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    output_schema_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    tooluniverse_config_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(40), default="registered")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

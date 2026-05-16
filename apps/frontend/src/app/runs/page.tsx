@@ -29,7 +29,7 @@ export default async function RunsPage() {
               <td><span className="badge">{run.status}</span></td>
               <td>{run.current_state}</td>
               <td>{run.agent_count}</td>
-              <td>${run.estimated_cost_usd}</td>
+              <td>{run.estimated_cost_usd} units</td>
             </tr>
           ))}
         </tbody>
@@ -37,4 +37,3 @@ export default async function RunsPage() {
     </main>
   );
 }
-

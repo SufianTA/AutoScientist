@@ -1,6 +1,6 @@
 # BioAutoScientist
 
-ToolUniverse-native research workbench prototype for auditable biomedical hypothesis generation.
+Open-source local framework for auditable biomedical hypothesis generation on top of ToolUniverse-style tools, LangGraph orchestration, optional OpenClaw integration, configurable model providers, and a CLAW-like research board.
 
 The first slice implements a mock-first ACVR1/FOP workflow:
 
@@ -10,7 +10,8 @@ The first slice implements a mock-first ACVR1/FOP workflow:
 - Structured agent state machine for intake, planning, evidence collection, hypothesis generation, critique, board publication, and reporting.
 - Next.js frontend skeleton with objective intake, live run trace, tool inventory, research board, and report views.
 - Docker Compose for API, frontend, Postgres, and Redis.
-- Async research-run controls for agent count, runtime, tool budget, evidence strictness, and queued/background execution.
+- Async research-run controls for agent count, runtime, tool budget units, evidence strictness, local model provider, and queued/background execution.
+- Custom model onboarding that emits ToolUniverse-style model tool configs.
 
 ## Quick Start
 
@@ -59,6 +60,12 @@ Run a live API smoke test after the API is running:
 
 ```powershell
 .\infra\scripts\smoke_test_platform.ps1
+```
+
+Run one scientific question locally without opening the web UI:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
 More deployment detail:

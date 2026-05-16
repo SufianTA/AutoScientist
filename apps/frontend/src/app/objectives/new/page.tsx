@@ -14,6 +14,10 @@ export default function NewObjectivePage() {
   const [toolBudgetUsd, setToolBudgetUsd] = useState(10);
   const [evidenceStrictness, setEvidenceStrictness] = useState("balanced");
   const [executionMode, setExecutionMode] = useState("background");
+  const [agentFramework, setAgentFramework] = useState("langgraph");
+  const [llmProvider, setLlmProvider] = useState("mock");
+  const [llmModel, setLlmModel] = useState("mock-scientist");
+  const [llmApiKeyEnvVar, setLlmApiKeyEnvVar] = useState("");
   const [estimate, setEstimate] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,7 +29,13 @@ export default function NewObjectivePage() {
     evidence_strictness: evidenceStrictness,
     human_review_required: true,
     execution_mode: executionMode,
-    payment_mode: "internal_credits"
+    execution_backend: "local_process",
+    agent_framework: agentFramework,
+    openclaw_enabled: agentFramework === "openclaw",
+    llm_provider: llmProvider,
+    llm_model: llmModel,
+    llm_api_key_env_var: llmApiKeyEnvVar,
+    model_tool_names: []
   };
 
   async function estimateRun() {
@@ -81,7 +91,7 @@ export default function NewObjectivePage() {
             <input type="number" min={5} max={240} value={maxRuntimeMinutes} onChange={(event) => setMaxRuntimeMinutes(Number(event.target.value))} />
           </label>
           <label>
-            <span className="label">Tool budget</span>
+            <span className="label">Tool budget units</span>
             <input type="number" min={0} max={500} value={toolBudgetUsd} onChange={(event) => setToolBudgetUsd(Number(event.target.value))} />
           </label>
           <label>
@@ -91,6 +101,32 @@ export default function NewObjectivePage() {
               <option value="strict">Strict</option>
               <option value="exploratory">Exploratory</option>
             </select>
+          </label>
+          <label>
+            <span className="label">Agent framework</span>
+            <select value={agentFramework} onChange={(event) => setAgentFramework(event.target.value)}>
+              <option value="langgraph">LangGraph</option>
+              <option value="custom_state_machine">Built-in state machine</option>
+              <option value="openclaw">OpenClaw optional adapter</option>
+            </select>
+          </label>
+          <label>
+            <span className="label">LLM provider</span>
+            <select value={llmProvider} onChange={(event) => setLlmProvider(event.target.value)}>
+              <option value="mock">Mock local</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Gemini</option>
+              <option value="openai_compatible">OpenAI-compatible local</option>
+            </select>
+          </label>
+          <label>
+            <span className="label">LLM model</span>
+            <input value={llmModel} onChange={(event) => setLlmModel(event.target.value)} />
+          </label>
+          <label>
+            <span className="label">API key env var</span>
+            <input value={llmApiKeyEnvVar} placeholder="OPENAI_API_KEY" onChange={(event) => setLlmApiKeyEnvVar(event.target.value)} />
           </label>
           <label>
             <span className="label">Execution</span>
@@ -104,7 +140,7 @@ export default function NewObjectivePage() {
         <div style={{ height: 16 }} />
         <div className="actions">
           <button type="button" onClick={estimateRun}>Estimate run</button>
-          {estimate !== null && <span className="badge">${estimate.toFixed(2)} estimated</span>}
+          {estimate !== null && <span className="badge">{estimate.toFixed(2)} resource units</span>}
         </div>
         <div style={{ height: 16 }} />
         <button onClick={startRun} disabled={busy}>

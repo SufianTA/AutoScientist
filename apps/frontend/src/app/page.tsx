@@ -9,8 +9,8 @@ export default function Home() {
           <div className="kicker">ToolUniverse-native research loop</div>
           <h1>BioAutoScientist</h1>
           <p className="lede">
-            A workbench for auditable biomedical hypothesis generation: agents plan, call tools,
-            score evidence, critique claims, publish to a research board, and produce reproducible reports.
+            A local open-source framework for auditable biomedical hypothesis generation: LangGraph agents plan,
+            call ToolUniverse-style tools, score evidence, critique claims, publish to a research board, and produce reproducible reports.
           </p>
           <Link href="/objectives/new" className="button">
             <FlaskConical size={18} /> Start ACVR1/FOP Demo
@@ -21,7 +21,7 @@ export default function Home() {
           <h2>ACVR1 / FOP case study</h2>
           <p className="muted">
             The first demo uses mock scientific tools with provenance-compatible outputs.
-            Replace adapters with live ToolUniverse calls as each integration is validated.
+            Replace adapters with live ToolUniverse calls, OpenAI or Anthropic reasoning, and custom model tools as each integration is validated.
           </p>
           <div className="grid">
             <span className="badge"><ClipboardList size={14} /> Board</span>
@@ -33,4 +33,3 @@ export default function Home() {
     </main>
   );
 }
-

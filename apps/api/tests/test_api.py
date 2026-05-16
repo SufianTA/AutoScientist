@@ -127,13 +127,12 @@ def test_billing_checkout_and_ledger() -> None:
     assert any(entry["entry_type"] == "credit" for entry in ledger.json()["entries"])
 
 
-def test_inline_run_reserves_and_settles_credits() -> None:
-    account = client.get("/billing/account").json()["account"]
+def test_inline_run_does_not_require_payment() -> None:
     objective = client.post(
         "/objectives",
         json={
-            "title": "Paid inline ACVR1/FOP run",
-            "objective": "Generate a paid inline therapeutic hypothesis run for ACVR1-driven FOP.",
+            "title": "Local inline ACVR1/FOP run",
+            "objective": "Generate a local inline therapeutic hypothesis run for ACVR1-driven FOP.",
             "constraints": {"require_critic": True},
         },
     )
@@ -153,5 +152,41 @@ def test_inline_run_reserves_and_settles_credits() -> None:
     assert run.status_code == 200
     body = run.json()
     assert body["status"] == "completed"
-    assert body["payment_status"] == "settled"
-    assert body["account_id"] == account["id"]
+    assert body["payment_status"] == "not_required"
+    assert body["account_id"] is None
+
+
+def test_model_tool_onboarding_generates_tooluniverse_config() -> None:
+    response = client.post(
+        "/models",
+        json={
+            "name": "test_evidence_ranker",
+            "description": "Ranks evidence snippets for a hypothesis.",
+            "provider": "local_http",
+            "endpoint_url": "http://localhost:9000/score",
+            "api_key_env_var": "LOCAL_EVIDENCE_RANKER_KEY",
+        },
+    )
+    assert response.status_code == 200
+    model_tool = response.json()["model_tool"]
+    assert model_tool["tooluniverse_config"]["name"] == "test_evidence_ranker"
+    assert model_tool["tooluniverse_config"]["type"] == "CustomModelTool"
+
+    listed = client.get("/models")
+    assert listed.status_code == 200
+    assert any(tool["name"] == "test_evidence_ranker" for tool in listed.json()["model_tools"])
+
+
+def test_framework_and_provider_metadata() -> None:
+    runtimes = client.get("/framework/agent-runtimes")
+    assert runtimes.status_code == 200
+    assert runtimes.json()["default"] == "langgraph"
+
+    providers = client.get("/framework/llm-providers")
+    assert providers.status_code == 200
+    provider_ids = {provider["id"] for provider in providers.json()["providers"]}
+    assert {"openai", "anthropic", "mock"}.issubset(provider_ids)
+
+    validation = client.get("/framework/llm-providers/mock/validate")
+    assert validation.status_code == 200
+    assert validation.json()["valid"] is True

@@ -5,9 +5,6 @@ $baseUrl = "http://127.0.0.1:8000"
 $health = Invoke-RestMethod "$baseUrl/health"
 Write-Host "API health:" $health.status
 
-$billing = Invoke-RestMethod "$baseUrl/billing/account"
-Write-Host "Credits:" $billing.account.balance_usd
-
 $objectiveBody = @{
   title = "Smoke test ACVR1/FOP run"
   objective = "Generate a smoke-test therapeutic hypothesis for ACVR1-driven FOP."
@@ -32,8 +29,7 @@ $runBody = @{
 } | ConvertTo-Json -Depth 5
 
 $run = Invoke-RestMethod -Method Post -Uri "$baseUrl/runs" -ContentType "application/json" -Body $runBody
-Write-Host "Run:" $run.id $run.status $run.payment_status
+Write-Host "Run:" $run.id $run.status
 
 $report = Invoke-RestMethod "$baseUrl/reports/$($run.id)"
 Write-Host "Report:" $report.hypothesis.title
-

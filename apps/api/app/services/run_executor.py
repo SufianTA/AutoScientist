@@ -7,8 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, Objective, Run, ToolCall
 from app.db.session import SessionLocal
-from app.services.agent_orchestrator import AgentOrchestrator
-from app.services.billing_service import settle_run_payment
+from agents.app.runtime import build_agent_runtime
 
 
 DEFAULT_RUN_CONFIG: dict[str, Any] = {
@@ -18,7 +17,13 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "evidence_strictness": "balanced",
     "human_review_required": True,
     "execution_mode": "inline",
-    "payment_mode": "internal_credits",
+    "execution_backend": "local_process",
+    "agent_framework": "langgraph",
+    "openclaw_enabled": False,
+    "llm_provider": "mock",
+    "llm_model": "mock-scientist",
+    "llm_api_key_env_var": "",
+    "model_tool_names": [],
 }
 
 
@@ -31,6 +36,14 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         normalized["evidence_strictness"] = "balanced"
     if normalized["execution_mode"] not in {"inline", "background", "queued"}:
         normalized["execution_mode"] = "inline"
+    if normalized["execution_backend"] not in {"local_process", "docker", "cloud_run_job", "cloud_batch"}:
+        normalized["execution_backend"] = "local_process"
+    if normalized["agent_framework"] not in {"langgraph", "custom_state_machine", "openclaw"}:
+        normalized["agent_framework"] = "langgraph"
+    if normalized["llm_provider"] not in {"mock", "openai", "anthropic", "gemini", "openai_compatible", "local_http"}:
+        normalized["llm_provider"] = "mock"
+    if not isinstance(normalized["model_tool_names"], list):
+        normalized["model_tool_names"] = []
     return normalized
 
 
@@ -101,7 +114,7 @@ def execute_run(db: Session, run: Run, objective: Objective) -> Run:
     run.started_at = run.started_at or datetime.utcnow()
     db.commit()
     try:
-        orchestrator = AgentOrchestrator()
+        orchestrator = build_agent_runtime(run.run_config_json)
         state, trace = orchestrator.run_demo(
             run.id,
             objective.id,
@@ -127,7 +140,6 @@ def execute_run(db: Session, run: Run, objective: Objective) -> Run:
                 error=str(exc),
             )
         )
-    settle_run_payment(db, run, run.status)
     db.commit()
     db.refresh(run)
     return run

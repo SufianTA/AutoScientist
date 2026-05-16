@@ -6,12 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentStep, Objective, Run, ToolCall
 from app.db.session import get_db
-from app.services.billing_service import (
-    DEMO_ACCOUNT_EMAIL,
-    InsufficientCreditsError,
-    get_or_create_account,
-    reserve_credits,
-)
 from app.services.run_executor import (
     create_run_record,
     estimate_run_cost,
@@ -27,7 +21,6 @@ class RunCreate(BaseModel):
     objective_id: str
     execute_demo: bool = True
     run_config: dict[str, Any] = Field(default_factory=dict)
-    owner_email: str = DEMO_ACCOUNT_EMAIL
 
 
 class RunEstimateRequest(BaseModel):
@@ -55,15 +48,8 @@ def create_run(
 
     config = normalize_run_config(payload.run_config)
     run = create_run_record(db, objective, config)
-    account = get_or_create_account(db, owner_email=payload.owner_email)
-    try:
-        reserve_credits(db, account, run)
-        db.commit()
-    except InsufficientCreditsError as exc:
-        run.status = "payment_required"
-        run.payment_status = "insufficient_credits"
-        db.commit()
-        raise HTTPException(status_code=402, detail=str(exc)) from exc
+    run.payment_status = "not_required"
+    db.commit()
 
     if payload.execute_demo and config["execution_mode"] == "inline":
         run = execute_run(db, run, objective)

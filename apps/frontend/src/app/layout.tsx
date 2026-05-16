@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav className="nav">
               <Link href="/objectives/new">New Objective</Link>
               <Link href="/runs">Runs</Link>
-              <Link href="/billing">Billing</Link>
+              <Link href="/models">Models</Link>
               <Link href="/tools">Tool Inventory</Link>
               <Link href="/board">Research Board</Link>
             </nav>

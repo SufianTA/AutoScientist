@@ -13,7 +13,6 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
     current_state: string;
     final_confidence: number | null;
     estimated_cost_usd: number;
-    payment_status: string;
     agent_count: number;
     max_runtime_minutes: number;
     run_config: Record<string, unknown>;
@@ -27,7 +26,7 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
       <p className="muted">
         Status: {run.status} · Confidence: {run.final_confidence ?? "pending"} ·
         Agents: {run.agent_count} · Runtime: {run.max_runtime_minutes} min ·
-        Estimate: ${run.estimated_cost_usd} · Payment: {run.payment_status}
+        Estimate: {run.estimated_cost_usd} resource units
       </p>
       <div className="grid">
         <section className="panel">

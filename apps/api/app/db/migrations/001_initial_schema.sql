@@ -54,6 +54,20 @@ CREATE TABLE checkout_sessions (
   created_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE model_tools (
+  id VARCHAR PRIMARY KEY,
+  name VARCHAR(160) NOT NULL UNIQUE,
+  description TEXT NOT NULL,
+  provider VARCHAR(80) NOT NULL,
+  endpoint_url VARCHAR(512),
+  api_key_env_var VARCHAR(160),
+  input_schema_json JSON NOT NULL,
+  output_schema_json JSON NOT NULL,
+  tooluniverse_config_json JSON NOT NULL,
+  status VARCHAR(40) NOT NULL,
+  created_at TIMESTAMP NOT NULL
+);
+
 CREATE TABLE agent_steps (
   id VARCHAR PRIMARY KEY,
   run_id VARCHAR NOT NULL REFERENCES runs(id),

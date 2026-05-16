@@ -32,3 +32,6 @@ If ToolUniverse is installed editable from a local checkout, keep it isolated fr
 
 When ToolUniverse imports correctly, `tool_inventory.json` will include real ToolUniverse specs in addition to custom mock tools.
 
+## Custom Model Tools
+
+Use `/models` or the Models page to register specialized model tools. The framework emits a ToolUniverse-style JSON config that can later be converted into a native ToolUniverse custom tool file.

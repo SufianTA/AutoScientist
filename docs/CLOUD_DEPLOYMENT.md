@@ -1,6 +1,6 @@
 # Cloud Deployment Blueprint
 
-This is the intended Google Cloud shape for the paid async-run platform. Do not create all of this before the local ACVR1/FOP run is scientifically credible.
+This is an optional bring-your-own-cloud deployment shape. The primary product is a local open-source framework; cloud execution is a backend option for runs that need days of background work or larger machines.
 
 ## Minimal Services
 
@@ -12,18 +12,17 @@ This is the intended Google Cloud shape for the paid async-run platform. Do not 
 - Artifacts: Cloud Storage bucket.
 - Secrets: Secret Manager.
 - Queue: Postgres `runs` table first; Pub/Sub later.
-- Billing: Stripe Checkout or credits ledger.
+- Identity: user authenticates with their own cloud provider outside the local framework.
 
 ## Run Lifecycle
 
 1. User creates an objective.
 2. API validates run config: agents, budget, runtime, strictness, human review.
-3. API estimates cost.
-4. User pays or spends internal credits.
-5. API creates `runs.status = queued`.
-6. Cloud Run Job or Batch task executes `python -m app.services.queue_worker`.
-7. Worker marks run `running`, executes the state machine, persists traces/tool calls/evidence/board posts.
-8. User returns to `/runs/{run_id}` and `/reports/{run_id}`.
+3. API estimates resource units.
+4. API creates `runs.status = queued`.
+5. Local worker, Cloud Run Job, or Batch task executes `python -m app.services.queue_worker`.
+6. Worker marks run `running`, executes the state machine, persists traces/tool calls/evidence/board posts.
+7. User returns to `/runs/{run_id}` and `/reports/{run_id}`.
 
 ## First GCP Resources
 
@@ -38,7 +37,7 @@ Create:
 - Artifact Registry repo for Docker images.
 - Cloud SQL Postgres instance.
 - Cloud Storage bucket for reports and raw tool outputs.
-- Secret Manager entries for database URL, LLM keys, ToolUniverse keys, and Stripe keys.
+- Secret Manager entries for database URL, LLM keys, ToolUniverse keys, and custom model keys.
 
 ## Deployment Commands
 
@@ -74,20 +73,12 @@ Execute worker job:
 gcloud run jobs execute bio-auto-scientist-worker --region REGION
 ```
 
-## Payment/Credits Model
+## Local-First Model
 
-The repo now starts with an internal credits ledger and mock checkout. Add Stripe only after:
+Do not build payments into the core framework. Users run locally or bring their own cloud account. The framework should provide:
 
-- runs can be queued reliably,
-- estimates are visible before submission,
-- failed runs produce a useful failure record,
-- costs are logged per run.
-
-Suggested first pricing dimensions:
-
-- base platform fee,
-- agent count,
-- reserved runtime,
-- tool budget,
-- strictness multiplier,
-- optional GPU/model scorer surcharge.
+- resource estimates,
+- exact job specs,
+- reproducible tool and model configs,
+- durable traces and board posts,
+- optional cloud backend adapters.

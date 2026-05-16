@@ -1,0 +1,82 @@
+# Local AutoScientist Framework
+
+BioAutoScientist is being shaped as a local, open-source scientific automation framework.
+
+Core idea:
+
+1. Install ToolUniverse and BioAutoScientist locally.
+2. Register preferred LLMs and custom biomedical models.
+3. Ask a scientific question.
+4. The orchestrator builds a plan, assigns specialist agents, calls tools, publishes to a CLAW-like board, critiques claims, and emits a reproducible report.
+
+## Local Run
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
+```
+
+## Model Onboarding
+
+Use `/models` or the Models UI to register:
+
+- local HTTP models,
+- OpenAI-compatible endpoints,
+- Hugging Face models,
+- custom Python model wrappers.
+
+Each registration produces a ToolUniverse-style config object. That config is the bridge between the agent framework and specialized scientific models.
+
+## Agent Runtime
+
+Default:
+
+- LangGraph.
+
+Available/fallback:
+
+- built-in deterministic state machine.
+
+Optional future adapter:
+
+- OpenClaw.
+
+OpenClaw should remain optional because this project needs constrained, auditable biomedical execution. LangGraph is the right default for the scientific workflow state machine.
+
+## LLM Providers
+
+The framework supports provider config for:
+
+- `mock`
+- `openai`
+- `anthropic`
+- `gemini`
+- `openai_compatible`
+- `local_http`
+
+Pass keys through environment variables rather than storing raw secrets in the database.
+
+Example:
+
+```powershell
+$env:OPENAI_API_KEY = "..."
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -LlmProvider openai -LlmModel gpt-4.1
+```
+
+## Execution Backends
+
+Current:
+
+- `inline`: run immediately in the API process.
+- `background`: run via FastAPI background task.
+- `queued`: persist run and execute with `python -m app.services.queue_worker`.
+
+Planned:
+
+- Docker worker.
+- Cloud Run Job.
+- Google Cloud Batch.
+- Slurm/HPC adapter.
+
+## Guardrail
+
+This framework automates evidence-gathering and hypothesis generation. It does not validate clinical efficacy, safety, or therapeutic benefit.
