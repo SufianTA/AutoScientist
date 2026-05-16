@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Any, Callable
 
-from app.services.llm_provider import call_llm_json, require_real_provider
+from app.services.llm_provider import call_llm, parse_json_object, require_real_provider
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
@@ -191,7 +192,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         prompt: str,
         max_tokens: int = 1200,
     ) -> dict[str, Any]:
-        result = call_llm_json(
+        result = call_llm(
             provider=config["llm_provider"],
             model=config["llm_model"],
             api_key_env_var=config.get("llm_api_key_env_var") or None,
@@ -201,6 +202,28 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             temperature=0.2,
             max_tokens=max_tokens,
         )
+        try:
+            result["json"] = parse_json_object(result["text"])
+        except RuntimeError:
+            compact_prompt = (
+                f"{prompt}\n\nYour previous response was not parseable JSON. "
+                "Return one compact JSON object only, with no markdown and no commentary. "
+                "Keep every array to at most 5 short strings."
+            )
+            result = call_llm(
+                provider=config["llm_provider"],
+                model=config["llm_model"],
+                api_key_env_var=config.get("llm_api_key_env_var") or None,
+                base_url=config.get("llm_base_url") or None,
+                system_prompt=system_prompt,
+                prompt=compact_prompt,
+                temperature=0.0,
+                max_tokens=min(max_tokens, 900),
+            )
+            try:
+                result["json"] = parse_json_object(result["text"])
+            except RuntimeError:
+                result["json"] = self._fallback_llm_json(task, result["text"])
         call_summary = {
             "agent_name": agent_name,
             "task": task,
@@ -213,12 +236,69 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.context.setdefault("llm_calls", []).append(call_summary)
         return result["json"]
 
+    def _fallback_llm_json(self, task: str, text: str) -> dict[str, Any]:
+        excerpt = text.strip()[:1200]
+        if task == "biomedical_context_extraction":
+            context = self._heuristic_context(excerpt)
+            context["llm_raw_text"] = excerpt
+            context["_parse_fallback"] = True
+            return context
+        if task == "research_plan_generation":
+            return {
+                "plan_steps": [
+                    "Ground disease, target, pathway, and intervention entities.",
+                    "Collect live public and ToolUniverse evidence.",
+                    "Score support, contradictions, and safety concerns.",
+                    "Generate a bounded candidate hypothesis.",
+                    "Critique claims and propose validation experiments.",
+                ],
+                "llm_raw_text": excerpt,
+                "_parse_fallback": True,
+            }
+        if task == "evidence_quality_scoring":
+            return {
+                "label": "mechanistic_relevance",
+                "score": 0.5,
+                "evidence_type": "llm_unstructured_review",
+                "rationale": excerpt or "LLM returned unstructured evidence review.",
+                "warnings": ["LLM response was not parseable JSON; score was conservatively bounded."],
+                "_parse_fallback": True,
+            }
+        if task == "hypothesis_synthesis":
+            return {
+                "title": "Candidate therapeutic hypothesis requiring validation",
+                "hypothesis": "The LLM produced an unstructured hypothesis synthesis; raw text is preserved in provenance.",
+                "scientific_assessment": [],
+                "limitations": ["LLM response was not parseable JSON; use provenance for raw response review."],
+                "llm_raw_text": excerpt,
+                "_parse_fallback": True,
+            }
+        if task == "skeptical_critique":
+            return {
+                "critique_type": "unstructured_llm_critique",
+                "severity": "medium",
+                "critique": excerpt or "The LLM produced an unstructured critique.",
+                "recommended_fix": "Review raw LLM response in provenance and rerun with a stricter model/prompt if needed.",
+                "abstention_required": False,
+                "claim_boundary": "candidate hypothesis; no clinical efficacy or safety claim",
+                "_parse_fallback": True,
+            }
+        if task == "final_report_synthesis":
+            return {
+                "title": "Candidate biomedical hypothesis report",
+                "summary": excerpt or "The LLM produced an unstructured final synthesis.",
+                "_parse_fallback": True,
+            }
+        return {"llm_raw_text": excerpt, "_parse_fallback": True}
+
     def _extract_context(self, state: ResearchRunState, config: dict[str, Any]) -> dict[str, Any]:
         if self._llm_enabled(config):
             prompt = (
                 "Extract the biomedical entities needed for autonomous evidence gathering. "
                 "Return only JSON with keys: primary_genes, diseases, candidate_interventions, "
-                "pathways, pubmed_queries, analysis_goal. Use empty arrays when absent.\n\n"
+                "pathways, pubmed_queries, analysis_goal. Use empty arrays when absent. "
+                "Hard limits: primary_genes <= 4, diseases <= 3, candidate_interventions <= 6, "
+                "pathways <= 4, pubmed_queries <= 4. Do not add loosely related diseases or broad pathway catalogs.\n\n"
                 f"Scientific problem:\n{state.objective}"
             )
             context = self._llm_json(
@@ -289,13 +369,27 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             cleaned = re.sub(r"^[A-Z0-9]+-driven\s+", "", disease, flags=re.I).strip()
             if cleaned:
                 diseases.append(cleaned)
-        diseases = list(dict.fromkeys(diseases))
+        explicit_diseases = self._heuristic_context(objective).get("diseases", [])
+        diseases = list(
+            dict.fromkeys(
+                [
+                    *explicit_diseases,
+                    *[
+                        disease
+                        for disease in diseases
+                        if "heterotopic ossification" not in disease.lower()
+                    ],
+                ]
+            )
+        )
+        explicit_genes = self._explicit_gene_symbols(objective)
+        genes = list(dict.fromkeys([*explicit_genes, *genes]))[:4]
         normalized = {
             "primary_genes": genes,
-            "diseases": diseases,
-            "candidate_interventions": self._string_list(context.get("candidate_interventions")),
-            "pathways": self._string_list(context.get("pathways")),
-            "pubmed_queries": self._string_list(context.get("pubmed_queries")),
+            "diseases": diseases[:2],
+            "candidate_interventions": self._string_list(context.get("candidate_interventions"))[:6],
+            "pathways": self._string_list(context.get("pathways"))[:4],
+            "pubmed_queries": self._string_list(context.get("pubmed_queries"))[:4],
             "analysis_goal": str(context.get("analysis_goal") or objective),
             "extraction_method": context.get("extraction_method", "llm"),
         }
@@ -322,6 +416,15 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if isinstance(value, list):
             return [str(item).strip() for item in value if str(item).strip()]
         return []
+
+    def _explicit_gene_symbols(self, objective: str) -> list[str]:
+        stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "FOP", "BMP", "LLM"}
+        genes = [
+            value
+            for value in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
+            if value not in stop and not value.startswith("HTTP")
+        ]
+        return list(dict.fromkeys(genes))[:4]
 
     def _primary_target(self, state: ResearchRunState) -> str:
         genes = state.context.get("biomedical_context", {}).get("primary_genes", [])
@@ -514,7 +617,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         context = state.context.get("biomedical_context", {})
-        genes = context.get("primary_genes", [])[:4]
+        genes = context.get("primary_genes", [])[:2]
         diseases = context.get("diseases", [])[:3]
         candidates = context.get("candidate_interventions", [])[:8]
         pubmed_queries = context.get("pubmed_queries", [])[:5]
@@ -559,10 +662,15 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             }
 
         live_tool_outputs: list[dict[str, Any]] = []
-        if live_calls:
-            max_workers = max(1, min(int(config.get("agent_count", 6)), len(live_calls)))
+        serial_calls = [call for call in live_calls if call[1] == "ncbi_gene_profile_tool"]
+        parallel_calls = [call for call in live_calls if call[1] != "ncbi_gene_profile_tool"]
+        for call in serial_calls:
+            live_tool_outputs.append(execute_call(*call))
+            time.sleep(0.45)
+        if parallel_calls:
+            max_workers = max(1, min(int(config.get("agent_count", 6)), len(parallel_calls)))
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [executor.submit(execute_call, *call) for call in live_calls]
+                futures = [executor.submit(execute_call, *call) for call in parallel_calls]
                 for future in as_completed(futures):
                     live_tool_outputs.append(future.result())
         for live_output in live_tool_outputs:
@@ -819,19 +927,28 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 ),
                 prompt=(
                     "Return only JSON with keys title, hypothesis, scientific_assessment, "
-                    "candidate_intervention_summary, limitations. scientific_assessment and limitations are arrays.\n"
+                    "candidate_intervention_summary, limitations. Use short values. "
+                    "scientific_assessment and limitations are arrays of at most 3 short strings. "
+                    "The hypothesis must be at most 120 words. Do not assert efficacy or safety. "
+                    "Do not assert ligand-independent constitutive signaling unless the retrieved evidence directly supports it; "
+                    "when evidence is mixed, use broader wording such as aberrant or neomorphic pathway signaling.\n"
                     f"Objective: {state.objective}\n"
                     f"Evidence: {json.dumps(state.evidence, default=str)[:9000]}"
                 ),
-                max_tokens=1300,
+                max_tokens=1000,
             )
-            for key in ("title", "hypothesis", "candidate_intervention_summary"):
-                if hypothesis_json.get(key):
-                    state.hypothesis_card[key] = hypothesis_json[key]
-            for key in ("scientific_assessment", "limitations"):
-                values = self._string_list(hypothesis_json.get(key))
-                if values:
-                    state.hypothesis_card[key] = values
+            if hypothesis_json.get("_parse_fallback"):
+                state.hypothesis_card.setdefault("limitations", []).append(
+                    "LLM hypothesis synthesis was unstructured; raw response is preserved in provenance."
+                )
+            else:
+                for key in ("title", "hypothesis", "candidate_intervention_summary"):
+                    if hypothesis_json.get(key):
+                        state.hypothesis_card[key] = hypothesis_json[key]
+                for key in ("scientific_assessment", "limitations"):
+                    values = self._string_list(hypothesis_json.get(key))
+                    if values:
+                        state.hypothesis_card[key] = values
         self._record(
             trace,
             "mechanism_agent",

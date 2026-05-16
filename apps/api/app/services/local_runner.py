@@ -213,7 +213,7 @@ def run_interactive() -> None:
     provider = provider or "openai"
     model_default = {
         "openai": "gpt-4.1",
-        "anthropic": "claude-3-5-sonnet-latest",
+        "anthropic": "claude-sonnet-4-6",
         "gemini": "gemini-1.5-pro",
         "openai_compatible": "local-model",
         "local_http": "local-http-model",

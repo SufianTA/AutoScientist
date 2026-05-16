@@ -24,7 +24,7 @@ SUPPORTED_PROVIDERS = {
     "anthropic": {
         "display_name": "Anthropic",
         "requires_key": True,
-        "default_model": "claude-3-5-sonnet-latest",
+        "default_model": "claude-sonnet-4-6",
         "default_api_key_env_var": "ANTHROPIC_API_KEY",
     },
     "gemini": {
@@ -163,9 +163,12 @@ def call_llm_json(**kwargs: Any) -> dict[str, Any]:
 def parse_json_object(text: str) -> dict[str, Any]:
     stripped = text.strip()
     if stripped.startswith("```"):
-        stripped = stripped.strip("`")
-        if stripped.lower().startswith("json"):
-            stripped = stripped[4:].strip()
+        lines = stripped.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        stripped = "\n".join(lines).strip()
     try:
         value = json.loads(stripped)
         return value if isinstance(value, dict) else {"value": value}
@@ -173,8 +176,11 @@ def parse_json_object(text: str) -> dict[str, Any]:
         start = stripped.find("{")
         end = stripped.rfind("}")
         if start >= 0 and end > start:
-            value = json.loads(stripped[start : end + 1])
-            return value if isinstance(value, dict) else {"value": value}
+            try:
+                value = json.loads(stripped[start : end + 1])
+                return value if isinstance(value, dict) else {"value": value}
+            except json.JSONDecodeError as exc:
+                raise RuntimeError("LLM did not return a parseable JSON object.") from exc
         raise RuntimeError("LLM did not return a parseable JSON object.")
 
 

@@ -38,7 +38,8 @@ def fetch_json(url: str, timeout: int = 20) -> dict[str, Any]:
                 return json.loads(response.read().decode("utf-8"))
         except Exception as exc:  # pragma: no cover - live network defensive branch
             last_error = exc
-            time.sleep(0.4 * (attempt + 1))
+            delay = 1.2 * (attempt + 1) if "429" in str(exc) else 0.4 * (attempt + 1)
+            time.sleep(delay)
     raise RuntimeError(f"Live API request failed after retries: {last_error}")
 
 
