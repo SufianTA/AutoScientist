@@ -43,6 +43,14 @@ def test_demo_run_generates_report() -> None:
     report = client.get(f"/reports/{run_id}")
     assert report.status_code == 200
     assert "ACVR1" in report.json()["hypothesis"]["title"]
+    trace = client.get(f"/runs/{run_id}/trace")
+    assert trace.status_code == 200
+    states = [step["state_name"] for step in trace.json()["steps"]]
+    assert "INITIALIZE_FRAMEWORK" in states
+    assert "PLAN_RESEARCH" in states
+    assert "FIND_TOOLS" in states
+    assert "EXECUTE_EVIDENCE_COLLECTION" in states
+    assert "SCORE_EVIDENCE" in states
 
 
 def test_run_estimate_and_queued_submission() -> None:
@@ -190,3 +198,30 @@ def test_framework_and_provider_metadata() -> None:
     validation = client.get("/framework/llm-providers/mock/validate")
     assert validation.status_code == 200
     assert validation.json()["valid"] is True
+
+
+def test_openclaw_optional_adapter_trace() -> None:
+    objective = client.post(
+        "/objectives",
+        json={
+            "title": "OpenClaw optional adapter trace",
+            "objective": "Generate an OpenClaw-adapter trace for ACVR1-driven FOP.",
+            "constraints": {"require_critic": True},
+        },
+    )
+    run = client.post(
+        "/runs",
+        json={
+            "objective_id": objective.json()["id"],
+            "execute_demo": True,
+            "run_config": {
+                "execution_mode": "inline",
+                "agent_framework": "openclaw",
+            },
+        },
+    )
+    assert run.status_code == 200
+    trace = client.get(f"/runs/{run.json()['id']}/trace").json()
+    framework_step = next(step for step in trace["steps"] if step["state_name"] == "INITIALIZE_FRAMEWORK")
+    assert framework_step["output"]["framework"] == "openclaw"
+    assert framework_step["output"]["mode"] == "optional_adapter_placeholder"

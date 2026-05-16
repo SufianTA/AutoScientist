@@ -12,6 +12,7 @@ The first slice implements a mock-first ACVR1/FOP workflow:
 - Docker Compose for API, frontend, Postgres, and Redis.
 - Async research-run controls for agent count, runtime, tool budget units, evidence strictness, local model provider, and queued/background execution.
 - Custom model onboarding that emits ToolUniverse-style model tool configs.
+- LangGraph node workflow with deterministic fallback if LangGraph is unavailable.
 
 ## Quick Start
 

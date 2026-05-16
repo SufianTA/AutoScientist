@@ -42,6 +42,19 @@ Optional future adapter:
 
 OpenClaw should remain optional because this project needs constrained, auditable biomedical execution. LangGraph is the right default for the scientific workflow state machine.
 
+Current LangGraph node sequence:
+
+1. `plan_research`
+2. `find_tools`
+3. `execute_evidence_collection`
+4. `score_evidence`
+5. `generate_hypotheses`
+6. `critique_and_refine`
+7. `propose_experiments`
+8. `generate_report`
+
+Every node appends an auditable trace entry with inputs, outputs, agent name, state name, and timestamp. If LangGraph is unavailable in the local environment, the same node functions run sequentially so the framework still works.
+
 ## LLM Providers
 
 The framework supports provider config for:
