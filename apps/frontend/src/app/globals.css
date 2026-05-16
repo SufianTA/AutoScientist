@@ -142,6 +142,13 @@ a {
   gap: 12px;
 }
 
+.inlineControl {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .card {
   padding: 18px;
 }

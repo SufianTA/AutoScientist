@@ -13,6 +13,25 @@ type ModelTool = {
   status: string;
 };
 
+function optimizedAgentCount(text: string) {
+  const lower = text.toLowerCase();
+  const terms = [
+    "compound",
+    "molecule",
+    "omics",
+    "pathway",
+    "literature",
+    "safety",
+    "clinical",
+    "experiment",
+    "drug",
+    "therapeutic"
+  ];
+  const hits = terms.filter((term) => lower.includes(term)).length;
+  const lengthBonus = text.length > 300 ? 1 : 0;
+  return Math.max(3, Math.min(8, 4 + Math.floor(hits / 2) + lengthBonus));
+}
+
 export default function NewObjectivePage() {
   const [title, setTitle] = useState("ACVR1/FOP therapeutic hypothesis generation");
   const [objective, setObjective] = useState(preset);
@@ -105,7 +124,16 @@ export default function NewObjectivePage() {
         <div className="configGrid">
           <label>
             <span className="label">Agents</span>
-            <input type="number" min={1} max={12} value={agentCount} onChange={(event) => setAgentCount(Number(event.target.value))} />
+            <div className="inlineControl">
+              <input type="number" min={1} max={12} value={agentCount} onChange={(event) => setAgentCount(Number(event.target.value))} />
+              <button
+                className="secondaryButton"
+                type="button"
+                onClick={() => setAgentCount(optimizedAgentCount(objective))}
+              >
+                Optimized
+              </button>
+            </div>
           </label>
           <label>
             <span className="label">Runtime limit</span>
