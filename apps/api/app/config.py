@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./bio_auto_scientist.sqlite3"
     redis_url: str = "redis://localhost:6379/0"
     tool_mode: str = "mock"
+    tooluniverse_scan_all: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -15,4 +16,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

@@ -40,6 +40,14 @@ cd apps/api
 pytest
 ```
 
+Export the current ToolUniverse plus custom tool inventory:
+
+```powershell
+.\infra\scripts\export_tool_inventory.ps1
+```
+
+If ToolUniverse is installed but import fails, check `/tools/health`. The adapter reports dependency conflicts instead of crashing the API.
+
 ## Scientific Guardrails
 
 The system labels outputs as candidate hypotheses. It must not claim clinical efficacy, safety, or validation unless direct evidence supports that claim. Reports should use cautious wording such as "computationally prioritized", "evidence-supported but not validated", and "requires experimental validation".

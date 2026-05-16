@@ -20,6 +20,13 @@ def test_inventory_contains_custom_tools() -> None:
     assert "evidence_quality_scorer_tool" in names
 
 
+def test_tool_health_is_reported() -> None:
+    response = client.get("/tools/health")
+    assert response.status_code == 200
+    assert "tooluniverse" in response.json()
+    assert "available" in response.json()["tooluniverse"]
+
+
 def test_demo_run_generates_report() -> None:
     objective = client.post(
         "/objectives",
@@ -36,4 +43,3 @@ def test_demo_run_generates_report() -> None:
     report = client.get(f"/reports/{run_id}")
     assert report.status_code == 200
     assert "ACVR1" in report.json()["hypothesis"]["title"]
-

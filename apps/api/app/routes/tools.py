@@ -20,12 +20,18 @@ class ToolExecuteRequest(BaseModel):
 
 
 def get_adapter() -> ToolUniverseAdapter:
-    return ToolUniverseAdapter(mode=get_settings().tool_mode)
+    settings = get_settings()
+    return ToolUniverseAdapter(mode=settings.tool_mode, scan_all=settings.tooluniverse_scan_all)
 
 
 @router.get("/inventory")
 def inventory(adapter: ToolUniverseAdapter = Depends(get_adapter)) -> dict:
     return {"tools": adapter.list_tools()}
+
+
+@router.get("/health")
+def tool_health(adapter: ToolUniverseAdapter = Depends(get_adapter)) -> dict:
+    return {"tooluniverse": adapter.tooluniverse_health()}
 
 
 @router.post("/execute")
@@ -51,4 +57,3 @@ def execute_tool(
     db.add(call)
     db.commit()
     return {"tool_call_id": call.id, "result": result}
-
