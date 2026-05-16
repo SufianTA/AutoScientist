@@ -2,17 +2,23 @@
 
 Open-source local framework for auditable biomedical hypothesis generation on top of ToolUniverse-style tools, LangGraph orchestration, optional OpenClaw integration, configurable model providers, and a CLAW-like research board.
 
-The first slice implements a mock-first ACVR1/FOP workflow:
+The first slice now has two execution contracts:
+
+- **Deterministic/dev mode** for local tests and demos without paid model keys.
+- **Strict real mode** for autonomous runs with a real LLM provider, live public biomedical APIs, ToolUniverse/OpenTargets calls, streamed agent events, and provenance.
 
 - FastAPI backend with objectives, runs, tools, research board, traces, and reports.
 - Custom scientific tool interface with provenance-bearing outputs.
-- Mock custom tools for ACVR1 profile, FOP profile, RDKit-like descriptors, evidence scoring, hypothesis cards, and experiment recommendations.
+- Custom scientific tools for ACVR1/FOP demo support, RDKit-like descriptors, evidence scoring, hypothesis cards, and experiment recommendations.
 - Structured agent state machine for intake, planning, evidence collection, hypothesis generation, critique, board publication, and reporting.
 - Next.js frontend skeleton with objective intake, live run trace, tool inventory, research board, and report views.
 - Docker Compose for API, frontend, Postgres, and Redis.
 - Async research-run controls for agent count, runtime, tool budget units, evidence strictness, local model provider, and queued/background execution.
 - Custom model onboarding that emits ToolUniverse-style model tool configs and executes selected mock/local HTTP model tools inside the run.
 - LangGraph node workflow with deterministic fallback if LangGraph is unavailable.
+- Real LLM provider calls through OpenAI, Anthropic, Gemini, OpenAI-compatible endpoints, or local HTTP models.
+- Question-derived biomedical entity extraction, not an ACVR1-only real-data path.
+- Specialist agent roster and live CLI progress for PI, finder, ToolUniverse, literature, knowledge, molecule, critic, experiment, and publisher roles.
 
 ## Quick Start
 
@@ -98,7 +104,27 @@ Run the non-interactive CLI with live public data:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -RealData -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_real_report.md -ProvenanceFile .\outputs\acvr1_fop_real_provenance.json
 ```
 
-Live-data mode currently calls NCBI Gene, PubMed, and PubChem. ToolUniverse health is available at `/tools/health`; the local environment was fixed by replacing the broken editable ToolUniverse checkout with a clean `tooluniverse==1.0.4` install.
+Live-data mode calls NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets where the extracted entities provide valid inputs. ToolUniverse health is available at `/tools/health`; the local environment was fixed by replacing the broken editable ToolUniverse checkout with a clean `tooluniverse==1.0.4` install.
+
+Run the fully real autonomous mode with a real LLM key:
+
+```powershell
+$env:OPENAI_API_KEY = "sk-..."
+.\infra\scripts\run_local_question.ps1 `
+  -Question "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy." `
+  -Agents 7 `
+  -Runtime 30 `
+  -Strictness strict `
+  -RealData `
+  -LlmProvider openai `
+  -LlmModel gpt-4.1 `
+  -RequireRealLlm `
+  -OutputFormat markdown `
+  -OutputFile .\outputs\strict_real_report.md `
+  -ProvenanceFile .\outputs\strict_real_provenance.json
+```
+
+If `-RequireRealLlm` is used and the provider/key is missing, the run fails instead of silently falling back to mock behavior.
 
 Write both a report and full provenance trace:
 

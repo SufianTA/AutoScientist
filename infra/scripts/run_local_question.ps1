@@ -10,6 +10,9 @@ param(
   [string]$LlmModel = "mock-scientist",
   [string[]]$ModelTools = @(),
   [switch]$RealData,
+  [string]$LlmApiKeyEnvVar = "",
+  [string]$LlmBaseUrl = "",
+  [switch]$RequireRealLlm,
   [ValidateSet("summary", "json", "markdown")]
   [string]$OutputFormat = "summary",
   [string]$OutputFile = "",
@@ -39,6 +42,15 @@ try {
     "--llm-model", $LlmModel,
     "--output-format", $OutputFormat
   )
+  if ($LlmApiKeyEnvVar) {
+    $args += @("--llm-api-key-env-var", $LlmApiKeyEnvVar)
+  }
+  if ($LlmBaseUrl) {
+    $args += @("--llm-base-url", $LlmBaseUrl)
+  }
+  if ($RequireRealLlm) {
+    $args += "--require-real-llm"
+  }
   foreach ($modelTool in $ModelTools) {
     $args += @("--model-tool", $modelTool)
   }
@@ -60,6 +72,9 @@ try {
     $args += @("--provenance-file", $resolvedProvenanceFile)
   }
   python -m app.services.local_runner @args
+  if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
 } finally {
   Pop-Location
 }

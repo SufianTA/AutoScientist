@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
+import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Any, Callable
 
+from app.services.llm_provider import call_llm_json, require_real_provider
+from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
 from agents.app.state import AgentStateName, ResearchRunState
@@ -39,7 +44,11 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         self._progress_callback = raw_config.get("_progress_callback")
         config = {key: value for key, value in raw_config.items() if not key.startswith("_")}
         config = {**config, "agent_framework": "langgraph"}
+        if config.get("require_real_llm"):
+            require_real_provider(config)
         state = ResearchRunState(run_id=run_id, objective_id=objective_id, objective=objective)
+        state.context["agent_roster"] = self._agent_roster(config.get("agent_count", 6))
+        state.context["real_mode"] = bool(config.get("real_data_enabled") and config.get("require_real_llm"))
         trace: list[dict[str, Any]] = []
         try:
             self._record(
@@ -52,6 +61,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "available": self.langgraph_available,
                     "mode": "state_graph" if self.langgraph_available else "sequential_node_fallback",
                     "node_count": len(self._node_sequence()),
+                    "agent_roster": state.context["agent_roster"],
+                    "real_mode": state.context["real_mode"],
                 },
             )
 
@@ -146,6 +157,180 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if callable(callback):
             callback(trace_item)
 
+    def _agent_roster(self, count: int) -> list[dict[str, Any]]:
+        roles = [
+            ("pi_agent", "principal investigator planning and synthesis"),
+            ("finder_agent", "tool discovery and schema mapping"),
+            ("tooluniverse_agent", "ToolUniverse/OpenTargets execution"),
+            ("literature_agent", "PubMed evidence retrieval"),
+            ("knowledge_agent", "gene, disease, and mechanism grounding"),
+            ("molecule_agent", "candidate intervention and chemistry lookup"),
+            ("critic_agent", "skeptical evidence scoring and claim limits"),
+            ("experiment_designer_agent", "validation experiment design"),
+            ("publisher_agent", "board post and final report synthesis"),
+            ("safety_agent", "safety and translation gap review"),
+            ("omics_agent", "pathway and omics mechanism review"),
+            ("provenance_agent", "trace and reproducibility checks"),
+        ]
+        return [
+            {"slot": index + 1, "agent_name": name, "responsibility": responsibility}
+            for index, (name, responsibility) in enumerate(roles[: max(1, min(int(count), len(roles)))])
+        ]
+
+    def _llm_enabled(self, config: dict[str, Any]) -> bool:
+        return config.get("llm_provider") not in {None, "", "mock"}
+
+    def _llm_json(
+        self,
+        state: ResearchRunState,
+        config: dict[str, Any],
+        *,
+        agent_name: str,
+        task: str,
+        system_prompt: str,
+        prompt: str,
+        max_tokens: int = 1200,
+    ) -> dict[str, Any]:
+        result = call_llm_json(
+            provider=config["llm_provider"],
+            model=config["llm_model"],
+            api_key_env_var=config.get("llm_api_key_env_var") or None,
+            base_url=config.get("llm_base_url") or None,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            temperature=0.2,
+            max_tokens=max_tokens,
+        )
+        call_summary = {
+            "agent_name": agent_name,
+            "task": task,
+            "provider": result["provider"],
+            "model": result["model"],
+            "status": result["status"],
+            "latency_ms": result["latency_ms"],
+            "response_excerpt": result["text"][:600],
+        }
+        state.context.setdefault("llm_calls", []).append(call_summary)
+        return result["json"]
+
+    def _extract_context(self, state: ResearchRunState, config: dict[str, Any]) -> dict[str, Any]:
+        if self._llm_enabled(config):
+            prompt = (
+                "Extract the biomedical entities needed for autonomous evidence gathering. "
+                "Return only JSON with keys: primary_genes, diseases, candidate_interventions, "
+                "pathways, pubmed_queries, analysis_goal. Use empty arrays when absent.\n\n"
+                f"Scientific problem:\n{state.objective}"
+            )
+            context = self._llm_json(
+                state,
+                config,
+                agent_name="pi_agent",
+                task="biomedical_context_extraction",
+                system_prompt=(
+                    "You are a biomedical research planner. Extract grounded entities for tool calls. "
+                    "Do not invent entities that are not implied by the question."
+                ),
+                prompt=prompt,
+                max_tokens=900,
+            )
+        else:
+            context = self._heuristic_context(state.objective)
+        return self._normalize_context(context, state.objective)
+
+    def _heuristic_context(self, objective: str) -> dict[str, Any]:
+        stop = {
+            "AND",
+            "THE",
+            "USE",
+            "DO",
+            "NOT",
+            "DNA",
+            "RNA",
+            "AI",
+            "BMP",
+            "FOP",
+            "LLM",
+        }
+        genes = [
+            match
+            for match in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
+            if match not in stop and not match.startswith("HTTP")
+        ]
+        diseases: list[str] = []
+        for pattern in [
+            r"for ([A-Z][A-Za-z0-9 /-]+?)(?:\.|,|;| and | with | by |$)",
+            r"driven ([A-Z][A-Za-z0-9 /-]+?)(?:\.|,|;| and | with | by |$)",
+            r"in ([A-Z][A-Za-z0-9 /-]+?)(?:\.|,|;| and | with | by |$)",
+        ]:
+            match = re.search(pattern, objective)
+            if match:
+                diseases.append(match.group(1).strip())
+        candidates = re.findall(r"\b(?:palovarotene|dorsomorphin|LDN-193189|rapamycin|statin|inhibitor)\b", objective, re.I)
+        queries = []
+        if genes and diseases:
+            queries.append(f"{genes[0]} {diseases[0]} mechanism")
+            queries.append(f"{genes[0]} {diseases[0]} safety therapeutic")
+        else:
+            queries.append(objective[:180])
+        return {
+            "primary_genes": list(dict.fromkeys(genes))[:4],
+            "diseases": list(dict.fromkeys(diseases))[:3],
+            "candidate_interventions": list(dict.fromkeys(candidates))[:6],
+            "pathways": [],
+            "pubmed_queries": queries[:4],
+            "analysis_goal": objective,
+            "extraction_method": "heuristic",
+        }
+
+    def _normalize_context(self, context: dict[str, Any], objective: str) -> dict[str, Any]:
+        genes = self._string_list(context.get("primary_genes"))
+        diseases = []
+        for disease in self._string_list(context.get("diseases")):
+            cleaned = re.sub(r"^[A-Z0-9]+-driven\s+", "", disease, flags=re.I).strip()
+            if cleaned:
+                diseases.append(cleaned)
+        diseases = list(dict.fromkeys(diseases))
+        normalized = {
+            "primary_genes": genes,
+            "diseases": diseases,
+            "candidate_interventions": self._string_list(context.get("candidate_interventions")),
+            "pathways": self._string_list(context.get("pathways")),
+            "pubmed_queries": self._string_list(context.get("pubmed_queries")),
+            "analysis_goal": str(context.get("analysis_goal") or objective),
+            "extraction_method": context.get("extraction_method", "llm"),
+        }
+        if not normalized["pubmed_queries"]:
+            pieces = normalized["primary_genes"] + normalized["diseases"] + normalized["pathways"]
+            base_query = " ".join(pieces) or objective[:180]
+            normalized["pubmed_queries"] = [
+                f"{base_query} mechanism",
+                f"{base_query} therapeutic safety",
+                f"{base_query} candidate intervention",
+            ]
+        else:
+            normalized["pubmed_queries"] = [
+                re.sub(r"([A-Z0-9]+)\s+\1-driven\s+", r"\1 ", query, flags=re.I)
+                for query in normalized["pubmed_queries"]
+            ]
+        return normalized
+
+    def _string_list(self, value: Any) -> list[str]:
+        if not value:
+            return []
+        if isinstance(value, str):
+            return [value.strip()] if value.strip() else []
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        return []
+
+    def _primary_target(self, state: ResearchRunState) -> str:
+        genes = state.context.get("biomedical_context", {}).get("primary_genes", [])
+        return genes[0] if genes else "disease-relevant target/pathway"
+
+    def _primary_disease(self, state: ResearchRunState) -> str:
+        diseases = state.context.get("biomedical_context", {}).get("diseases", [])
+        return diseases[0] if diseases else "the disease context"
+
     def _plan_research(
         self,
         state: ResearchRunState,
@@ -153,14 +338,36 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         state.current_state = AgentStateName.PLAN_RESEARCH
-        state.plan = [
-            "Ground disease and target identity.",
-            "Collect disease-target-mechanism evidence through ToolUniverse-style tools.",
-            "Generate a candidate hypothesis with explicit uncertainty.",
-            "Score evidence and separate support from translation gaps.",
-            "Critique claims before publishing to the research board.",
-            "Propose computational and experimental validation steps.",
-        ]
+        biomedical_context = self._extract_context(state, config)
+        state.context["biomedical_context"] = biomedical_context
+        if self._llm_enabled(config):
+            plan_json = self._llm_json(
+                state,
+                config,
+                agent_name="pi_agent",
+                task="research_plan_generation",
+                system_prompt=(
+                    "You are a skeptical biomedical principal investigator. Create a tool-grounded "
+                    "plan for evidence gathering, hypothesis generation, critique, and validation. "
+                    "Avoid clinical claims unless direct evidence is available."
+                ),
+                prompt=(
+                    "Return only JSON with key plan_steps as an array of 5-8 concise steps. "
+                    f"Scientific problem: {state.objective}\n"
+                    f"Extracted context: {json.dumps(biomedical_context, indent=2)}"
+                ),
+                max_tokens=900,
+            )
+            state.plan = self._string_list(plan_json.get("plan_steps"))
+        if not state.plan:
+            state.plan = [
+                "Extract disease, target, pathway, and intervention entities from the objective.",
+                "Collect live gene, disease, literature, compound, and ToolUniverse/OpenTargets evidence.",
+                "Generate a candidate therapeutic or mechanistic hypothesis with explicit uncertainty.",
+                "Score evidence and separate support from safety, translation, and contradiction gaps.",
+                "Critique claims before publishing to the research board.",
+                "Propose computational and experimental validation steps.",
+            ]
         self._record(
             trace,
             "pi_agent",
@@ -168,10 +375,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {"objective": state.objective, "run_config": config},
             {
                 "plan": state.plan,
+                "biomedical_context": biomedical_context,
+                "agent_roster": state.context.get("agent_roster", []),
                 "agent_count": config.get("agent_count", 6),
                 "evidence_strictness": config.get("evidence_strictness", "balanced"),
                 "llm_provider": config.get("llm_provider", "mock"),
                 "llm_model": config.get("llm_model", "mock-scientist"),
+                "llm_calls": state.context.get("llm_calls", []),
             },
         )
         return state
@@ -183,28 +393,44 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         state.current_state = AgentStateName.FIND_TOOLS
-        state.selected_tools = [
-            "acvr1_target_profile_tool",
-            "fop_disease_profile_tool",
-            "evidence_quality_scorer_tool",
-            "hypothesis_card_generator_tool",
-            "experiment_recommendation_tool",
-            *[tool["name"] for tool in config.get("model_tool_configs", [])],
-        ]
         if config.get("real_data_enabled"):
-            state.selected_tools.extend(
-                [
-                    "ncbi_gene_profile_tool",
-                    "pubmed_literature_search_tool",
-                    "pubchem_candidate_lookup_tool",
-                ]
-            )
+            state.selected_tools = [
+                "ncbi_gene_profile_tool",
+                "pubmed_literature_search_tool",
+                "pubchem_candidate_lookup_tool",
+                "OpenTargets_get_disease_id_description_by_name",
+                "OpenTargets_get_drug_chembId_by_generic_name",
+                "evidence_quality_scorer_tool",
+                "hypothesis_card_generator_tool",
+                "experiment_recommendation_tool",
+                *[tool["name"] for tool in config.get("model_tool_configs", [])],
+            ]
+        else:
+            state.selected_tools = [
+                "acvr1_target_profile_tool",
+                "fop_disease_profile_tool",
+                "evidence_quality_scorer_tool",
+                "hypothesis_card_generator_tool",
+                "experiment_recommendation_tool",
+                *[tool["name"] for tool in config.get("model_tool_configs", [])],
+            ]
         self._record(
             trace,
             "finder_agent",
             state.current_state.value,
-            {"objective": state.objective, "available_custom_tools": sorted(self.tools.keys())},
-            {"selected_tools": state.selected_tools, "selection_policy": "mock ACVR1/FOP demo plus configured model tools"},
+            {
+                "objective": state.objective,
+                "biomedical_context": state.context.get("biomedical_context", {}),
+                "available_custom_tools": sorted(self.tools.keys()),
+            },
+            {
+                "selected_tools": state.selected_tools,
+                "selection_policy": (
+                    "live public APIs plus ToolUniverse/OpenTargets and configured model tools"
+                    if config.get("real_data_enabled")
+                    else "local deterministic demo tools plus configured model tools"
+                ),
+            },
         )
         return state
 
@@ -215,6 +441,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         state.current_state = AgentStateName.EXECUTE_EVIDENCE_COLLECTION
+        if config.get("real_data_enabled"):
+            return self._execute_live_evidence_collection(state, trace, config)
         acvr1 = self.tools["acvr1_target_profile_tool"].run({"gene_symbol": "ACVR1"}).model_dump()
         fop = self.tools["fop_disease_profile_tool"].run(
             {"disease_name": "Fibrodysplasia Ossificans Progressiva"}
@@ -255,74 +483,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "structured": fop["output"],
             },
         ]
-        live_tool_outputs = []
-        if config.get("real_data_enabled"):
-            live_calls = [
-                (
-                    "ncbi_gene_profile_tool",
-                    {"gene_symbol": "ACVR1", "organism": "Homo sapiens"},
-                ),
-                (
-                    "pubmed_literature_search_tool",
-                    {"query": "ACVR1 Fibrodysplasia Ossificans Progressiva BMP signaling", "retmax": 5},
-                ),
-                (
-                    "pubmed_literature_search_tool",
-                    {"query": "ACVR1 inhibitor safety Fibrodysplasia Ossificans Progressiva", "retmax": 5},
-                ),
-                (
-                    "pubchem_candidate_lookup_tool",
-                    {"names": ["palovarotene", "LDN-193189", "dorsomorphin"]},
-                ),
-            ]
-            for tool_name, tool_input in live_calls:
-                result = self.tools[tool_name].run(tool_input).model_dump()
-                state.tool_outputs.append(
-                    {
-                        "tool_name": tool_name,
-                        "tool_source": "live_public_biomedical",
-                        "result": result,
-                    }
-                )
-                live_tool_outputs.append({"tool_name": tool_name, "result": result})
-            for live_output in live_tool_outputs:
-                result = live_output["result"]
-                if result.get("status") == "failure":
-                    continue
-                output = result.get("output", {})
-                if live_output["tool_name"] == "ncbi_gene_profile_tool":
-                    state.evidence.append(
-                        {
-                            "source": "NCBI Gene",
-                            "text": (
-                                f"NCBI Gene ACVR1 profile: "
-                                f"{output.get('summary') or output.get('description') or 'live record returned.'}"
-                            ),
-                            "structured": output,
-                        }
-                    )
-                elif live_output["tool_name"] == "pubmed_literature_search_tool":
-                    articles = output.get("articles", [])
-                    titles = "; ".join(
-                        article.get("title", "") for article in articles[:3] if article.get("title")
-                    )
-                    state.evidence.append(
-                        {
-                            "source": f"PubMed: {output.get('query')}",
-                            "text": titles or f"PubMed returned live literature search results for {output.get('query')}.",
-                            "structured": output,
-                        }
-                    )
-                elif live_output["tool_name"] == "pubchem_candidate_lookup_tool":
-                    compounds = output.get("compounds", [])
-                    names = ", ".join(compound.get("name", "") for compound in compounds)
-                    state.evidence.append(
-                        {
-                            "source": "PubChem candidate lookup",
-                            "text": f"PubChem returned candidate/intervention records for: {names}.",
-                            "structured": output,
-                        }
-                    )
         for model_output in model_tool_outputs:
             result = model_output["result"]
             if result["status"] in {"success", "partial"}:
@@ -342,10 +502,234 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "evidence": state.evidence,
                 "tool_output_count": len(state.tool_outputs),
                 "custom_model_tool_count": len(model_tool_outputs),
-                "live_public_tool_count": len(live_tool_outputs),
+                "live_public_tool_count": 0,
             },
         )
         return state
+
+    def _execute_live_evidence_collection(
+        self,
+        state: ResearchRunState,
+        trace: list[dict[str, Any]],
+        config: dict[str, Any],
+    ) -> ResearchRunState:
+        context = state.context.get("biomedical_context", {})
+        genes = context.get("primary_genes", [])[:4]
+        diseases = context.get("diseases", [])[:3]
+        candidates = context.get("candidate_interventions", [])[:8]
+        pubmed_queries = context.get("pubmed_queries", [])[:5]
+        live_calls: list[tuple[str, str, dict[str, Any]]] = []
+        for gene in genes:
+            live_calls.append(("knowledge_agent", "ncbi_gene_profile_tool", {"gene_symbol": gene, "organism": "Homo sapiens"}))
+        for query in pubmed_queries:
+            live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": query, "retmax": 5}))
+        if candidates:
+            live_calls.append(("molecule_agent", "pubchem_candidate_lookup_tool", {"names": candidates}))
+        for disease in diseases:
+            live_calls.append(
+                (
+                    "tooluniverse_agent",
+                    "OpenTargets_get_disease_id_description_by_name",
+                    {"diseaseName": disease},
+                )
+            )
+        for drug in candidates:
+            live_calls.append(
+                (
+                    "tooluniverse_agent",
+                    "OpenTargets_get_drug_chembId_by_generic_name",
+                    {"drugName": drug},
+                )
+            )
+
+        def execute_call(agent_name: str, tool_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+            if tool_name in self.tools:
+                result = self.tools[tool_name].run(payload).model_dump()
+                source = "live_public_biomedical"
+            else:
+                tooluniverse_adapter = ToolUniverseAdapter(scan_all=False)
+                result = tooluniverse_adapter.execute(tool_name, payload)
+                source = "tooluniverse"
+            return {
+                "agent_name": agent_name,
+                "tool_name": tool_name,
+                "tool_source": source,
+                "input": payload,
+                "result": result,
+            }
+
+        live_tool_outputs: list[dict[str, Any]] = []
+        if live_calls:
+            max_workers = max(1, min(int(config.get("agent_count", 6)), len(live_calls)))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(execute_call, *call) for call in live_calls]
+                for future in as_completed(futures):
+                    live_tool_outputs.append(future.result())
+        for live_output in live_tool_outputs:
+            state.tool_outputs.append(
+                {
+                    "tool_name": live_output["tool_name"],
+                    "tool_source": live_output["tool_source"],
+                    "result": live_output["result"],
+                }
+            )
+            evidence_item = self._evidence_from_tool_output(live_output)
+            if evidence_item:
+                state.evidence.append(evidence_item)
+        follow_up_outputs = self._run_tooluniverse_followups(state, live_tool_outputs)
+        for follow_up in follow_up_outputs:
+            state.tool_outputs.append(
+                {
+                    "tool_name": follow_up["tool_name"],
+                    "tool_source": "tooluniverse",
+                    "result": follow_up["result"],
+                }
+            )
+            evidence_item = self._evidence_from_tool_output(follow_up)
+            if evidence_item:
+                state.evidence.append(evidence_item)
+
+        model_tool_outputs = []
+        hypothesis_seed = (
+            f"Modulating {self._primary_target(state)}-linked mechanisms may be relevant to {self._primary_disease(state)}."
+        )
+        for model_tool in config.get("model_tool_configs", []):
+            model_result = execute_model_tool(
+                model_tool,
+                {
+                    "hypothesis": hypothesis_seed,
+                    "evidence_text": "Live evidence collection includes gene, disease, literature, compound, and OpenTargets context.",
+                    "entity_context": {
+                        "genes": genes,
+                        "diseases": diseases,
+                        "candidate_interventions": candidates,
+                    },
+                },
+            )
+            state.tool_outputs.append(
+                {
+                    "tool_name": model_tool["name"],
+                    "tool_source": "custom_model",
+                    "result": model_result,
+                }
+            )
+            model_tool_outputs.append({"tool_name": model_tool["name"], "result": model_result})
+            if model_result["status"] in {"success", "partial"}:
+                state.evidence.append(
+                    {
+                        "source": model_tool["name"],
+                        "text": model_result["output"].get("rationale", "Custom model produced a structured evidence assessment."),
+                        "structured": model_result["output"],
+                    }
+                )
+        self._record(
+            trace,
+            "mechanism_agent",
+            state.current_state.value,
+            {
+                "selected_tools": state.selected_tools,
+                "agent_roster": state.context.get("agent_roster", []),
+                "biomedical_context": context,
+            },
+            {
+                "evidence": state.evidence,
+                "tool_output_count": len(state.tool_outputs),
+                "custom_model_tool_count": len(model_tool_outputs),
+                "live_public_tool_count": len(
+                    [item for item in live_tool_outputs if item["tool_source"] == "live_public_biomedical"]
+                ),
+                "tooluniverse_tool_count": len(
+                    [item for item in live_tool_outputs if item["tool_source"] == "tooluniverse"]
+                )
+                + len(follow_up_outputs),
+                "agent_tool_assignments": [
+                    {
+                        "agent_name": item["agent_name"],
+                        "tool_name": item["tool_name"],
+                        "status": item["result"].get("status"),
+                    }
+                    for item in [*live_tool_outputs, *follow_up_outputs]
+                ],
+            },
+        )
+        return state
+
+    def _run_tooluniverse_followups(
+        self,
+        state: ResearchRunState,
+        live_tool_outputs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        efo_ids: list[str] = []
+        for item in live_tool_outputs:
+            if item["tool_name"] != "OpenTargets_get_disease_id_description_by_name":
+                continue
+            raw = item["result"].get("output", {}).get("raw")
+            for hit in raw.get("data", {}).get("search", {}).get("hits", []) if isinstance(raw, dict) else []:
+                efo_id = hit.get("id")
+                if efo_id:
+                    efo_ids.append(efo_id)
+        outputs = []
+        if not efo_ids:
+            return outputs
+        adapter = ToolUniverseAdapter(scan_all=False)
+        for efo_id in list(dict.fromkeys(efo_ids))[:2]:
+            result = adapter.execute("OpenTargets_get_associated_targets_by_disease_efoId", {"efoId": efo_id})
+            outputs.append(
+                {
+                    "agent_name": "tooluniverse_agent",
+                    "tool_name": "OpenTargets_get_associated_targets_by_disease_efoId",
+                    "tool_source": "tooluniverse",
+                    "input": {"efoId": efo_id},
+                    "result": result,
+                }
+            )
+        return outputs
+
+    def _evidence_from_tool_output(self, live_output: dict[str, Any]) -> dict[str, Any] | None:
+        result = live_output["result"]
+        if result.get("status") == "failure":
+            return None
+        output = result.get("output", {})
+        tool_name = live_output["tool_name"]
+        if tool_name == "ncbi_gene_profile_tool":
+            text = output.get("summary") or output.get("description") or "NCBI Gene returned a live gene record."
+            return {"source": "NCBI Gene", "text": f"NCBI Gene {output.get('gene_symbol', '')}: {text}", "structured": output}
+        if tool_name == "pubmed_literature_search_tool":
+            articles = output.get("articles", [])
+            titles = "; ".join(article.get("title", "") for article in articles[:4] if article.get("title"))
+            return {
+                "source": f"PubMed: {output.get('query')}",
+                "text": titles or f"PubMed returned live literature search results for {output.get('query')}.",
+                "structured": output,
+            }
+        if tool_name == "pubchem_candidate_lookup_tool":
+            compounds = output.get("compounds", [])
+            names = ", ".join(compound.get("name", "") for compound in compounds)
+            return {
+                "source": "PubChem candidate lookup",
+                "text": f"PubChem returned candidate/intervention records for: {names}.",
+                "structured": output,
+            }
+        raw = output.get("raw", {})
+        return {
+            "source": f"ToolUniverse: {tool_name}",
+            "text": self._summarize_tooluniverse_output(tool_name, raw),
+            "structured": {"tool_name": tool_name, "raw": raw},
+        }
+
+    def _summarize_tooluniverse_output(self, tool_name: str, raw: Any) -> str:
+        try:
+            hits = raw.get("data", {}).get("search", {}).get("hits", [])
+            if hits:
+                summaries = []
+                for hit in hits[:3]:
+                    summaries.append(
+                        f"{hit.get('name') or hit.get('id')}: {hit.get('description') or hit.get('id')}"
+                    )
+                return f"{tool_name} returned OpenTargets search hits: " + "; ".join(summaries)
+        except AttributeError:
+            pass
+        return f"{tool_name} returned ToolUniverse/OpenTargets evidence: {str(raw)[:1000]}"
 
     def _score_evidence(
         self,
@@ -355,22 +739,58 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
     ) -> ResearchRunState:
         state.current_state = AgentStateName.SCORE_EVIDENCE
         scored = []
+        hypothesis_seed = (
+            f"Modulating {self._primary_target(state)}-linked mechanisms may be relevant to {self._primary_disease(state)}."
+        )
         for item in state.evidence:
-            score = self.tools["evidence_quality_scorer_tool"].run(
-                {
-                    "hypothesis": "Modulating ACVR1-linked BMP signaling may reduce FOP-relevant osteogenic signaling.",
-                    "evidence_text": item["text"],
-                    "evidence_source": item["source"],
+            if item.get("source", "").startswith("PubMed:") and item.get("structured", {}).get("count") == 0:
+                score_output = {
+                    "label": "irrelevant",
+                    "score": 0.1,
+                    "evidence_type": "literature_search",
+                    "rationale": "The live PubMed query returned zero records, so it cannot support the hypothesis.",
+                    "warnings": ["Absence of retrieved records is not evidence against the hypothesis."],
                 }
-            ).model_dump()
-            scored.append({**item, "score": score["output"]})
+            elif self._llm_enabled(config):
+                score_output = self._llm_json(
+                    state,
+                    config,
+                    agent_name="critic_agent",
+                    task="evidence_quality_scoring",
+                    system_prompt=(
+                        "You are a skeptical biomedical evidence evaluator. Classify whether the evidence "
+                        "supports, weakly supports, is mechanistically relevant, is irrelevant, contradicts, "
+                        "or indicates safety/translational concern. Do not overclaim."
+                    ),
+                    prompt=(
+                        "Return only JSON with keys label, score, evidence_type, rationale, warnings. "
+                        "Allowed labels: strong_support, weak_support, mechanistic_relevance, irrelevant, "
+                        "contradicts, safety_concern. Score must be 0-1.\n"
+                        f"Hypothesis: {hypothesis_seed}\n"
+                        f"Evidence source: {item['source']}\n"
+                        f"Evidence text: {item['text']}\n"
+                        f"Structured evidence: {json.dumps(item.get('structured', {}), default=str)[:3500]}"
+                    ),
+                    max_tokens=700,
+                )
+                score_output["score"] = float(score_output.get("score", 0.0))
+            else:
+                score = self.tools["evidence_quality_scorer_tool"].run(
+                    {
+                        "hypothesis": hypothesis_seed,
+                        "evidence_text": item["text"],
+                        "evidence_source": item["source"],
+                    }
+                ).model_dump()
+                score_output = score["output"]
+            scored.append({**item, "score": score_output})
         state.evidence = scored
         self._record(
             trace,
             "critic_agent",
             state.current_state.value,
             {"evidence_count": len(scored), "strictness": config.get("evidence_strictness", "balanced")},
-            {"scored_evidence": scored},
+            {"scored_evidence": scored, "llm_calls": state.context.get("llm_calls", [])},
         )
         return state
 
@@ -381,16 +801,43 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         state.current_state = AgentStateName.GENERATE_HYPOTHESES
+        target = self._primary_target(state)
+        disease = self._primary_disease(state)
         card = self.tools["hypothesis_card_generator_tool"].run(
-            {"target": "ACVR1", "disease": "FOP", "evidence": state.evidence}
+            {"target": target, "disease": disease, "evidence": state.evidence}
         ).model_dump()
         state.hypothesis_card = card["output"]
+        if self._llm_enabled(config):
+            hypothesis_json = self._llm_json(
+                state,
+                config,
+                agent_name="mechanism_agent",
+                task="hypothesis_synthesis",
+                system_prompt=(
+                    "You are a biomedical mechanism scientist. Synthesize a cautious therapeutic or "
+                    "mechanistic candidate hypothesis from the retrieved evidence. Keep guardrails explicit."
+                ),
+                prompt=(
+                    "Return only JSON with keys title, hypothesis, scientific_assessment, "
+                    "candidate_intervention_summary, limitations. scientific_assessment and limitations are arrays.\n"
+                    f"Objective: {state.objective}\n"
+                    f"Evidence: {json.dumps(state.evidence, default=str)[:9000]}"
+                ),
+                max_tokens=1300,
+            )
+            for key in ("title", "hypothesis", "candidate_intervention_summary"):
+                if hypothesis_json.get(key):
+                    state.hypothesis_card[key] = hypothesis_json[key]
+            for key in ("scientific_assessment", "limitations"):
+                values = self._string_list(hypothesis_json.get(key))
+                if values:
+                    state.hypothesis_card[key] = values
         self._record(
             trace,
             "mechanism_agent",
             state.current_state.value,
             {"scored_evidence": state.evidence},
-            {"hypothesis_card": state.hypothesis_card},
+            {"hypothesis_card": state.hypothesis_card, "llm_calls": state.context.get("llm_calls", [])},
         )
         return state
 
@@ -401,31 +848,46 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         state.current_state = AgentStateName.CRITIQUE_AND_REFINE
-        state.critique = {
-            "critique_type": "translation_gap",
-            "severity": "medium",
-            "critique": (
-                "The mechanism is plausible, and live public evidence supports ACVR1/FOP grounding, but the run "
-                "still cannot claim clinical efficacy or safety. Retrieved safety/intervention literature should "
-                "lower confidence in any molecule-specific recommendation until direct preclinical and clinical "
-                "evidence is reviewed."
-                if config.get("real_data_enabled")
-                else "The mechanism is plausible, but mock evidence is not sufficient to rank clinical candidates or claim efficacy."
-            ),
-            "recommended_fix": (
-                "Add curated target-disease associations, compound potency/selectivity, ADMET, and safety review before molecule ranking."
-                if config.get("real_data_enabled")
-                else "Replace mock profiles with ToolUniverse target-disease, literature, ChEMBL, and safety calls before escalation."
-            ),
-            "abstention_required": False,
-            "claim_boundary": "candidate hypothesis; no clinical efficacy or safety claim",
-        }
+        if self._llm_enabled(config):
+            state.critique = self._llm_json(
+                state,
+                config,
+                agent_name="critic_agent",
+                task="skeptical_critique",
+                system_prompt=(
+                    "You are a skeptical biomedical reviewer. Identify overclaims, missing evidence, "
+                    "contradictions, safety gaps, and validation needs. Make abstention explicit when evidence is insufficient."
+                ),
+                prompt=(
+                    "Return only JSON with keys critique_type, severity, critique, recommended_fix, "
+                    "abstention_required, claim_boundary.\n"
+                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:6000]}\n"
+                    f"Evidence: {json.dumps(state.evidence, default=str)[:8000]}"
+                ),
+                max_tokens=1000,
+            )
+            state.critique.setdefault("claim_boundary", "candidate hypothesis; no clinical efficacy or safety claim")
+        else:
+            state.critique = {
+                "critique_type": "translation_gap",
+                "severity": "medium",
+                "critique": (
+                    "The mechanism is plausible, but deterministic evidence is not sufficient to rank clinical "
+                    "candidates or claim efficacy."
+                ),
+                "recommended_fix": (
+                    "Run strict mode with a real LLM, live public APIs, ToolUniverse target-disease tools, "
+                    "compound potency/selectivity, ADMET, and safety review before molecule ranking."
+                ),
+                "abstention_required": False,
+                "claim_boundary": "candidate hypothesis; no clinical efficacy or safety claim",
+            }
         self._record(
             trace,
             "critic_agent",
             state.current_state.value,
             {"hypothesis_card": state.hypothesis_card},
-            state.critique,
+            {**state.critique, "llm_calls": state.context.get("llm_calls", [])},
         )
         return state
 
@@ -457,7 +919,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
     ) -> ResearchRunState:
         state.current_state = AgentStateName.GENERATE_REPORT
         state.report = {
-            "title": "ACVR1/FOP Candidate Therapeutic Hypothesis Report",
+            "title": f"{self._primary_target(state)} / {self._primary_disease(state)} Candidate Hypothesis Report",
             "summary": state.hypothesis_card.get("hypothesis"),
             "confidence": state.hypothesis_card.get("confidence", 0.0),
             "guardrails": [
@@ -468,7 +930,31 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "next_experiments": state.experiments,
             "run_config": config,
             "agent_framework": "langgraph",
+            "biomedical_context": state.context.get("biomedical_context", {}),
+            "llm_calls": state.context.get("llm_calls", []),
         }
+        if self._llm_enabled(config):
+            report_json = self._llm_json(
+                state,
+                config,
+                agent_name="publisher_agent",
+                task="final_report_synthesis",
+                system_prompt=(
+                    "You are a biomedical report publisher. Write a concise final scientific synthesis "
+                    "using only the supplied evidence and explicit guardrails."
+                ),
+                prompt=(
+                    "Return only JSON with keys title and summary. Do not claim clinical efficacy or safety.\n"
+                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:6000]}\n"
+                    f"Critique: {json.dumps(state.critique, default=str)[:3000]}\n"
+                    f"Experiments: {json.dumps(state.experiments, default=str)[:3000]}"
+                ),
+                max_tokens=800,
+            )
+            if report_json.get("title"):
+                state.report["title"] = report_json["title"]
+            if report_json.get("summary"):
+                state.report["summary"] = report_json["summary"]
         self._record(
             trace,
             "publisher_agent",
@@ -478,6 +964,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "critique": state.critique,
                 "experiments": state.experiments,
             },
-            {"report": state.report},
+            {"report": state.report, "llm_calls": state.context.get("llm_calls", [])},
         )
         return state

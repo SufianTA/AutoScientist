@@ -12,10 +12,25 @@ class EvidenceQualityScorerTool(ScientificTool):
 
     def _run(self, payload: dict) -> ToolResult:
         text = str(payload.get("evidence_text", "")).lower()
+        hypothesis = str(payload.get("hypothesis", "")).lower()
+        hypothesis_terms = {
+            term
+            for term in hypothesis.replace("/", " ").replace("-", " ").split()
+            if len(term) >= 4 and term not in {"candidate", "hypothesis", "mechanisms", "relevant", "modulating"}
+        }
+        overlap = sum(1 for term in hypothesis_terms if term in text)
         if any(term in text for term in ["toxicity", "unsafe", "adverse", "safety"]):
             label, score, evidence_type = "safety_concern", 0.72, "safety"
-        elif "acvr1" in text and ("fop" in text or "fibrodysplasia" in text) and ("bmp" in text or "osteogenic" in text or "ossification" in text):
+        elif (
+            "acvr1" in text
+            and ("fop" in text or "fibrodysplasia" in text)
+            and ("bmp" in text or "osteogenic" in text or "ossification" in text)
+        ):
             label, score, evidence_type = "strong_support", 0.84, "mechanistic"
+        elif overlap >= 3:
+            label, score, evidence_type = "strong_support", 0.76, "mechanistic"
+        elif overlap >= 2:
+            label, score, evidence_type = "weak_support", 0.61, "mechanistic"
         elif "acvr1" in text or "bmp" in text or "fibrodysplasia" in text or "ossification" in text:
             label, score, evidence_type = "weak_support", 0.58, "mechanistic"
         elif "pubchem" in text or "candidate" in text or "compound" in text:
@@ -31,9 +46,12 @@ class EvidenceQualityScorerTool(ScientificTool):
                 "label": label,
                 "score": score,
                 "evidence_type": evidence_type,
-                "rationale": "Rule-based prototype scorer. Replace with PubMedBERT/SciBERT classifier for Milestone 5.",
-                "warnings": ["Prototype score is not a validation claim."],
+                "rationale": (
+                    "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and "
+                    "domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer."
+                ),
+                "warnings": ["Score is not a validation claim."],
             },
-            sources=[{"name": "Rule-based evidence scorer", "id": "mock-evidence-scorer-v0.1"}],
+            sources=[{"name": "Deterministic evidence scorer", "id": "evidence-scorer-v0.2"}],
             confidence=score,
         )

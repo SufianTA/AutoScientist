@@ -37,7 +37,26 @@ Flow:
 4. Watch realtime agent-state events, queued tools, tool-call counts, evidence scores, critique, and report confidence.
 5. Receive the final summary plus Markdown and provenance JSON files.
 
-When live public data is enabled, the run calls NCBI Gene, PubMed, and PubChem and records those calls as `live_public_biomedical` tool calls. ToolUniverse health is still reported separately; if a local ToolUniverse installation is broken, the framework does not fake those calls.
+When live public data is enabled, the run calls NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets when the extracted entities provide valid inputs. Calls are recorded as `live_public_biomedical` or `tooluniverse` tool calls. If a local ToolUniverse installation is broken, the framework does not fake those calls.
+
+Strict real autonomous mode requires both live data and a real LLM provider:
+
+```powershell
+$env:OPENAI_API_KEY = "..."
+.\infra\scripts\run_local_question.ps1 `
+  -Question "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy." `
+  -Agents 7 `
+  -Strictness strict `
+  -RealData `
+  -LlmProvider openai `
+  -LlmModel gpt-4.1 `
+  -RequireRealLlm `
+  -OutputFormat markdown `
+  -OutputFile .\outputs\strict_real_report.md `
+  -ProvenanceFile .\outputs\strict_real_provenance.json
+```
+
+In strict mode, the PI/context extraction, plan generation, evidence scoring, hypothesis synthesis, critique, and report synthesis use the configured LLM. If the key or provider is missing, the run fails fast rather than falling back to mock behavior.
 
 Output modes:
 
@@ -63,10 +82,12 @@ Each registration produces a ToolUniverse-style config object. That config is th
 
 Executable providers in the local prototype:
 
-- `mock`: deterministic local model response for testing onboarding and provenance.
-- `local_http`: POSTs the model payload to `endpoint_url` and expects a JSON object response.
-
-Other providers can be registered as metadata and exported as ToolUniverse-style configs, but the local runner marks them as partial until a constrained executor is added.
+- `mock`: deterministic local model response for tests and provenance-only demos.
+- `openai`: uses the OpenAI Responses API.
+- `anthropic`: uses the Anthropic Messages API.
+- `gemini`: uses the Gemini generateContent API.
+- `openai_compatible`: uses `/v1/chat/completions` on a configured base URL.
+- `local_http`: POSTs the prompt to a configured local endpoint.
 
 Run integration:
 
@@ -103,7 +124,7 @@ Current LangGraph node sequence:
 7. `propose_experiments`
 8. `generate_report`
 
-Every node appends an auditable trace entry with inputs, outputs, agent name, state name, and timestamp. If LangGraph is unavailable in the local environment, the same node functions run sequentially so the framework still works.
+Every node appends an auditable trace entry with inputs, outputs, agent name, state name, and timestamp. Real-data runs also record a specialist agent roster and tool assignments such as `literature_agent -> pubmed_literature_search_tool`, `knowledge_agent -> ncbi_gene_profile_tool`, and `tooluniverse_agent -> OpenTargets_*`. If LangGraph is unavailable in the local environment, the same node functions run sequentially so the framework still works.
 
 ## LLM Providers
 

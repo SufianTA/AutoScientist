@@ -77,6 +77,14 @@ class HypothesisCardGeneratorTool(ScientificTool):
         candidate_items = [
             item for item in evidence if "pubchem" in item.get("source", "").lower()
         ]
+        literature_candidate_titles = []
+        for item in evidence:
+            if "pubmed" not in item.get("source", "").lower():
+                continue
+            for article in item.get("structured", {}).get("articles", []):
+                title = article.get("title", "")
+                if any(term in title.lower() for term in ["treatment", "therapeutic", "inhibitor", "drug", "modality"]):
+                    literature_candidate_titles.append(title)
         contradictions = []
         if safety_items:
             contradictions.append(
@@ -95,8 +103,8 @@ class HypothesisCardGeneratorTool(ScientificTool):
                 "evidence_label_counts": counts,
                 "scientific_assessment": [
                     (
-                        "The disease-target rationale is biologically plausible because ACVR1 is a TGF-beta/BMP "
-                        "superfamily receptor and live/public evidence links ACVR1 mutations with FOP."
+                        f"The disease-target rationale is biologically plausible when live/public evidence links "
+                        f"{target} to {disease} through disease association, pathway, or mechanism records."
                     ),
                     (
                         "The current claim should remain pathway-level: evidence supports target and mechanism "
@@ -110,7 +118,12 @@ class HypothesisCardGeneratorTool(ScientificTool):
                 "candidate_intervention_summary": (
                     "PubChem/literature candidate records were found, but none are asserted as clinically effective."
                     if candidate_items
-                    else "No candidate intervention records were retrieved in this run."
+                    else (
+                        "Live literature retrieved candidate intervention or treatment records, but they are not "
+                        f"asserted as clinically effective: {'; '.join(literature_candidate_titles[:4])}."
+                        if literature_candidate_titles
+                        else "No candidate intervention records were retrieved in this run."
+                    )
                 ),
                 "contradictions": contradictions,
                 "citations": extract_citations(evidence, target),

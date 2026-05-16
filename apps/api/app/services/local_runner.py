@@ -90,12 +90,16 @@ def format_result(result: dict, output_format: str) -> str:
         f"Final confidence: {result['final_confidence']}",
         f"Agent steps: {result['trace_summary']['agent_steps']}",
         f"Tool calls: {result['trace_summary']['tool_calls']}",
-        "",
-        f"Hypothesis: {hypothesis['title']}",
-        hypothesis["text"],
-        "",
-        "Evidence:",
     ]
+    errors = [
+        step.get("error")
+        for step in result.get("provenance", {}).get("agent_steps", [])
+        if step.get("error")
+    ]
+    if errors:
+        lines.extend(["", "Errors:"])
+        lines.extend(f"- {error}" for error in errors)
+    lines.extend(["", f"Hypothesis: {hypothesis['title']}", hypothesis["text"], "", "Evidence:"])
     for item in report["evidence"]:
         lines.append(f"- {item['source']}: {item['support_label']} ({item['support_score']})")
     lines.extend(["", "Guardrails:"])
@@ -140,11 +144,23 @@ def render_progress_event(event: dict[str, Any]) -> str:
         lines.append(
             f"  tool calls completed: {output['tool_output_count']} "
             f"(custom models: {output.get('custom_model_tool_count', 0)}, "
-            f"live public: {output.get('live_public_tool_count', 0)})"
+            f"live public: {output.get('live_public_tool_count', 0)}, "
+            f"tooluniverse: {output.get('tooluniverse_tool_count', 0)})"
         )
+    if "agent_tool_assignments" in output:
+        for assignment in output["agent_tool_assignments"][:8]:
+            lines.append(
+                f"  {assignment['agent_name']} -> {assignment['tool_name']}: {assignment['status']}"
+            )
     if "scored_evidence" in output:
         labels = [item.get("score", {}).get("label", "unscored") for item in output["scored_evidence"]]
         lines.append(f"  evidence scored: {', '.join(labels)}")
+    if "llm_calls" in output and output["llm_calls"]:
+        latest = output["llm_calls"][-1]
+        lines.append(
+            f"  llm: {latest.get('agent_name')} {latest.get('task')} "
+            f"via {latest.get('provider')}/{latest.get('model')} ({latest.get('latency_ms')} ms)"
+        )
     if "hypothesis_card" in output:
         card = output["hypothesis_card"]
         lines.append(f"  hypothesis: {card.get('title')}")
@@ -193,6 +209,20 @@ def run_interactive() -> None:
         strictness = "balanced"
     live_raw = input("Use live public biomedical data? [Y/n]: ").strip().lower()
     real_data_enabled = live_raw not in {"n", "no", "mock"}
+    provider = input("LLM provider [openai/anthropic/gemini/openai_compatible/local_http, default openai]: ").strip().lower()
+    provider = provider or "openai"
+    model_default = {
+        "openai": "gpt-4.1",
+        "anthropic": "claude-3-5-sonnet-latest",
+        "gemini": "gemini-1.5-pro",
+        "openai_compatible": "local-model",
+        "local_http": "local-http-model",
+    }.get(provider, "gpt-4.1")
+    model = input(f"LLM model [default {model_default}]: ").strip() or model_default
+    api_key_env = input("API key env var [provider default]: ").strip()
+    base_url = ""
+    if provider in {"openai_compatible", "local_http"}:
+        base_url = input("LLM base URL: ").strip()
     output_file = input("Markdown output file [outputs/interactive_report.md]: ").strip() or "outputs/interactive_report.md"
     provenance_file = (
         input("Provenance JSON file [outputs/interactive_provenance.json]: ").strip()
@@ -201,6 +231,7 @@ def run_interactive() -> None:
     print("")
     print(f"Queued {agents} agents with {strictness} evidence strictness.")
     print(f"Live public biomedical data: {'enabled' if real_data_enabled else 'disabled'}")
+    print(f"Real LLM: {provider}/{model}")
     print("Running local scientist loop...\n")
 
     def progress(event: dict[str, Any]) -> None:
@@ -213,8 +244,11 @@ def run_interactive() -> None:
             "agent_count": agents,
             "max_runtime_minutes": 30,
             "evidence_strictness": strictness,
-            "llm_provider": "mock",
-            "llm_model": "mock-scientist",
+            "llm_provider": provider,
+            "llm_model": model,
+            "llm_api_key_env_var": api_key_env,
+            "llm_base_url": base_url,
+            "require_real_llm": True,
             "real_data_enabled": real_data_enabled,
         },
         progress_callback=progress,
@@ -251,6 +285,9 @@ def main() -> None:
     parser.add_argument("--strictness", choices=["exploratory", "balanced", "strict"], default="balanced")
     parser.add_argument("--llm-provider", default="mock")
     parser.add_argument("--llm-model", default="mock-scientist")
+    parser.add_argument("--llm-api-key-env-var", default="")
+    parser.add_argument("--llm-base-url", default="")
+    parser.add_argument("--require-real-llm", action="store_true")
     parser.add_argument("--model-tool", action="append", default=[], help="Registered custom model tool name")
     parser.add_argument("--real-data", action="store_true", help="Use live public biomedical APIs during the run")
     parser.add_argument(
@@ -275,6 +312,9 @@ def main() -> None:
             "evidence_strictness": args.strictness,
             "llm_provider": args.llm_provider,
             "llm_model": args.llm_model,
+            "llm_api_key_env_var": args.llm_api_key_env_var,
+            "llm_base_url": args.llm_base_url,
+            "require_real_llm": args.require_real_llm,
             "model_tool_names": args.model_tool,
             "real_data_enabled": args.real_data,
         },
@@ -310,6 +350,8 @@ def main() -> None:
         )
     else:
         print(formatted)
+    if args.require_real_llm and result["status"] != "completed":
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

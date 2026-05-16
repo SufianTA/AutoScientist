@@ -163,8 +163,12 @@ class ToolUniverseAdapter:
         try:
             tooluniverse.load_tools(include_tools=[tool_name])
             raw_output = tooluniverse.run({"name": tool_name, "arguments": payload}, verbose=False)
-            status = "success"
-            warnings: list[str] = []
+            if raw_output is None:
+                status = "partial"
+                warnings = ["ToolUniverse returned no data."]
+            else:
+                status = "success"
+                warnings = []
         except Exception as exc:
             raw_output = {"error": str(exc)}
             status = "failure"

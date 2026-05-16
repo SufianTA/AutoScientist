@@ -23,6 +23,8 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "llm_provider": "mock",
     "llm_model": "mock-scientist",
     "llm_api_key_env_var": "",
+    "llm_base_url": "",
+    "require_real_llm": False,
     "model_tool_names": [],
     "real_data_enabled": False,
 }
@@ -43,6 +45,8 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         normalized["agent_framework"] = "langgraph"
     if normalized["llm_provider"] not in {"mock", "openai", "anthropic", "gemini", "openai_compatible", "local_http"}:
         normalized["llm_provider"] = "mock"
+    normalized["llm_base_url"] = str(normalized.get("llm_base_url") or "")
+    normalized["require_real_llm"] = bool(normalized.get("require_real_llm", False))
     if not isinstance(normalized["model_tool_names"], list):
         normalized["model_tool_names"] = []
     normalized["real_data_enabled"] = bool(normalized.get("real_data_enabled", False))

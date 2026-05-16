@@ -22,6 +22,7 @@ class ResearchRunState(BaseModel):
     objective_id: str
     objective: str
     current_state: AgentStateName = AgentStateName.INTAKE_OBJECTIVE
+    context: dict[str, Any] = Field(default_factory=dict)
     plan: list[str] = Field(default_factory=list)
     selected_tools: list[str] = Field(default_factory=list)
     tool_outputs: list[dict[str, Any]] = Field(default_factory=list)
