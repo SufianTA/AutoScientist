@@ -76,7 +76,7 @@ gcloud run jobs execute bio-auto-scientist-worker --region REGION
 
 ## Payment/Credits Model
 
-Start with internal credits in the database. Add Stripe only after:
+The repo now starts with an internal credits ledger and mock checkout. Add Stripe only after:
 
 - runs can be queued reliably,
 - estimates are visible before submission,
@@ -91,4 +91,3 @@ Suggested first pricing dimensions:
 - tool budget,
 - strictness multiplier,
 - optional GPU/model scorer surcharge.
-

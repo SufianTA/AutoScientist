@@ -12,7 +12,9 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
-  if (!response.ok) throw new Error(`POST ${path} failed`);
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`POST ${path} failed: ${detail}`);
+  }
   return response.json();
 }
-

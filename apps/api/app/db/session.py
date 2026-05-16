@@ -30,6 +30,8 @@ def _ensure_sqlite_columns() -> None:
         "agent_count": "INTEGER DEFAULT 6",
         "max_runtime_minutes": "INTEGER DEFAULT 30",
         "estimated_cost_usd": "FLOAT DEFAULT 0.0",
+        "account_id": "VARCHAR",
+        "payment_status": "VARCHAR(40) DEFAULT 'not_required'",
         "queued_at": "DATETIME",
     }
     with engine.begin() as connection:

@@ -55,6 +55,12 @@ Process one queued run locally:
 .\infra\scripts\process_next_run.ps1
 ```
 
+Run a live API smoke test after the API is running:
+
+```powershell
+.\infra\scripts\smoke_test_platform.ps1
+```
+
 More deployment detail:
 
 - `docs/TOOLUNIVERSE_SETUP.md`

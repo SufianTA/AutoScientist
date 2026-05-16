@@ -107,3 +107,51 @@ def test_background_run_completes() -> None:
     )
     assert run.status_code == 200
     assert run.json()["status"] in {"queued", "completed"}
+
+
+def test_billing_checkout_and_ledger() -> None:
+    account = client.get("/billing/account")
+    assert account.status_code == 200
+    starting_balance = account.json()["account"]["balance_usd"]
+
+    checkout = client.post("/billing/checkout", json={"amount_usd": 12.5, "provider": "mock"})
+    assert checkout.status_code == 200
+    session_id = checkout.json()["checkout_session"]["id"]
+
+    completed = client.post(f"/billing/checkout/{session_id}/complete", json={})
+    assert completed.status_code == 200
+    assert completed.json()["account"]["balance_usd"] >= starting_balance + 12.5
+
+    ledger = client.get("/billing/ledger")
+    assert ledger.status_code == 200
+    assert any(entry["entry_type"] == "credit" for entry in ledger.json()["entries"])
+
+
+def test_inline_run_reserves_and_settles_credits() -> None:
+    account = client.get("/billing/account").json()["account"]
+    objective = client.post(
+        "/objectives",
+        json={
+            "title": "Paid inline ACVR1/FOP run",
+            "objective": "Generate a paid inline therapeutic hypothesis run for ACVR1-driven FOP.",
+            "constraints": {"require_critic": True},
+        },
+    )
+    run = client.post(
+        "/runs",
+        json={
+            "objective_id": objective.json()["id"],
+            "execute_demo": True,
+            "run_config": {
+                "execution_mode": "inline",
+                "agent_count": 2,
+                "max_runtime_minutes": 5,
+                "tool_budget_usd": 0,
+            },
+        },
+    )
+    assert run.status_code == 200
+    body = run.json()
+    assert body["status"] == "completed"
+    assert body["payment_status"] == "settled"
+    assert body["account_id"] == account["id"]

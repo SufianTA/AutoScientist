@@ -37,6 +37,8 @@ class Run(Base):
     agent_count: Mapped[int] = mapped_column(Integer, default=6)
     max_runtime_minutes: Mapped[int] = mapped_column(Integer, default=30)
     estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    account_id: Mapped[str | None] = mapped_column(ForeignKey("billing_accounts.id"), nullable=True)
+    payment_status: Mapped[str] = mapped_column(String(40), default="not_required")
     queued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -121,4 +123,40 @@ class ModelScore(Base):
     label: Mapped[str] = mapped_column(String(80))
     score: Mapped[float] = mapped_column(Float)
     rationale: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class BillingAccount(Base):
+    __tablename__ = "billing_accounts"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("acct"))
+    owner_email: Mapped[str] = mapped_column(String(255), unique=True)
+    display_name: Mapped[str] = mapped_column(String(255))
+    balance_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class CreditLedgerEntry(Base):
+    __tablename__ = "credit_ledger_entries"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("ledger"))
+    account_id: Mapped[str] = mapped_column(ForeignKey("billing_accounts.id"))
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    entry_type: Mapped[str] = mapped_column(String(40))
+    amount_usd: Mapped[float] = mapped_column(Float)
+    balance_after_usd: Mapped[float] = mapped_column(Float)
+    description: Mapped[str] = mapped_column(Text)
+    external_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class CheckoutSession(Base):
+    __tablename__ = "checkout_sessions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("checkout"))
+    account_id: Mapped[str] = mapped_column(ForeignKey("billing_accounts.id"))
+    amount_usd: Mapped[float] = mapped_column(Float)
+    provider: Mapped[str] = mapped_column(String(40), default="mock")
+    status: Mapped[str] = mapped_column(String(40), default="created")
+    checkout_url: Mapped[str] = mapped_column(String(512))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

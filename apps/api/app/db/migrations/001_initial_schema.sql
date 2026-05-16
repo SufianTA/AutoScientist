@@ -16,10 +16,42 @@ CREATE TABLE runs (
   agent_count INTEGER NOT NULL,
   max_runtime_minutes INTEGER NOT NULL,
   estimated_cost_usd FLOAT NOT NULL,
+  account_id VARCHAR REFERENCES billing_accounts(id),
+  payment_status VARCHAR(40) NOT NULL,
   queued_at TIMESTAMP,
   started_at TIMESTAMP,
   completed_at TIMESTAMP,
   final_confidence FLOAT
+);
+
+CREATE TABLE billing_accounts (
+  id VARCHAR PRIMARY KEY,
+  owner_email VARCHAR(255) NOT NULL UNIQUE,
+  display_name VARCHAR(255) NOT NULL,
+  balance_usd FLOAT NOT NULL,
+  created_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE credit_ledger_entries (
+  id VARCHAR PRIMARY KEY,
+  account_id VARCHAR NOT NULL REFERENCES billing_accounts(id),
+  run_id VARCHAR REFERENCES runs(id),
+  entry_type VARCHAR(40) NOT NULL,
+  amount_usd FLOAT NOT NULL,
+  balance_after_usd FLOAT NOT NULL,
+  description TEXT NOT NULL,
+  external_reference VARCHAR(255),
+  created_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE checkout_sessions (
+  id VARCHAR PRIMARY KEY,
+  account_id VARCHAR NOT NULL REFERENCES billing_accounts(id),
+  amount_usd FLOAT NOT NULL,
+  provider VARCHAR(40) NOT NULL,
+  status VARCHAR(40) NOT NULL,
+  checkout_url VARCHAR(512) NOT NULL,
+  created_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE agent_steps (

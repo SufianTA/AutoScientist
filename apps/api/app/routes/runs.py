@@ -6,6 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentStep, Objective, Run, ToolCall
 from app.db.session import get_db
+from app.services.billing_service import (
+    DEMO_ACCOUNT_EMAIL,
+    InsufficientCreditsError,
+    get_or_create_account,
+    reserve_credits,
+)
 from app.services.run_executor import (
     create_run_record,
     estimate_run_cost,
@@ -21,6 +27,7 @@ class RunCreate(BaseModel):
     objective_id: str
     execute_demo: bool = True
     run_config: dict[str, Any] = Field(default_factory=dict)
+    owner_email: str = DEMO_ACCOUNT_EMAIL
 
 
 class RunEstimateRequest(BaseModel):
@@ -48,6 +55,15 @@ def create_run(
 
     config = normalize_run_config(payload.run_config)
     run = create_run_record(db, objective, config)
+    account = get_or_create_account(db, owner_email=payload.owner_email)
+    try:
+        reserve_credits(db, account, run)
+        db.commit()
+    except InsufficientCreditsError as exc:
+        run.status = "payment_required"
+        run.payment_status = "insufficient_credits"
+        db.commit()
+        raise HTTPException(status_code=402, detail=str(exc)) from exc
 
     if payload.execute_demo and config["execution_mode"] == "inline":
         run = execute_run(db, run, objective)
@@ -136,6 +152,8 @@ def serialize_run(run: Run) -> dict:
         "agent_count": run.agent_count,
         "max_runtime_minutes": run.max_runtime_minutes,
         "estimated_cost_usd": run.estimated_cost_usd,
+        "account_id": run.account_id,
+        "payment_status": run.payment_status,
         "queued_at": run.queued_at.isoformat() if run.queued_at else None,
         "started_at": run.started_at.isoformat() if run.started_at else None,
         "completed_at": run.completed_at.isoformat() if run.completed_at else None,

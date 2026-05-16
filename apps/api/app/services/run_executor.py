@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, Objective, Run, ToolCall
 from app.db.session import SessionLocal
 from app.services.agent_orchestrator import AgentOrchestrator
+from app.services.billing_service import settle_run_payment
 
 
 DEFAULT_RUN_CONFIG: dict[str, Any] = {
@@ -126,6 +127,7 @@ def execute_run(db: Session, run: Run, objective: Objective) -> Run:
                 error=str(exc),
             )
         )
+    settle_run_payment(db, run, run.status)
     db.commit()
     db.refresh(run)
     return run
@@ -198,4 +200,3 @@ def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[d
             content_json=state.critique,
         )
     )
-

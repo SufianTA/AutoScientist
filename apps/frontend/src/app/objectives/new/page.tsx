@@ -15,6 +15,7 @@ export default function NewObjectivePage() {
   const [evidenceStrictness, setEvidenceStrictness] = useState("balanced");
   const [executionMode, setExecutionMode] = useState("background");
   const [estimate, setEstimate] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const runConfig = {
@@ -34,23 +35,29 @@ export default function NewObjectivePage() {
 
   async function startRun() {
     setBusy(true);
-    const created = await apiPost<{ id: string }>("/objectives", {
-      title,
-      objective,
-      mode: "full_auto_with_human_review",
-      constraints: {
-        use_tooluniverse: true,
-        allow_custom_tools: true,
-        require_citations: true,
-        require_critic: true
-      }
-    });
-    const run = await apiPost<{ id: string }>("/runs", {
-      objective_id: created.id,
-      execute_demo: true,
-      run_config: runConfig
-    });
-    window.location.href = `/runs/${run.id}`;
+    setError(null);
+    try {
+      const created = await apiPost<{ id: string }>("/objectives", {
+        title,
+        objective,
+        mode: "full_auto_with_human_review",
+        constraints: {
+          use_tooluniverse: true,
+          allow_custom_tools: true,
+          require_citations: true,
+          require_critic: true
+        }
+      });
+      const run = await apiPost<{ id: string }>("/runs", {
+        objective_id: created.id,
+        execute_demo: true,
+        run_config: runConfig
+      });
+      window.location.href = `/runs/${run.id}`;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Run submission failed");
+      setBusy(false);
+    }
   }
 
   return (
@@ -103,6 +110,7 @@ export default function NewObjectivePage() {
         <button onClick={startRun} disabled={busy}>
           <Play size={18} /> {busy ? "Submitting" : "Submit research run"}
         </button>
+        {error && <p className="muted">{error}</p>}
       </div>
     </main>
   );
