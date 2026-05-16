@@ -51,6 +51,14 @@ def test_demo_run_generates_report() -> None:
     assert "FIND_TOOLS" in states
     assert "EXECUTE_EVIDENCE_COLLECTION" in states
     assert "SCORE_EVIDENCE" in states
+    markdown = client.get(f"/reports/{run_id}/download?format=markdown")
+    assert markdown.status_code == 200
+    assert markdown.text.startswith("# ")
+    assert "ACVR1" in markdown.text
+    assert "FOP" in markdown.text
+    report_json = client.get(f"/reports/{run_id}/download?format=json")
+    assert report_json.status_code == 200
+    assert report_json.json()["run"]["id"] == run_id
 
 
 def test_run_estimate_and_queued_submission() -> None:

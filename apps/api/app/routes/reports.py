@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.db.models import BoardPost, EvidenceItem, Hypothesis, Run
@@ -9,6 +11,29 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/{run_id}")
 def get_report(run_id: str, db: Session = Depends(get_db)) -> dict:
+    return build_report(run_id, db)
+
+
+@router.get("/{run_id}/download")
+def download_report(run_id: str, format: str = "markdown", db: Session = Depends(get_db)) -> Response:
+    report = build_report(run_id, db)
+    if format == "json":
+        return Response(
+            content=json.dumps(report, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{run_id}_report.json"'},
+        )
+    if format not in {"markdown", "md"}:
+        raise HTTPException(status_code=400, detail="format must be markdown or json")
+    markdown = render_markdown_report(report)
+    return Response(
+        content=markdown,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{run_id}_report.md"'},
+    )
+
+
+def build_report(run_id: str, db: Session) -> dict:
     run = db.get(Run, run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -51,3 +76,43 @@ def get_report(run_id: str, db: Session = Depends(get_db)) -> dict:
         ],
     }
 
+
+def render_markdown_report(report: dict) -> str:
+    hypothesis = report["hypothesis"]
+    lines = [
+        f"# {hypothesis['title']}",
+        "",
+        f"Run: `{report['run']['id']}`",
+        f"Status: `{report['run']['status']}`",
+        f"Confidence: `{hypothesis['confidence']}`",
+        "",
+        "## Candidate Hypothesis",
+        "",
+        hypothesis["text"] or "No hypothesis text generated.",
+        "",
+        "## Evidence",
+        "",
+        "| Source | Label | Score | Evidence |",
+        "| --- | --- | --- | --- |",
+    ]
+    for item in report["evidence"]:
+        text = str(item["text"]).replace("|", "\\|").replace("\n", " ")
+        lines.append(
+            f"| {item['source']} | {item['support_label']} | {item['support_score']} | {text} |"
+        )
+    lines.extend(["", "## Research Board Posts", ""])
+    for post in report["board_posts"]:
+        lines.extend(
+            [
+                f"### {post['post_type']} by {post['agent_author']}",
+                "",
+                "```json",
+                json.dumps(post["content"], indent=2),
+                "```",
+                "",
+            ]
+        )
+    lines.extend(["## Guardrails", ""])
+    for guardrail in report["guardrails"]:
+        lines.append(f"- {guardrail}")
+    return "\n".join(lines) + "\n"

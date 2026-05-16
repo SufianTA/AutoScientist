@@ -24,8 +24,8 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
       <div className="kicker">Live run trace</div>
       <h1>{run.current_state}</h1>
       <p className="muted">
-        Status: {run.status} · Confidence: {run.final_confidence ?? "pending"} ·
-        Agents: {run.agent_count} · Runtime: {run.max_runtime_minutes} min ·
+        Status: {run.status} / Confidence: {run.final_confidence ?? "pending"} /
+        Agents: {run.agent_count} / Runtime: {run.max_runtime_minutes} min /
         Estimate: {run.estimated_cost_usd} resource units
       </p>
       <div className="grid">

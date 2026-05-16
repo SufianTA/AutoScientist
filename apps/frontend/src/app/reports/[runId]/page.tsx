@@ -1,4 +1,4 @@
-import { apiGet } from "@/lib/api";
+import { API_BASE_URL, apiGet } from "@/lib/api";
 
 type Report = {
   hypothesis: { title: string; text: string; confidence: number | null; status: string | null };
@@ -15,6 +15,11 @@ export default async function ReportPage({ params }: { params: Promise<{ runId: 
       <h1>{report.hypothesis.title}</h1>
       <p className="lede">{report.hypothesis.text}</p>
       <p><span className="badge">confidence {report.hypothesis.confidence ?? "n/a"}</span></p>
+      <div className="actions">
+        <a className="button" href={`${API_BASE_URL}/reports/${runId}/download?format=markdown`}>Download Markdown</a>
+        <a className="button secondaryButton" href={`${API_BASE_URL}/reports/${runId}/download?format=json`}>Download JSON</a>
+      </div>
+      <div style={{ height: 18 }} />
       <section className="panel">
         <h2>Evidence</h2>
         <table className="table">
@@ -26,7 +31,7 @@ export default async function ReportPage({ params }: { params: Promise<{ runId: 
               <tr key={`${item.source}-${item.text}`}>
                 <td>{item.source}</td>
                 <td>{item.text}</td>
-                <td>{item.support_label} · {item.support_score}</td>
+                <td>{item.support_label} / {item.support_score}</td>
               </tr>
             ))}
           </tbody>
@@ -41,4 +46,3 @@ export default async function ReportPage({ params }: { params: Promise<{ runId: 
     </main>
   );
 }
-

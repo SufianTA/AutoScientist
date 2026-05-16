@@ -190,6 +190,15 @@ button:hover,
   background: var(--accent-dark);
 }
 
+.secondaryButton {
+  background: #f3eee8;
+  color: var(--accent-dark);
+}
+
+.secondaryButton:hover {
+  background: #e8ded3;
+}
+
 .muted {
   color: var(--muted);
 }

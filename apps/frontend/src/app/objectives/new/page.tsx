@@ -173,7 +173,7 @@ export default function NewObjectivePage() {
                   />
                   <span>
                     <strong>{tool.name}</strong>
-                    <small>{tool.provider} · {tool.status}</small>
+                    <small>{tool.provider} / {tool.status}</small>
                   </span>
                 </label>
               ))}
