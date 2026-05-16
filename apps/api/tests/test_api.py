@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.local_runner import format_result
+from app.services.local_runner import format_result, run_question
 
 
 client = TestClient(app)
@@ -64,6 +64,21 @@ def test_cli_result_formatter_outputs_markdown() -> None:
     markdown = format_result(result, "markdown")
     assert markdown.startswith("# ACVR1 pathway")
     assert "## Guardrails" in markdown
+
+
+def test_cli_runner_returns_full_provenance() -> None:
+    result = run_question(
+        "Generate a therapeutic hypothesis for ACVR1-driven FOP.",
+        {"agent_count": 2, "max_runtime_minutes": 5, "evidence_strictness": "balanced"},
+    )
+    assert result["status"] == "completed"
+    assert result["trace_summary"]["agent_steps"] >= 8
+    assert result["trace_summary"]["tool_calls"] >= 2
+    assert result["provenance"]["agent_steps"][0]["state_name"] == "INITIALIZE_FRAMEWORK"
+    assert any(
+        call["tool_name"] == "acvr1_target_profile_tool"
+        for call in result["provenance"]["tool_calls"]
+    )
 
 
 def test_demo_run_generates_report() -> None:

@@ -21,7 +21,10 @@ Output modes:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat summary
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat json
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md -ProvenanceFile .\outputs\acvr1_fop_provenance.json
 ```
+
+`-ProvenanceFile` writes the full agent-step trace and normalized tool-call outputs as JSON for audit/replay work.
 
 ## Model Onboarding
 

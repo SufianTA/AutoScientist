@@ -28,8 +28,8 @@ def run_question(question: str, config: dict | None = None) -> dict:
         db.commit()
         run = execute_run(db, run, objective)
         report = build_report(run.id, db)
-        step_count = db.query(AgentStep).filter(AgentStep.run_id == run.id).count()
-        tool_call_count = db.query(ToolCall).filter(ToolCall.run_id == run.id).count()
+        steps = db.query(AgentStep).filter(AgentStep.run_id == run.id).order_by(AgentStep.started_at.asc()).all()
+        tool_calls = db.query(ToolCall).filter(ToolCall.run_id == run.id).order_by(ToolCall.created_at.asc()).all()
         return {
             "run_id": run.id,
             "status": run.status,
@@ -37,8 +37,34 @@ def run_question(question: str, config: dict | None = None) -> dict:
             "report_url": f"/reports/{run.id}",
             "trace_url": f"/runs/{run.id}/trace",
             "trace_summary": {
-                "agent_steps": step_count,
-                "tool_calls": tool_call_count,
+                "agent_steps": len(steps),
+                "tool_calls": len(tool_calls),
+            },
+            "provenance": {
+                "agent_steps": [
+                    {
+                        "agent_name": step.agent_name,
+                        "state_name": step.state_name,
+                        "input": step.input_json,
+                        "output": step.output_json,
+                        "started_at": step.started_at.isoformat(),
+                        "completed_at": step.completed_at.isoformat() if step.completed_at else None,
+                        "error": step.error,
+                    }
+                    for step in steps
+                ],
+                "tool_calls": [
+                    {
+                        "tool_name": call.tool_name,
+                        "tool_source": call.tool_source,
+                        "input": call.input_json,
+                        "output": call.output_json,
+                        "status": call.status,
+                        "latency_ms": call.latency_ms,
+                        "created_at": call.created_at.isoformat(),
+                    }
+                    for call in tool_calls
+                ],
             },
             "report": report,
         }
@@ -89,6 +115,7 @@ def main() -> None:
         help="Command-line output format",
     )
     parser.add_argument("--output-file", help="Optional path to write the formatted output")
+    parser.add_argument("--provenance-file", help="Optional path to write full JSON trace and tool provenance")
     args = parser.parse_args()
     result = run_question(
         args.question,
@@ -102,10 +129,34 @@ def main() -> None:
         },
     )
     formatted = format_result(result, args.output_format)
+    if args.provenance_file:
+        Path(args.provenance_file).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.provenance_file).write_text(
+            json.dumps(
+                {
+                    "run_id": result["run_id"],
+                    "status": result["status"],
+                    "trace_summary": result["trace_summary"],
+                    "provenance": result["provenance"],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
     if args.output_file:
         Path(args.output_file).parent.mkdir(parents=True, exist_ok=True)
         Path(args.output_file).write_text(formatted, encoding="utf-8")
-        print(json.dumps({"run_id": result["run_id"], "status": result["status"], "output_file": args.output_file}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "run_id": result["run_id"],
+                    "status": result["status"],
+                    "output_file": args.output_file,
+                    "provenance_file": args.provenance_file,
+                },
+                indent=2,
+            )
+        )
     else:
         print(formatted)
 

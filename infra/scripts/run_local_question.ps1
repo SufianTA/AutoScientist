@@ -10,7 +10,8 @@ param(
   [string[]]$ModelTools = @(),
   [ValidateSet("summary", "json", "markdown")]
   [string]$OutputFormat = "summary",
-  [string]$OutputFile = ""
+  [string]$OutputFile = "",
+  [string]$ProvenanceFile = ""
 )
 
 $repoRoot = Resolve-Path "$PSScriptRoot\..\.."
@@ -35,6 +36,13 @@ try {
       $resolvedOutputFile = Join-Path $repoRoot.Path $resolvedOutputFile
     }
     $args += @("--output-file", $resolvedOutputFile)
+  }
+  if ($ProvenanceFile) {
+    $resolvedProvenanceFile = $ProvenanceFile
+    if (-not [System.IO.Path]::IsPathRooted($resolvedProvenanceFile)) {
+      $resolvedProvenanceFile = Join-Path $repoRoot.Path $resolvedProvenanceFile
+    }
+    $args += @("--provenance-file", $resolvedProvenanceFile)
   }
   python -m app.services.local_runner @args
 } finally {

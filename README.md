@@ -75,6 +75,18 @@ Write a command-line report artifact:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md
 ```
 
+Write both a report and full provenance trace:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md -ProvenanceFile .\outputs\acvr1_fop_provenance.json
+```
+
+Run the repeatable CLI smoke test:
+
+```powershell
+.\infra\scripts\smoke_test_cli.ps1
+```
+
 Register a custom evidence model in the Models UI, then select it on the New Objective page. The selected model name is passed as `model_tool_names`; the backend resolves it to a ToolUniverse-style config and records the model invocation as a provenance-bearing tool call.
 
 CLI runs can select registered model tools too:
