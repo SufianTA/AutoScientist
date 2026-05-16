@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.local_runner import format_result
 
 
 client = TestClient(app)
@@ -25,6 +26,44 @@ def test_tool_health_is_reported() -> None:
     assert response.status_code == 200
     assert "tooluniverse" in response.json()
     assert "available" in response.json()["tooluniverse"]
+
+
+def test_standalone_evidence_score_endpoint() -> None:
+    response = client.post(
+        "/score/evidence",
+        json={
+            "hypothesis": "Inhibiting ACVR1-linked BMP signaling may reduce FOP-relevant ossification.",
+            "evidence_text": "ACVR1 variants are associated with FOP and altered BMP pathway signaling.",
+            "evidence_source": "curated_test",
+            "entity_context": {"gene": "ACVR1", "disease": "FOP"},
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["score"]["label"] in {"strong_support", "weak_support", "mechanistic_relevance"}
+
+
+def test_cli_result_formatter_outputs_markdown() -> None:
+    result = {
+        "run_id": "run_test",
+        "status": "completed",
+        "final_confidence": 0.61,
+        "trace_summary": {"agent_steps": 8, "tool_calls": 2},
+        "report": {
+            "run": {"id": "run_test", "status": "completed", "final_confidence": 0.61},
+            "hypothesis": {
+                "title": "ACVR1 pathway modulation as a candidate strategy for FOP",
+                "text": "Candidate hypothesis only.",
+                "confidence": 0.61,
+                "status": "candidate",
+            },
+            "evidence": [],
+            "board_posts": [],
+            "guardrails": ["Requires experimental validation."],
+        },
+    }
+    markdown = format_result(result, "markdown")
+    assert markdown.startswith("# ACVR1 pathway")
+    assert "## Guardrails" in markdown
 
 
 def test_demo_run_generates_report() -> None:

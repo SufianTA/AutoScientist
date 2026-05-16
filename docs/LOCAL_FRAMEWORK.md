@@ -15,6 +15,14 @@ Core idea:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
+Output modes:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat summary
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat json
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md
+```
+
 ## Model Onboarding
 
 Use `/models` or the Models UI to register:

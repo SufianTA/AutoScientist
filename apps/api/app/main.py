@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import init_db
-from app.routes import billing, board, frameworks, models, objectives, reports, runs, tools
+from app.routes import billing, board, frameworks, models, objectives, reports, runs, score, tools
 
 
 app = FastAPI(title="BioAutoScientist API", version="0.1.0")
@@ -35,3 +35,4 @@ app.include_router(reports.router)
 app.include_router(billing.router)
 app.include_router(models.router)
 app.include_router(frameworks.router)
+app.include_router(score.router)

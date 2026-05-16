@@ -69,6 +69,12 @@ Run one scientific question locally without opening the web UI:
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
+Write a command-line report artifact:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md
+```
+
 Register a custom evidence model in the Models UI, then select it on the New Objective page. The selected model name is passed as `model_tool_names`; the backend resolves it to a ToolUniverse-style config and records the model invocation as a provenance-bearing tool call.
 
 CLI runs can select registered model tools too:

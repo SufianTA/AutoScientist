@@ -11,4 +11,6 @@ build/
 *.sqlite3
 coverage.xml
 .coverage
-
+outputs/*
+!outputs/.gitignore
+!outputs/acvr1_fop_cli_report.md
