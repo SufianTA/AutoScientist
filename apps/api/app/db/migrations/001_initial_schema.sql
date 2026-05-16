@@ -12,6 +12,11 @@ CREATE TABLE runs (
   objective_id VARCHAR NOT NULL REFERENCES objectives(id),
   status VARCHAR(40) NOT NULL,
   current_state VARCHAR(80) NOT NULL,
+  run_config_json JSON NOT NULL,
+  agent_count INTEGER NOT NULL,
+  max_runtime_minutes INTEGER NOT NULL,
+  estimated_cost_usd FLOAT NOT NULL,
+  queued_at TIMESTAMP,
   started_at TIMESTAMP,
   completed_at TIMESTAMP,
   final_confidence FLOAT
@@ -84,4 +89,3 @@ CREATE TABLE model_scores (
   rationale TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL
 );
-

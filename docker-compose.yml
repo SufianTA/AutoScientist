@@ -34,6 +34,24 @@ services:
       - ./agents:/app/agents
       - ./tools:/app/tools
 
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    command: ["python", "-m", "app.services.queue_worker"]
+    environment:
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/bio_auto_scientist
+      REDIS_URL: redis://redis:6379/0
+      TOOL_MODE: mock
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./agents:/app/agents
+      - ./tools:/app/tools
+
   frontend:
     build:
       context: .

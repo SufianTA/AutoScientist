@@ -101,6 +101,19 @@ a {
   gap: 18px;
 }
 
+.configGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .card {
   padding: 18px;
 }
@@ -113,7 +126,8 @@ a {
 }
 
 textarea,
-input {
+input,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -231,4 +245,3 @@ pre {
     font-size: 34px;
   }
 }
-

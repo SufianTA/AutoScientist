@@ -9,8 +9,15 @@ class AgentOrchestrator:
     def __init__(self) -> None:
         self.tools = build_custom_tools()
 
-    def run_demo(self, run_id: str, objective_id: str, objective: str) -> tuple[ResearchRunState, list[dict[str, Any]]]:
+    def run_demo(
+        self,
+        run_id: str,
+        objective_id: str,
+        objective: str,
+        run_config: dict[str, Any] | None = None,
+    ) -> tuple[ResearchRunState, list[dict[str, Any]]]:
         state = ResearchRunState(run_id=run_id, objective_id=objective_id, objective=objective)
+        config = run_config or {}
         trace: list[dict[str, Any]] = []
 
         def record(agent: str, state_name: AgentStateName, output: dict[str, Any]) -> None:
@@ -18,7 +25,7 @@ class AgentOrchestrator:
                 {
                     "agent_name": agent,
                     "state_name": state_name.value,
-                    "input": {"objective": state.objective},
+                    "input": {"objective": state.objective, "run_config": config},
                     "output": output,
                     "completed_at": datetime.utcnow().isoformat(),
                 }
@@ -32,7 +39,16 @@ class AgentOrchestrator:
             "Score evidence and apply skeptical critique.",
             "Publish board post and final report with guardrails.",
         ]
-        record("pi_agent", state.current_state, {"plan": state.plan})
+        record(
+            "pi_agent",
+            state.current_state,
+            {
+                "plan": state.plan,
+                "agent_count": config.get("agent_count", 6),
+                "evidence_strictness": config.get("evidence_strictness", "balanced"),
+                "max_runtime_minutes": config.get("max_runtime_minutes", 30),
+            },
+        )
 
         state.current_state = AgentStateName.FIND_TOOLS
         state.selected_tools = [
@@ -108,7 +124,7 @@ class AgentOrchestrator:
                 "This is a computationally prioritized candidate hypothesis requiring validation.",
             ],
             "next_experiments": state.experiments,
+            "run_config": config,
         }
         record("publisher_agent", state.current_state, {"report": state.report})
         return state, trace
-

@@ -16,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="brand">BioAutoScientist</Link>
             <nav className="nav">
               <Link href="/objectives/new">New Objective</Link>
+              <Link href="/runs">Runs</Link>
               <Link href="/tools">Tool Inventory</Link>
               <Link href="/board">Research Board</Link>
             </nav>
@@ -26,4 +27,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

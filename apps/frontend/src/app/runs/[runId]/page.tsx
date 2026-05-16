@@ -8,14 +8,25 @@ type Trace = {
 
 export default async function RunPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params;
-  const run = await apiGet<{ status: string; current_state: string; final_confidence: number | null }>(`/runs/${runId}`);
+  const run = await apiGet<{
+    status: string;
+    current_state: string;
+    final_confidence: number | null;
+    estimated_cost_usd: number;
+    agent_count: number;
+    max_runtime_minutes: number;
+    run_config: Record<string, unknown>;
+  }>(`/runs/${runId}`);
   const trace = await apiGet<Trace>(`/runs/${runId}/trace`);
 
   return (
     <main className="page">
       <div className="kicker">Live run trace</div>
       <h1>{run.current_state}</h1>
-      <p className="muted">Status: {run.status} · Confidence: {run.final_confidence ?? "pending"}</p>
+      <p className="muted">
+        Status: {run.status} · Confidence: {run.final_confidence ?? "pending"} ·
+        Agents: {run.agent_count} · Runtime: {run.max_runtime_minutes} min · Estimate: ${run.estimated_cost_usd}
+      </p>
       <div className="grid">
         <section className="panel">
           <h2>Agent states</h2>
@@ -50,4 +61,3 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
     </main>
   );
 }
-

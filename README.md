@@ -10,6 +10,7 @@ The first slice implements a mock-first ACVR1/FOP workflow:
 - Structured agent state machine for intake, planning, evidence collection, hypothesis generation, critique, board publication, and reporting.
 - Next.js frontend skeleton with objective intake, live run trace, tool inventory, research board, and report views.
 - Docker Compose for API, frontend, Postgres, and Redis.
+- Async research-run controls for agent count, runtime, tool budget, evidence strictness, and queued/background execution.
 
 ## Quick Start
 
@@ -47,6 +48,17 @@ Export the current ToolUniverse plus custom tool inventory:
 ```
 
 If ToolUniverse is installed but import fails, check `/tools/health`. The adapter reports dependency conflicts instead of crashing the API.
+
+Process one queued run locally:
+
+```powershell
+.\infra\scripts\process_next_run.ps1
+```
+
+More deployment detail:
+
+- `docs/TOOLUNIVERSE_SETUP.md`
+- `docs/CLOUD_DEPLOYMENT.md`
 
 ## Scientific Guardrails
 

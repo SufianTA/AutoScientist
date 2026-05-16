@@ -1,12 +1,18 @@
-from datetime import datetime
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, Objective, Run, ToolCall
+from app.db.models import AgentStep, Objective, Run, ToolCall
 from app.db.session import get_db
-from app.services.agent_orchestrator import AgentOrchestrator
+from app.services.run_executor import (
+    create_run_record,
+    estimate_run_cost,
+    execute_run,
+    execute_run_by_id,
+    normalize_run_config,
+)
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -14,95 +20,70 @@ router = APIRouter(prefix="/runs", tags=["runs"])
 class RunCreate(BaseModel):
     objective_id: str
     execute_demo: bool = True
+    run_config: dict[str, Any] = Field(default_factory=dict)
+
+
+class RunEstimateRequest(BaseModel):
+    run_config: dict[str, Any] = Field(default_factory=dict)
+
+
+class RunExecuteRequest(BaseModel):
+    force: bool = False
+
+
+@router.post("/estimate")
+def estimate_run(payload: RunEstimateRequest) -> dict:
+    return estimate_run_cost(payload.run_config)
 
 
 @router.post("")
-def create_run(payload: RunCreate, db: Session = Depends(get_db)) -> dict:
+def create_run(
+    payload: RunCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> dict:
     objective = db.get(Objective, payload.objective_id)
     if objective is None:
         raise HTTPException(status_code=404, detail="Objective not found")
 
-    run = Run(objective_id=objective.id, status="running", started_at=datetime.utcnow())
-    db.add(run)
-    db.commit()
-    db.refresh(run)
+    config = normalize_run_config(payload.run_config)
+    run = create_run_record(db, objective, config)
 
-    if payload.execute_demo:
-        orchestrator = AgentOrchestrator()
-        state, trace = orchestrator.run_demo(run.id, objective.id, objective.objective_text)
-        for trace_item in trace:
-            db.add(
-                AgentStep(
-                    run_id=run.id,
-                    agent_name=trace_item["agent_name"],
-                    state_name=trace_item["state_name"],
-                    input_json=trace_item["input"],
-                    output_json=trace_item["output"],
-                    completed_at=datetime.utcnow(),
-                )
-            )
-        for output in state.tool_outputs:
-            result = output["result"]
-            db.add(
-                ToolCall(
-                    run_id=run.id,
-                    tool_name=output["tool_name"],
-                    tool_source="custom",
-                    input_json=result["input"],
-                    output_json=result,
-                    status=result["status"],
-                    latency_ms=result["runtime_ms"],
-                )
-            )
-        for evidence in state.evidence:
-            db.add(
-                EvidenceItem(
-                    run_id=run.id,
-                    source=evidence["source"],
-                    evidence_text=evidence["text"],
-                    structured_json=evidence,
-                    support_label=evidence.get("score", {}).get("label"),
-                    support_score=evidence.get("score", {}).get("score"),
-                )
-            )
-        hypothesis = Hypothesis(
-            run_id=run.id,
-            title=state.hypothesis_card["title"],
-            hypothesis_text=state.hypothesis_card["hypothesis"],
-            confidence=state.hypothesis_card["confidence"],
-        )
-        db.add(hypothesis)
-        db.flush()
-        db.add(
-            BoardPost(
-                post_type="hypothesis",
-                run_id=run.id,
-                hypothesis_id=hypothesis.id,
-                agent_author="publisher_agent",
-                content_json={
-                    **state.hypothesis_card,
-                    "next_experiments": state.experiments,
-                    "critique": state.critique,
-                },
-            )
-        )
-        db.add(
-            BoardPost(
-                post_type="critique",
-                run_id=run.id,
-                hypothesis_id=hypothesis.id,
-                agent_author="critic_agent",
-                content_json=state.critique,
-            )
-        )
-        run.status = "completed"
-        run.current_state = state.current_state.value
-        run.completed_at = datetime.utcnow()
-        run.final_confidence = state.report["confidence"]
-        db.commit()
+    if payload.execute_demo and config["execution_mode"] == "inline":
+        run = execute_run(db, run, objective)
+    elif payload.execute_demo and config["execution_mode"] == "background":
+        background_tasks.add_task(execute_run_by_id, run.id)
 
     db.refresh(run)
     return serialize_run(run)
+
+
+@router.get("")
+def list_runs(db: Session = Depends(get_db)) -> dict:
+    runs = db.query(Run).order_by(Run.queued_at.desc().nullslast(), Run.started_at.desc().nullslast()).all()
+    return {"runs": [serialize_run(run) for run in runs]}
+
+
+@router.get("/queue")
+def get_queue(db: Session = Depends(get_db)) -> dict:
+    runs = db.query(Run).filter(Run.status.in_(["queued", "running"])).order_by(Run.queued_at.asc()).all()
+    return {"runs": [serialize_run(run) for run in runs]}
+
+
+@router.post("/{run_id}/execute")
+def execute_queued_run(
+    run_id: str,
+    payload: RunExecuteRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> dict:
+    run = db.get(Run, run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if run.status not in {"queued", "failed"} and not payload.force:
+        raise HTTPException(status_code=409, detail=f"Run is {run.status}, not queued")
+    background_tasks.add_task(execute_run_by_id, run.id)
+    return {"id": run.id, "status": "dispatching"}
 
 
 @router.get("/{run_id}")
@@ -151,8 +132,12 @@ def serialize_run(run: Run) -> dict:
         "objective_id": run.objective_id,
         "status": run.status,
         "current_state": run.current_state,
+        "run_config": run.run_config_json,
+        "agent_count": run.agent_count,
+        "max_runtime_minutes": run.max_runtime_minutes,
+        "estimated_cost_usd": run.estimated_cost_usd,
+        "queued_at": run.queued_at.isoformat() if run.queued_at else None,
         "started_at": run.started_at.isoformat() if run.started_at else None,
         "completed_at": run.completed_at.isoformat() if run.completed_at else None,
         "final_confidence": run.final_confidence,
     }
-

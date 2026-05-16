@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -33,6 +33,11 @@ class Run(Base):
     objective_id: Mapped[str] = mapped_column(ForeignKey("objectives.id"))
     status: Mapped[str] = mapped_column(String(40), default="created")
     current_state: Mapped[str] = mapped_column(String(80), default="INTAKE_OBJECTIVE")
+    run_config_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    agent_count: Mapped[int] = mapped_column(Integer, default=6)
+    max_runtime_minutes: Mapped[int] = mapped_column(Integer, default=30)
+    estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    queued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     final_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -117,4 +122,3 @@ class ModelScore(Base):
     score: Mapped[float] = mapped_column(Float)
     rationale: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
