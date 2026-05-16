@@ -2,7 +2,7 @@ import { apiGet } from "@/lib/api";
 import { RunTraceClient } from "./RunTraceClient";
 
 type Trace = {
-  steps: Array<{ id: string; agent_name: string; state_name: string; output: unknown }>;
+  steps: Array<{ id: string; agent_name: string; state_name: string; output: Record<string, unknown> }>;
   tool_calls: Array<{ id: string; tool_name: string; status: string; latency_ms: number }>;
 };
 

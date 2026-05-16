@@ -8,6 +8,10 @@
   --accent-dark: #7b1322;
   --gold: #b68d40;
   --green: #2f6f4e;
+  --blue: #315f7d;
+  --purple: #6d4f7d;
+  --amber-soft: #f7efe1;
+  --red-soft: #f8e8ea;
 }
 
 * {
@@ -69,6 +73,11 @@ a {
   padding: 24px 0 18px;
 }
 
+.productHero {
+  min-height: calc(100vh - 180px);
+  align-items: center;
+}
+
 .hero h1 {
   margin: 0 0 12px;
   font-size: 46px;
@@ -83,6 +92,61 @@ a {
   max-width: 760px;
 }
 
+.lede.compact {
+  max-width: 880px;
+  margin-top: 0;
+}
+
+.statusPanel {
+  align-self: center;
+}
+
+.badgeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.workflowBand {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+  margin: 20px 0 8px;
+}
+
+.compactBand {
+  margin-bottom: 20px;
+}
+
+.workflowStep {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px 10px;
+  background: #fff;
+  padding: 16px;
+  min-height: 106px;
+}
+
+.workflowStep svg {
+  color: var(--accent);
+}
+
+.workflowStep strong {
+  align-self: center;
+}
+
+.workflowStep span {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .panel,
 .card {
   background: var(--surface);
@@ -93,6 +157,42 @@ a {
 
 .panel {
   padding: 22px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.sectionHeader h2 {
+  margin: 4px 0 0;
+}
+
+.presetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.presetButton {
+  justify-content: flex-start;
+  min-height: 48px;
+  background: #fff;
+  color: var(--accent-dark);
+  border: 1px solid var(--line);
+}
+
+.presetButton:hover {
+  background: var(--red-soft);
+}
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 20px 0;
 }
 
 .grid {
@@ -142,6 +242,46 @@ a {
   gap: 12px;
 }
 
+.actions .muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.metric svg {
+  color: var(--accent);
+  grid-row: span 2;
+}
+
+.metric span {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric strong {
+  font-size: 16px;
+}
+
 .inlineControl {
   display: grid;
   grid-template-columns: minmax(72px, 1fr) auto;
@@ -151,6 +291,10 @@ a {
 
 .card {
   padding: 18px;
+}
+
+.buttonLike {
+  border: 1px solid var(--line);
 }
 
 .label {
@@ -210,6 +354,15 @@ button:hover,
   color: var(--muted);
 }
 
+.helpText {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+  margin: 14px 0 0;
+}
+
 .kicker {
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -254,6 +407,23 @@ button:hover,
   font-weight: 700;
 }
 
+.status-success {
+  background: #e6f2eb;
+  color: var(--green);
+}
+
+.status-partial,
+.status-running,
+.status-queued {
+  background: var(--amber-soft);
+  color: #7a5615;
+}
+
+.status-failed {
+  background: var(--red-soft);
+  color: var(--accent-dark);
+}
+
 pre {
   white-space: pre-wrap;
   word-break: break-word;
@@ -282,6 +452,10 @@ pre {
   }
 
   .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .workflowBand {
     grid-template-columns: 1fr;
   }
 

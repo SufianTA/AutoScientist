@@ -1,10 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Play } from "lucide-react";
+import { BrainCircuit, DatabaseZap, KeyRound, Play, ShieldCheck, Sparkles } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 
-const preset = "Generate a therapeutic hypothesis for ACVR1-driven Fibrodysplasia Ossificans Progressiva and identify candidate small molecules or intervention strategies. Use ToolUniverse tools where available, collect evidence, critique the hypothesis, and propose validation experiments.";
+const presets = [
+  {
+    title: "ACVR1/FOP therapeutic hypothesis",
+    objective: "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
+  },
+  {
+    title: "PCSK9 familial hypercholesterolemia",
+    objective: "Generate a scientist-grade therapeutic hypothesis analysis for PCSK9-driven familial hypercholesterolemia and elevated LDL cholesterol. Use live public evidence, identify disease-target mechanism, approved and investigational intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
+  },
+  {
+    title: "CFTR F508del cystic fibrosis",
+    objective: "Generate a scientist-grade therapeutic hypothesis analysis for CFTR F508del cystic fibrosis. Use live public evidence, identify disease-target mechanism, modulator intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
+  }
+];
+
+const providerDefaults: Record<string, { model: string; key: string }> = {
+  openai: { model: "gpt-4.1", key: "OPENAI_API_KEY" },
+  anthropic: { model: "claude-sonnet-4-6", key: "ANTHROPIC_API_KEY" },
+  gemini: { model: "gemini-1.5-pro", key: "GEMINI_API_KEY" },
+  openai_compatible: { model: "local-model", key: "OPENAI_COMPATIBLE_API_KEY" },
+  local_http: { model: "local-http-model", key: "" },
+  mock: { model: "mock-scientist", key: "" }
+};
 
 type ModelTool = {
   name: string;
@@ -33,17 +55,19 @@ function optimizedAgentCount(text: string) {
 }
 
 export default function NewObjectivePage() {
-  const [title, setTitle] = useState("ACVR1/FOP therapeutic hypothesis generation");
-  const [objective, setObjective] = useState(preset);
-  const [agentCount, setAgentCount] = useState(6);
+  const [title, setTitle] = useState(presets[0].title);
+  const [objective, setObjective] = useState(presets[0].objective);
+  const [agentCount, setAgentCount] = useState(7);
   const [maxRuntimeMinutes, setMaxRuntimeMinutes] = useState(30);
   const [toolBudgetUsd, setToolBudgetUsd] = useState(10);
-  const [evidenceStrictness, setEvidenceStrictness] = useState("balanced");
+  const [evidenceStrictness, setEvidenceStrictness] = useState("strict");
   const [executionMode, setExecutionMode] = useState("background");
   const [agentFramework, setAgentFramework] = useState("langgraph");
-  const [llmProvider, setLlmProvider] = useState("mock");
-  const [llmModel, setLlmModel] = useState("mock-scientist");
-  const [llmApiKeyEnvVar, setLlmApiKeyEnvVar] = useState("");
+  const [llmProvider, setLlmProvider] = useState("anthropic");
+  const [llmModel, setLlmModel] = useState("claude-sonnet-4-6");
+  const [llmApiKeyEnvVar, setLlmApiKeyEnvVar] = useState("ANTHROPIC_API_KEY");
+  const [llmBaseUrl, setLlmBaseUrl] = useState("");
+  const [requireRealLlm, setRequireRealLlm] = useState(true);
   const [realDataEnabled, setRealDataEnabled] = useState(true);
   const [modelTools, setModelTools] = useState<ModelTool[]>([]);
   const [selectedModelTools, setSelectedModelTools] = useState<string[]>([]);
@@ -64,6 +88,8 @@ export default function NewObjectivePage() {
     llm_provider: llmProvider,
     llm_model: llmModel,
     llm_api_key_env_var: llmApiKeyEnvVar,
+    llm_base_url: llmBaseUrl,
+    require_real_llm: requireRealLlm,
     real_data_enabled: realDataEnabled,
     model_tool_names: selectedModelTools
   };
@@ -78,6 +104,20 @@ export default function NewObjectivePage() {
     setSelectedModelTools((current) => (
       current.includes(name) ? current.filter((item) => item !== name) : [...current, name]
     ));
+  }
+
+  function choosePreset(nextTitle: string, nextObjective: string) {
+    setTitle(nextTitle);
+    setObjective(nextObjective);
+    setAgentCount(optimizedAgentCount(nextObjective));
+  }
+
+  function chooseProvider(provider: string) {
+    setLlmProvider(provider);
+    const defaults = providerDefaults[provider];
+    setLlmModel(defaults.model);
+    setLlmApiKeyEnvVar(defaults.key);
+    setRequireRealLlm(provider !== "mock");
   }
 
   async function estimateRun() {
@@ -115,8 +155,38 @@ export default function NewObjectivePage() {
   return (
     <main className="page">
       <div className="kicker">New objective</div>
-      <h1>Launch a research loop</h1>
+      <h1>Launch an auditable scientist run</h1>
+      <p className="lede compact">
+        Pick a provider, paste a biomedical question, choose agent count, and watch the run produce a trace,
+        evidence table, critique, research board posts, and final report.
+      </p>
+      <section className="workflowBand compactBand">
+        <div className="workflowStep"><BrainCircuit size={20} /><strong>Agents</strong><span>PI, finder, literature, tool, molecule, critic, publisher.</span></div>
+        <div className="workflowStep"><DatabaseZap size={20} /><strong>Live tools</strong><span>NCBI, PubMed, PubChem, ToolUniverse/OpenTargets.</span></div>
+        <div className="workflowStep"><ShieldCheck size={20} /><strong>Guardrails</strong><span>No efficacy or safety claims without direct evidence.</span></div>
+        <div className="workflowStep"><KeyRound size={20} /><strong>Keys</strong><span>Use env vars from your local settings file.</span></div>
+      </section>
       <div className="panel">
+        <div className="sectionHeader">
+          <div>
+            <div className="kicker">Examples</div>
+            <h2>Start from a known biomedical benchmark</h2>
+          </div>
+        </div>
+        <div className="presetGrid">
+          {presets.map((item) => (
+            <button
+              className="presetButton"
+              type="button"
+              key={item.title}
+              onClick={() => choosePreset(item.title, item.objective)}
+            >
+              <Sparkles size={16} />
+              <span>{item.title}</span>
+            </button>
+          ))}
+        </div>
+        <div className="divider" />
         <label className="label" htmlFor="title">Title</label>
         <input id="title" value={title} onChange={(event) => setTitle(event.target.value)} />
         <div style={{ height: 16 }} />
@@ -163,7 +233,7 @@ export default function NewObjectivePage() {
           </label>
           <label>
             <span className="label">LLM provider</span>
-            <select value={llmProvider} onChange={(event) => setLlmProvider(event.target.value)}>
+            <select value={llmProvider} onChange={(event) => chooseProvider(event.target.value)}>
               <option value="mock">Mock local</option>
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
@@ -178,7 +248,11 @@ export default function NewObjectivePage() {
           </label>
           <label>
             <span className="label">API key env var</span>
-            <input value={llmApiKeyEnvVar} placeholder="OPENAI_API_KEY" onChange={(event) => setLlmApiKeyEnvVar(event.target.value)} />
+            <input value={llmApiKeyEnvVar} placeholder="ANTHROPIC_API_KEY" onChange={(event) => setLlmApiKeyEnvVar(event.target.value)} />
+          </label>
+          <label>
+            <span className="label">Provider base URL</span>
+            <input value={llmBaseUrl} placeholder="Only for local/OpenAI-compatible" onChange={(event) => setLlmBaseUrl(event.target.value)} />
           </label>
           <label>
             <span className="label">Execution</span>
@@ -199,7 +273,22 @@ export default function NewObjectivePage() {
               <small>NCBI, PubMed, PubChem</small>
             </span>
           </label>
+          <label className="selectCard">
+            <input
+              type="checkbox"
+              checked={requireRealLlm}
+              onChange={(event) => setRequireRealLlm(event.target.checked)}
+            />
+            <span>
+              <strong>Strict real LLM</strong>
+              <small>Fail fast if provider key is missing</small>
+            </span>
+          </label>
         </div>
+        <p className="helpText">
+          Put keys in `.env` at the repo root, for example `ANTHROPIC_API_KEY=...`,
+          then restart the API. The web app references env var names only; it does not store raw keys.
+        </p>
         {modelTools.length > 0 && (
           <>
             <div style={{ height: 16 }} />

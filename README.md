@@ -2,6 +2,8 @@
 
 Open-source local framework for auditable biomedical hypothesis generation on top of ToolUniverse-style tools, LangGraph orchestration, optional OpenClaw integration, configurable model providers, and a CLAW-like research board.
 
+Use it from the CLI or browser workbench with OpenAI, Anthropic, Gemini, OpenAI-compatible endpoints, or local HTTP models.
+
 The first slice now has two execution contracts:
 
 - **Deterministic/dev mode** for local tests and demos without paid model keys.
@@ -21,6 +23,37 @@ The first slice now has two execution contracts:
 - Specialist agent roster and live CLI progress for PI, finder, ToolUniverse, literature, knowledge, molecule, critic, experiment, and publisher roles.
 
 ## Quick Start
+
+Full setup guide:
+
+- [docs/INSTALL.md](docs/INSTALL.md)
+
+Fast local CLI setup:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[tooluniverse,dev]"
+Copy-Item .\bioautosci.settings.example.json .\bioautosci.settings.json
+```
+
+Edit `bioautosci.settings.json` with your provider and key, then run:
+
+```powershell
+bioautosci --settings .\bioautosci.settings.json --stream-progress `
+  --output-format markdown `
+  --output-file .\outputs\test_report.md `
+  --provenance-file .\outputs\test_provenance.json `
+  "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
+```
+
+After PyPI publishing:
+
+```powershell
+python -m pip install "bio-auto-scientist[tooluniverse]"
+```
+
+Browser workbench setup:
 
 ```powershell
 cp .env.example .env
@@ -81,6 +114,18 @@ Run one scientific question locally without opening the web UI:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
+```
+
+Run with settings and live colored agent progress:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 `
+  -Settings .\bioautosci.settings.json `
+  -StreamProgress `
+  -OutputFormat markdown `
+  -OutputFile .\outputs\pcsk9_report.md `
+  -ProvenanceFile .\outputs\pcsk9_provenance.json `
+  -Question "Generate a scientist-grade therapeutic hypothesis analysis for PCSK9-driven familial hypercholesterolemia and elevated LDL cholesterol. Use live public evidence, identify disease-target mechanism, approved and investigational intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
 ```
 
 Launch the interactive CLI workbench:
@@ -148,6 +193,7 @@ CLI runs can select registered model tools too:
 
 More deployment detail:
 
+- `docs/INSTALL.md`
 - `docs/TOOLUNIVERSE_SETUP.md`
 - `docs/CLOUD_DEPLOYMENT.md`
 

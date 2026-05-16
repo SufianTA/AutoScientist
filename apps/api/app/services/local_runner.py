@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -108,6 +109,21 @@ def run_question(
         }
     finally:
         db.close()
+
+
+def load_cli_settings(path: str | None) -> dict[str, Any]:
+    if not path:
+        return {}
+    settings_path = Path(path)
+    if not settings_path.exists():
+        raise FileNotFoundError(f"Settings file not found: {settings_path}")
+    data = json.loads(settings_path.read_text(encoding="utf-8-sig"))
+    api_keys = data.get("api_keys", {})
+    if isinstance(api_keys, dict):
+        for env_var, value in api_keys.items():
+            if value and "put-your-key-here" not in str(value):
+                os.environ[str(env_var)] = str(value).strip()
+    return data
 
 
 def format_result(result: dict, output_format: str) -> str:
@@ -335,6 +351,7 @@ def run_interactive() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a local BioAutoScientist question.")
     parser.add_argument("question", nargs="?", help="Scientific question or objective")
+    parser.add_argument("--settings", help="Path to bioautosci.settings.json")
     parser.add_argument("--interactive", action="store_true", help="Prompt for agents and scientific problem")
     parser.add_argument("--agents", type=int, default=6)
     parser.add_argument("--runtime", type=int, default=30)
@@ -362,6 +379,20 @@ def main() -> None:
         return
     if not args.question:
         parser.error("question is required unless --interactive is set")
+    settings = load_cli_settings(args.settings)
+    agent_count = args.agents if args.agents != 6 else int(settings.get("agent_count", args.agents))
+    runtime = args.runtime if args.runtime != 30 else int(settings.get("max_runtime_minutes", args.runtime))
+    strictness = (
+        args.strictness
+        if args.strictness != "balanced"
+        else settings.get("evidence_strictness", args.strictness)
+    )
+    llm_provider = args.llm_provider if args.llm_provider != "mock" else settings.get("llm_provider", args.llm_provider)
+    llm_model = args.llm_model if args.llm_model != "mock-scientist" else settings.get("llm_model", args.llm_model)
+    llm_api_key_env_var = args.llm_api_key_env_var or settings.get("llm_api_key_env_var", "")
+    llm_base_url = args.llm_base_url or settings.get("llm_base_url", "")
+    require_real_llm = args.require_real_llm or bool(settings.get("require_real_llm", False))
+    real_data_enabled = args.real_data or bool(settings.get("real_data_enabled", False))
     def progress(event: dict[str, Any]) -> None:
         print(render_progress_event(event, color=not args.no_color), flush=True)
         print("", flush=True)
@@ -372,22 +403,22 @@ def main() -> None:
             flush=True,
         )
         print(f"Question: {args.question}", flush=True)
-        print(f"Agents: {args.agents} | Strictness: {args.strictness} | Provider: {args.llm_provider}/{args.llm_model}", flush=True)
+        print(f"Agents: {agent_count} | Strictness: {strictness} | Provider: {llm_provider}/{llm_model}", flush=True)
         print("", flush=True)
 
     result = run_question(
         args.question,
         {
-            "agent_count": args.agents,
-            "max_runtime_minutes": args.runtime,
-            "evidence_strictness": args.strictness,
-            "llm_provider": args.llm_provider,
-            "llm_model": args.llm_model,
-            "llm_api_key_env_var": args.llm_api_key_env_var,
-            "llm_base_url": args.llm_base_url,
-            "require_real_llm": args.require_real_llm,
+            "agent_count": agent_count,
+            "max_runtime_minutes": runtime,
+            "evidence_strictness": strictness,
+            "llm_provider": llm_provider,
+            "llm_model": llm_model,
+            "llm_api_key_env_var": llm_api_key_env_var,
+            "llm_base_url": llm_base_url,
+            "require_real_llm": require_real_llm,
             "model_tool_names": args.model_tool,
-            "real_data_enabled": args.real_data,
+            "real_data_enabled": real_data_enabled,
         },
         progress_callback=progress if args.stream_progress else None,
     )

@@ -1,0 +1,16 @@
+{
+  "llm_provider": "anthropic",
+  "llm_model": "claude-sonnet-4-6",
+  "llm_api_key_env_var": "ANTHROPIC_API_KEY",
+  "api_keys": {
+    "ANTHROPIC_API_KEY": "put-your-key-here-or-leave-empty-and-set-env-var",
+    "OPENAI_API_KEY": "",
+    "GEMINI_API_KEY": ""
+  },
+  "real_data_enabled": true,
+  "require_real_llm": true,
+  "evidence_strictness": "strict",
+  "agent_count": 7,
+  "max_runtime_minutes": 30,
+  "output_dir": "outputs"
+}

@@ -2,6 +2,7 @@ param(
   [Parameter(Mandatory = $false)]
   [string]$Question,
   [switch]$Interactive,
+  [string]$Settings = "",
   [int]$Agents = 6,
   [int]$Runtime = 30,
   [ValidateSet("exploratory", "balanced", "strict")]
@@ -35,6 +36,13 @@ try {
     $args += $Question
   } else {
     throw "Provide -Question or use -Interactive."
+  }
+  if ($Settings) {
+    $resolvedSettings = $Settings
+    if (-not [System.IO.Path]::IsPathRooted($resolvedSettings)) {
+      $resolvedSettings = Join-Path $repoRoot.Path $resolvedSettings
+    }
+    $args += @("--settings", $resolvedSettings)
   }
   $args += @(
     "--agents", $Agents,

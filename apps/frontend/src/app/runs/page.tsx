@@ -18,6 +18,9 @@ export default async function RunsPage() {
     <main className="page">
       <div className="kicker">Run queue</div>
       <h1>Submitted research runs</h1>
+      <p className="lede compact">
+        Every run preserves agent states, LLM calls, tool calls, evidence scores, board posts, and report exports.
+      </p>
       <table className="table">
         <thead>
           <tr><th>Run</th><th>Status</th><th>State</th><th>Agents</th><th>Estimate</th></tr>
@@ -26,7 +29,7 @@ export default async function RunsPage() {
           {data.runs.map((run) => (
             <tr key={run.id}>
               <td><Link href={`/runs/${run.id}`}>{run.id}</Link></td>
-              <td><span className="badge">{run.status}</span></td>
+              <td><span className={`badge status-${run.status}`}>{run.status}</span></td>
               <td>{run.current_state}</td>
               <td>{run.agent_count}</td>
               <td>{run.estimated_cost_usd} units</td>
