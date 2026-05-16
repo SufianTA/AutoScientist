@@ -191,6 +191,14 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "experiment_recommendation_tool",
             *[tool["name"] for tool in config.get("model_tool_configs", [])],
         ]
+        if config.get("real_data_enabled"):
+            state.selected_tools.extend(
+                [
+                    "ncbi_gene_profile_tool",
+                    "pubmed_literature_search_tool",
+                    "pubchem_candidate_lookup_tool",
+                ]
+            )
         self._record(
             trace,
             "finder_agent",
@@ -247,6 +255,74 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "structured": fop["output"],
             },
         ]
+        live_tool_outputs = []
+        if config.get("real_data_enabled"):
+            live_calls = [
+                (
+                    "ncbi_gene_profile_tool",
+                    {"gene_symbol": "ACVR1", "organism": "Homo sapiens"},
+                ),
+                (
+                    "pubmed_literature_search_tool",
+                    {"query": "ACVR1 Fibrodysplasia Ossificans Progressiva BMP signaling", "retmax": 5},
+                ),
+                (
+                    "pubmed_literature_search_tool",
+                    {"query": "ACVR1 inhibitor safety Fibrodysplasia Ossificans Progressiva", "retmax": 5},
+                ),
+                (
+                    "pubchem_candidate_lookup_tool",
+                    {"names": ["palovarotene", "LDN-193189", "dorsomorphin"]},
+                ),
+            ]
+            for tool_name, tool_input in live_calls:
+                result = self.tools[tool_name].run(tool_input).model_dump()
+                state.tool_outputs.append(
+                    {
+                        "tool_name": tool_name,
+                        "tool_source": "live_public_biomedical",
+                        "result": result,
+                    }
+                )
+                live_tool_outputs.append({"tool_name": tool_name, "result": result})
+            for live_output in live_tool_outputs:
+                result = live_output["result"]
+                if result.get("status") == "failure":
+                    continue
+                output = result.get("output", {})
+                if live_output["tool_name"] == "ncbi_gene_profile_tool":
+                    state.evidence.append(
+                        {
+                            "source": "NCBI Gene",
+                            "text": (
+                                f"NCBI Gene ACVR1 profile: "
+                                f"{output.get('summary') or output.get('description') or 'live record returned.'}"
+                            ),
+                            "structured": output,
+                        }
+                    )
+                elif live_output["tool_name"] == "pubmed_literature_search_tool":
+                    articles = output.get("articles", [])
+                    titles = "; ".join(
+                        article.get("title", "") for article in articles[:3] if article.get("title")
+                    )
+                    state.evidence.append(
+                        {
+                            "source": f"PubMed: {output.get('query')}",
+                            "text": titles or f"PubMed returned live literature search results for {output.get('query')}.",
+                            "structured": output,
+                        }
+                    )
+                elif live_output["tool_name"] == "pubchem_candidate_lookup_tool":
+                    compounds = output.get("compounds", [])
+                    names = ", ".join(compound.get("name", "") for compound in compounds)
+                    state.evidence.append(
+                        {
+                            "source": "PubChem candidate lookup",
+                            "text": f"PubChem returned candidate/intervention records for: {names}.",
+                            "structured": output,
+                        }
+                    )
         for model_output in model_tool_outputs:
             result = model_output["result"]
             if result["status"] in {"success", "partial"}:
@@ -266,6 +342,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "evidence": state.evidence,
                 "tool_output_count": len(state.tool_outputs),
                 "custom_model_tool_count": len(model_tool_outputs),
+                "live_public_tool_count": len(live_tool_outputs),
             },
         )
         return state

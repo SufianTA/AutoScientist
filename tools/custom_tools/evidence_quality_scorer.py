@@ -11,13 +11,15 @@ class EvidenceQualityScorerTool(ScientificTool):
     }
 
     def _run(self, payload: dict) -> ToolResult:
-        text = f"{payload.get('hypothesis', '')} {payload.get('evidence_text', '')}".lower()
-        if any(term in text for term in ["toxicity", "unsafe", "adverse"]):
+        text = str(payload.get("evidence_text", "")).lower()
+        if any(term in text for term in ["toxicity", "unsafe", "adverse", "safety"]):
             label, score, evidence_type = "safety_concern", 0.72, "safety"
-        elif "acvr1" in text and ("fop" in text or "fibrodysplasia" in text) and ("bmp" in text or "osteogenic" in text):
+        elif "acvr1" in text and ("fop" in text or "fibrodysplasia" in text) and ("bmp" in text or "osteogenic" in text or "ossification" in text):
             label, score, evidence_type = "strong_support", 0.84, "mechanistic"
-        elif "acvr1" in text or "bmp" in text:
+        elif "acvr1" in text or "bmp" in text or "fibrodysplasia" in text or "ossification" in text:
             label, score, evidence_type = "weak_support", 0.58, "mechanistic"
+        elif "pubchem" in text or "candidate" in text or "compound" in text:
+            label, score, evidence_type = "mechanistic_relevance", 0.46, "chemical"
         elif "contradict" in text or "no association" in text:
             label, score, evidence_type = "contradicts", 0.69, "literature"
         else:
@@ -35,4 +37,3 @@ class EvidenceQualityScorerTool(ScientificTool):
             sources=[{"name": "Rule-based evidence scorer", "id": "mock-evidence-scorer-v0.1"}],
             confidence=score,
         )
-

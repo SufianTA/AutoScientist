@@ -2,7 +2,7 @@
   "tooluniverse_health": {
     "available": false,
     "status": "needs_install_or_dependency_fix",
-    "error": "tokenizers>=0.19,<0.20 is required for a normal functioning of this module, but found tokenizers==0.22.2.\nTry: `pip install transformers -U` or `pip install -e '.[dev]'` if you're working with git main"
+    "error": "cannot import name 'candidate_tester_tool' from partially initialized module 'tooluniverse' (most likely due to a circular import) (C:\\Users\\cassa\\Documents\\Github\\Harvard\\bioagent\\ToolUniverse\\src\\tooluniverse\\__init__.py)"
   },
   "tools": [
     {
@@ -130,6 +130,95 @@
       "notes": ""
     },
     {
+      "name": "ncbi_gene_profile_tool",
+      "description": "Retrieves a live NCBI Gene summary for a human gene symbol.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "gene_symbol": {
+            "type": "string"
+          },
+          "organism": {
+            "type": "string",
+            "default": "Homo sapiens"
+          }
+        },
+        "required": [
+          "gene_symbol"
+        ]
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "example_input": {
+        "gene_symbol": "ACVR1",
+        "organism": "Homo sapiens"
+      },
+      "source": "custom",
+      "status": "working",
+      "notes": ""
+    },
+    {
+      "name": "pubmed_literature_search_tool",
+      "description": "Searches PubMed live and returns PMID, title, journal, and publication date summaries.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "retmax": {
+            "type": "integer",
+            "default": 5
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "example_input": {
+        "query": "ACVR1 FOP BMP signaling",
+        "retmax": 5
+      },
+      "source": "custom",
+      "status": "working",
+      "notes": ""
+    },
+    {
+      "name": "pubchem_candidate_lookup_tool",
+      "description": "Looks up candidate intervention names in PubChem and returns identifiers and properties.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "names"
+        ]
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "example_input": {
+        "names": [
+          "palovarotene",
+          "LDN-193189",
+          "dorsomorphin"
+        ]
+      },
+      "source": "custom",
+      "status": "working",
+      "notes": ""
+    },
+    {
       "name": "tooluniverse_unavailable",
       "description": "ToolUniverse package could not be imported in the current environment.",
       "input_schema": {
@@ -141,7 +230,7 @@
       "example_input": {},
       "source": "tooluniverse",
       "status": "needs_install_or_dependency_fix",
-      "notes": "tokenizers>=0.19,<0.20 is required for a normal functioning of this module, but found tokenizers==0.22.2.\nTry: `pip install transformers -U` or `pip install -e '.[dev]'` if you're working with git main"
+      "notes": "cannot import name 'candidate_tester_tool' from partially initialized module 'tooluniverse' (most likely due to a circular import) (C:\\Users\\cassa\\Documents\\Github\\Harvard\\bioagent\\ToolUniverse\\src\\tooluniverse\\__init__.py)"
     }
   ]
 }

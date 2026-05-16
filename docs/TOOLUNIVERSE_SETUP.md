@@ -24,6 +24,21 @@ python -c "from tooluniverse import ToolUniverse; print('ToolUniverse ok')"
 
 If ToolUniverse is installed editable from a local checkout, keep it isolated from unrelated ML packages. The API endpoint `/tools/health` reports the import error without crashing the platform.
 
+Current local diagnostic:
+
+```text
+tooluniverse 1.0.4 is installed as an editable checkout from
+C:\Users\cassa\Documents\Github\Harvard\bioagent\ToolUniverse
+```
+
+After fixing `tokenizers`, the import reaches the local ToolUniverse package but currently fails with:
+
+```text
+cannot import name 'candidate_tester_tool' from partially initialized module 'tooluniverse'
+```
+
+Until that editable checkout is fixed or replaced with a clean non-editable install, real BioAutoScientist runs use live public biomedical tools and record ToolUniverse health separately.
+
 ## Inventory Export
 
 ```powershell

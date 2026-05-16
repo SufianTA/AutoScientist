@@ -8,6 +8,9 @@ def test_custom_tools_return_standard_result() -> None:
     assert "output" in result
     assert "sources" in result
     assert result["tool_version"] == "0.1.0"
+    assert "ncbi_gene_profile_tool" in tools
+    assert "pubmed_literature_search_tool" in tools
+    assert "pubchem_candidate_lookup_tool" in tools
 
 
 def test_evidence_scorer_labels_acvr1_fop_mechanism() -> None:
@@ -19,4 +22,3 @@ def test_evidence_scorer_labels_acvr1_fop_mechanism() -> None:
         }
     )
     assert result.output["label"] == "strong_support"
-

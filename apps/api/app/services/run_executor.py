@@ -24,6 +24,7 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "llm_model": "mock-scientist",
     "llm_api_key_env_var": "",
     "model_tool_names": [],
+    "real_data_enabled": False,
 }
 
 
@@ -44,6 +45,7 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         normalized["llm_provider"] = "mock"
     if not isinstance(normalized["model_tool_names"], list):
         normalized["model_tool_names"] = []
+    normalized["real_data_enabled"] = bool(normalized.get("real_data_enabled", False))
     return normalized
 
 

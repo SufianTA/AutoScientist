@@ -9,6 +9,7 @@ param(
   [string]$LlmProvider = "mock",
   [string]$LlmModel = "mock-scientist",
   [string[]]$ModelTools = @(),
+  [switch]$RealData,
   [ValidateSet("summary", "json", "markdown")]
   [string]$OutputFormat = "summary",
   [string]$OutputFile = "",
@@ -38,6 +39,9 @@ try {
   )
   foreach ($modelTool in $ModelTools) {
     $args += @("--model-tool", $modelTool)
+  }
+  if ($RealData) {
+    $args += "--real-data"
   }
   if ($OutputFile) {
     $resolvedOutputFile = $OutputFile

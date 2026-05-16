@@ -37,6 +37,8 @@ Flow:
 4. Watch realtime agent-state events, queued tools, tool-call counts, evidence scores, critique, and report confidence.
 5. Receive the final summary plus Markdown and provenance JSON files.
 
+When live public data is enabled, the run calls NCBI Gene, PubMed, and PubChem and records those calls as `live_public_biomedical` tool calls. ToolUniverse health is still reported separately; if a local ToolUniverse installation is broken, the framework does not fake those calls.
+
 Output modes:
 
 ```powershell

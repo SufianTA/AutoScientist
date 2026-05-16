@@ -44,6 +44,7 @@ export default function NewObjectivePage() {
   const [llmProvider, setLlmProvider] = useState("mock");
   const [llmModel, setLlmModel] = useState("mock-scientist");
   const [llmApiKeyEnvVar, setLlmApiKeyEnvVar] = useState("");
+  const [realDataEnabled, setRealDataEnabled] = useState(true);
   const [modelTools, setModelTools] = useState<ModelTool[]>([]);
   const [selectedModelTools, setSelectedModelTools] = useState<string[]>([]);
   const [estimate, setEstimate] = useState<number | null>(null);
@@ -63,6 +64,7 @@ export default function NewObjectivePage() {
     llm_provider: llmProvider,
     llm_model: llmModel,
     llm_api_key_env_var: llmApiKeyEnvVar,
+    real_data_enabled: realDataEnabled,
     model_tool_names: selectedModelTools
   };
 
@@ -185,6 +187,17 @@ export default function NewObjectivePage() {
               <option value="queued">Queued worker</option>
               <option value="inline">Inline demo</option>
             </select>
+          </label>
+          <label className="selectCard">
+            <input
+              type="checkbox"
+              checked={realDataEnabled}
+              onChange={(event) => setRealDataEnabled(event.target.checked)}
+            />
+            <span>
+              <strong>Live public data</strong>
+              <small>NCBI, PubMed, PubChem</small>
+            </span>
           </label>
         </div>
         {modelTools.length > 0 && (

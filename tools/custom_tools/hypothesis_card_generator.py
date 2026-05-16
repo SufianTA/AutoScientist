@@ -24,11 +24,10 @@ class HypothesisCardGeneratorTool(ScientificTool):
                 "contradictions": [],
                 "confidence": round(confidence, 2),
                 "limitations": [
-                    "Mock evidence requires replacement with live ToolUniverse and literature calls.",
+                    "Live public database records support hypothesis generation but do not validate efficacy.",
                     "No clinical efficacy or safety claim is made.",
                     "Compound specificity and translational risk remain unresolved.",
                 ],
             },
             confidence=confidence,
         )
-

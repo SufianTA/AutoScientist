@@ -84,12 +84,21 @@ Launch the interactive CLI workbench:
 ```
 
 Interactive mode asks for the scientific problem, lets you choose an exact agent count or optimized agent count, streams each agent state as it runs, and writes both a Markdown report and JSON provenance trace.
+Choose live public biomedical data when prompted to use NCBI Gene, PubMed, and PubChem calls in the run.
 
 Write a command-line report artifact:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md
 ```
+
+Run the non-interactive CLI with live public data:
+
+```powershell
+.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -RealData -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_real_report.md -ProvenanceFile .\outputs\acvr1_fop_real_provenance.json
+```
+
+Live-data mode currently calls NCBI Gene, PubMed, and PubChem. ToolUniverse is installed locally, but the editable checkout currently fails during import with a circular import; `/tools/health` reports that instead of hiding it.
 
 Write both a report and full provenance trace:
 

@@ -139,7 +139,8 @@ def render_progress_event(event: dict[str, Any]) -> str:
     if "tool_output_count" in output:
         lines.append(
             f"  tool calls completed: {output['tool_output_count']} "
-            f"(custom models: {output.get('custom_model_tool_count', 0)})"
+            f"(custom models: {output.get('custom_model_tool_count', 0)}, "
+            f"live public: {output.get('live_public_tool_count', 0)})"
         )
     if "scored_evidence" in output:
         labels = [item.get("score", {}).get("label", "unscored") for item in output["scored_evidence"]]
@@ -190,6 +191,8 @@ def run_interactive() -> None:
     strictness = input("Evidence strictness [balanced/exploratory/strict, default balanced]: ").strip().lower()
     if strictness not in {"balanced", "exploratory", "strict"}:
         strictness = "balanced"
+    live_raw = input("Use live public biomedical data? [Y/n]: ").strip().lower()
+    real_data_enabled = live_raw not in {"n", "no", "mock"}
     output_file = input("Markdown output file [outputs/interactive_report.md]: ").strip() or "outputs/interactive_report.md"
     provenance_file = (
         input("Provenance JSON file [outputs/interactive_provenance.json]: ").strip()
@@ -197,6 +200,7 @@ def run_interactive() -> None:
     )
     print("")
     print(f"Queued {agents} agents with {strictness} evidence strictness.")
+    print(f"Live public biomedical data: {'enabled' if real_data_enabled else 'disabled'}")
     print("Running local scientist loop...\n")
 
     def progress(event: dict[str, Any]) -> None:
@@ -211,6 +215,7 @@ def run_interactive() -> None:
             "evidence_strictness": strictness,
             "llm_provider": "mock",
             "llm_model": "mock-scientist",
+            "real_data_enabled": real_data_enabled,
         },
         progress_callback=progress,
     )
@@ -247,6 +252,7 @@ def main() -> None:
     parser.add_argument("--llm-provider", default="mock")
     parser.add_argument("--llm-model", default="mock-scientist")
     parser.add_argument("--model-tool", action="append", default=[], help="Registered custom model tool name")
+    parser.add_argument("--real-data", action="store_true", help="Use live public biomedical APIs during the run")
     parser.add_argument(
         "--output-format",
         choices=["summary", "json", "markdown"],
@@ -270,6 +276,7 @@ def main() -> None:
             "llm_provider": args.llm_provider,
             "llm_model": args.llm_model,
             "model_tool_names": args.model_tool,
+            "real_data_enabled": args.real_data,
         },
     )
     formatted = format_result(result, args.output_format)
