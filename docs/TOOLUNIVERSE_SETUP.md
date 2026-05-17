@@ -9,7 +9,7 @@ The local environment previously had two issues:
 
 The working local fix was:
 
-```powershell
+```bash
 python -m pip uninstall -y tooluniverse
 python -m pip install "tokenizers>=0.19,<0.20"
 python -m pip install tooluniverse==1.0.4 --no-deps
@@ -20,6 +20,8 @@ After this, `from tooluniverse import ToolUniverse` and `ToolUniverse()` both in
 Use an isolated virtual environment for the API instead of the global Python install.
 
 ## Recommended Local Fix
+
+Windows:
 
 ```powershell
 cd apps/api
@@ -32,12 +34,33 @@ $env:PYTHONPATH = (Resolve-Path ..\..).Path
 python -c "from tooluniverse import ToolUniverse; print('ToolUniverse ok')"
 ```
 
+macOS/Linux:
+
+```bash
+cd apps/api
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[dev,tooluniverse]"
+pip install "tokenizers>=0.19,<0.20"
+export PYTHONPATH="$(cd ../.. && pwd):$(pwd)"
+python -c "from tooluniverse import ToolUniverse; print('ToolUniverse ok')"
+```
+
 If ToolUniverse is installed editable from a local checkout, keep it isolated from unrelated ML packages. The API endpoint `/tools/health` reports import errors without crashing the platform.
 
 ## Inventory Export
 
+Windows:
+
 ```powershell
 .\infra\scripts\export_tool_inventory.ps1
+```
+
+macOS/Linux:
+
+```bash
+./infra/scripts/export_tool_inventory.sh
 ```
 
 When ToolUniverse imports correctly, `tool_inventory.json` will include real ToolUniverse specs in addition to custom mock tools.

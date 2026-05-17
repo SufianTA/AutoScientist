@@ -13,20 +13,45 @@ Core idea:
 
 Start the local platform:
 
+Windows:
+
 ```powershell
 .\infra\scripts\start_local_platform.ps1
 ```
 
+macOS/Linux:
+
+```bash
+./infra/scripts/start_local_platform.sh
+```
+
 Open http://127.0.0.1:3000 for the browser workbench.
+
+Windows:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
+macOS/Linux:
+
+```bash
+./infra/scripts/run_local_question.sh --agents 6 --runtime 30 --strictness balanced \
+  "Generate a therapeutic hypothesis for ACVR1-driven FOP."
+```
+
 Interactive launcher:
+
+Windows:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Interactive
+```
+
+macOS/Linux:
+
+```bash
+./infra/scripts/run_local_question.sh --interactive
 ```
 
 Flow:
@@ -41,6 +66,8 @@ When live public data is enabled, the run calls NCBI Gene, PubMed, PubChem, and 
 
 Strict real autonomous mode requires both live data and a real LLM provider:
 
+Windows:
+
 ```powershell
 $env:OPENAI_API_KEY = "..."
 .\infra\scripts\run_local_question.ps1 `
@@ -54,6 +81,23 @@ $env:OPENAI_API_KEY = "..."
   -OutputFormat markdown `
   -OutputFile .\outputs\strict_real_report.md `
   -ProvenanceFile .\outputs\strict_real_provenance.json
+```
+
+macOS/Linux:
+
+```bash
+export OPENAI_API_KEY="..."
+./infra/scripts/run_local_question.sh \
+  --agents 7 \
+  --strictness strict \
+  --real-data \
+  --llm-provider openai \
+  --llm-model gpt-4.1 \
+  --require-real-llm \
+  --output-format markdown \
+  --output-file ./outputs/strict_real_report.md \
+  --provenance-file ./outputs/strict_real_provenance.json \
+  "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
 ```
 
 In strict mode, the PI/context extraction, plan generation, evidence scoring, hypothesis synthesis, critique, and report synthesis use the configured LLM. If the key or provider is missing, the run fails fast rather than falling back to mock behavior.
@@ -120,11 +164,12 @@ Current LangGraph node sequence:
 3. `execute_evidence_collection`
 4. `score_evidence`
 5. `generate_hypotheses`
-6. `critique_and_refine`
-7. `propose_experiments`
-8. `generate_report`
+6. `debate_and_revise`
+7. `critique_and_refine`
+8. `propose_experiments`
+9. `generate_report`
 
-Every node appends an auditable trace entry with inputs, outputs, agent name, state name, and timestamp. Real-data runs also record a specialist agent roster and tool assignments such as `literature_agent -> pubmed_literature_search_tool`, `knowledge_agent -> ncbi_gene_profile_tool`, and `tooluniverse_agent -> OpenTargets_*`. If LangGraph is unavailable in the local environment, the same node functions run sequentially so the framework still works.
+Every node appends an auditable trace entry with inputs, outputs, agent name, state name, and timestamp. Real-data runs also record a specialist agent roster and tool assignments such as `literature_agent -> pubmed_literature_search_tool`, `knowledge_agent -> ncbi_gene_profile_tool`, and `tooluniverse_agent -> OpenTargets_*`. In real LLM mode, `debate_and_revise` runs a parallel panel of specialist AI-scientist agents, records their positions, moderates disagreements, and lets the PI agent revise the final hypothesis. If LangGraph is unavailable in the local environment, the same node functions run sequentially so the framework still works.
 
 ## LLM Providers
 
@@ -141,9 +186,19 @@ Pass keys through environment variables rather than storing raw secrets in the d
 
 Example:
 
+Windows:
+
 ```powershell
 $env:OPENAI_API_KEY = "..."
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -LlmProvider openai -LlmModel gpt-4.1
+```
+
+macOS/Linux:
+
+```bash
+export OPENAI_API_KEY="..."
+./infra/scripts/run_local_question.sh --llm-provider openai --llm-model gpt-4.1 \
+  "Generate a therapeutic hypothesis for ACVR1-driven FOP."
 ```
 
 ## Execution Backends

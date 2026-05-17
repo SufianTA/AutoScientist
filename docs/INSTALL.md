@@ -4,7 +4,7 @@ BioAutoScientist can run as a local CLI or as a browser workbench. The easiest f
 
 ## 1. Clone
 
-```powershell
+```bash
 git clone https://github.com/YOUR_ORG/bio-auto-scientist.git
 cd bio-auto-scientist
 ```
@@ -13,15 +13,25 @@ cd bio-auto-scientist
 
 For development from the cloned repo:
 
+Windows:
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[tooluniverse,dev]"
 ```
 
+macOS/Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[tooluniverse,dev]"
+```
+
 After publishing to PyPI, users can install with:
 
-```powershell
+```bash
 python -m pip install "bio-auto-scientist[tooluniverse]"
 ```
 
@@ -29,8 +39,16 @@ python -m pip install "bio-auto-scientist[tooluniverse]"
 
 Copy the example settings file:
 
+Windows:
+
 ```powershell
 Copy-Item .\bioautosci.settings.example.json .\bioautosci.settings.json
+```
+
+macOS/Linux:
+
+```bash
+cp bioautosci.settings.example.json bioautosci.settings.json
 ```
 
 Edit `bioautosci.settings.json` and choose one provider:
@@ -54,15 +72,27 @@ Edit `bioautosci.settings.json` and choose one provider:
 
 You can also leave `api_keys` empty and set environment variables yourself:
 
+Windows:
+
 ```powershell
 $env:ANTHROPIC_API_KEY = "your-key"
 $env:OPENAI_API_KEY = "your-key"
 $env:GEMINI_API_KEY = "your-key"
 ```
 
+macOS/Linux:
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export OPENAI_API_KEY="your-key"
+export GEMINI_API_KEY="your-key"
+```
+
 The settings file is ignored by git. Do not commit raw keys.
 
 ## 4. Run CLI With Live Agent Activity
+
+Windows:
 
 ```powershell
 bioautosci `
@@ -71,6 +101,18 @@ bioautosci `
   --output-format markdown `
   --output-file .\outputs\acvr1_report.md `
   --provenance-file .\outputs\acvr1_provenance.json `
+  "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
+```
+
+macOS/Linux:
+
+```bash
+bioautosci \
+  --settings ./bioautosci.settings.json \
+  --stream-progress \
+  --output-format markdown \
+  --output-file ./outputs/acvr1_report.md \
+  --provenance-file ./outputs/acvr1_provenance.json \
   "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
 ```
 
@@ -89,16 +131,34 @@ The CLI prints:
 
 Install frontend dependencies once:
 
+Windows:
+
 ```powershell
 cd apps\frontend
 npm install
 cd ..\..
 ```
 
+macOS/Linux:
+
+```bash
+cd apps/frontend
+npm install
+cd ../..
+```
+
 Create `.env` at the repo root from `.env.example`:
+
+Windows:
 
 ```powershell
 Copy-Item .\.env.example .\.env
+```
+
+macOS/Linux:
+
+```bash
+cp .env.example .env
 ```
 
 Set your provider key in `.env`:
@@ -111,8 +171,16 @@ GEMINI_API_KEY=
 
 Start API and frontend:
 
+Windows:
+
 ```powershell
 .\infra\scripts\start_local_platform.ps1
+```
+
+macOS/Linux:
+
+```bash
+./infra/scripts/start_local_platform.sh
 ```
 
 Open:

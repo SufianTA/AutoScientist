@@ -30,6 +30,8 @@ Full setup guide:
 
 Fast local CLI setup:
 
+Windows PowerShell:
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -37,7 +39,18 @@ python -m pip install -e ".[tooluniverse,dev]"
 Copy-Item .\bioautosci.settings.example.json .\bioautosci.settings.json
 ```
 
-Edit `bioautosci.settings.json` with your provider and key, then run:
+macOS/Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[tooluniverse,dev]"
+cp bioautosci.settings.example.json bioautosci.settings.json
+```
+
+Edit `bioautosci.settings.json` with your provider and key, then run.
+
+Windows:
 
 ```powershell
 bioautosci --settings .\bioautosci.settings.json --stream-progress `
@@ -45,17 +58,25 @@ bioautosci --settings .\bioautosci.settings.json --stream-progress `
   --output-file .\outputs\test_report.md `
   --provenance-file .\outputs\test_provenance.json `
   "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
+macOS/Linux:
+
+```bash
+bioautosci --settings ./bioautosci.settings.json --stream-progress \
+  --output-format markdown \
+  --output-file ./outputs/test_report.md \
+  --provenance-file ./outputs/test_provenance.json \
+  "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
 ```
 
 After PyPI publishing:
 
-```powershell
+```bash
 python -m pip install "bio-auto-scientist[tooluniverse]"
 ```
 
 Browser workbench setup:
 
-```powershell
+```bash
 cp .env.example .env
 docker compose up --build
 ```
@@ -66,13 +87,23 @@ Frontend: http://localhost:3000
 
 Start both local dev servers without Docker:
 
+Windows:
+
 ```powershell
 .\infra\scripts\start_local_platform.ps1
+```
+
+macOS/Linux:
+
+```bash
+./infra/scripts/start_local_platform.sh
 ```
 
 Then open http://127.0.0.1:3000 and launch a run from **New Objective**.
 
 ## Local API Development
+
+Windows:
 
 ```powershell
 cd apps/api
@@ -83,22 +114,46 @@ $env:PYTHONPATH = (Resolve-Path ..\..).Path
 uvicorn app.main:app --reload
 ```
 
+macOS/Linux:
+
+```bash
+cd apps/api
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+export PYTHONPATH="$(cd ../.. && pwd):$(pwd)"
+uvicorn app.main:app --reload
+```
+
 Run tests:
 
-```powershell
-cd apps/api
-pytest
+```bash
+python -m pytest
 ```
 
 Export the current ToolUniverse plus custom tool inventory:
+
+Windows:
 
 ```powershell
 .\infra\scripts\export_tool_inventory.ps1
 ```
 
+macOS/Linux:
+
+```bash
+./infra/scripts/export_tool_inventory.sh
+```
+
 If ToolUniverse is installed but import fails, check `/tools/health`. The adapter reports dependency conflicts instead of crashing the API.
 
 Process one queued run locally:
+
+```bash
+./infra/scripts/process_next_run.sh
+```
+
+Windows:
 
 ```powershell
 .\infra\scripts\process_next_run.ps1
@@ -106,17 +161,34 @@ Process one queued run locally:
 
 Run a live API smoke test after the API is running:
 
+```bash
+./infra/scripts/smoke_test_platform.sh
+```
+
+Windows:
+
 ```powershell
 .\infra\scripts\smoke_test_platform.ps1
 ```
 
 Run one scientific question locally without opening the web UI:
 
+Windows:
+
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
 ```
 
+macOS/Linux:
+
+```bash
+./infra/scripts/run_local_question.sh --agents 6 --runtime 30 --strictness balanced \
+  "Generate a therapeutic hypothesis for ACVR1-driven FOP."
+```
+
 Run with settings and live colored agent progress:
+
+Windows:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 `
@@ -128,7 +200,25 @@ Run with settings and live colored agent progress:
   -Question "Generate a scientist-grade therapeutic hypothesis analysis for PCSK9-driven familial hypercholesterolemia and elevated LDL cholesterol. Use live public evidence, identify disease-target mechanism, approved and investigational intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
 ```
 
+macOS/Linux:
+
+```bash
+./infra/scripts/run_local_question.sh \
+  --settings ./bioautosci.settings.json \
+  --stream-progress \
+  --output-format markdown \
+  --output-file ./outputs/pcsk9_report.md \
+  --provenance-file ./outputs/pcsk9_provenance.json \
+  "Generate a scientist-grade therapeutic hypothesis analysis for PCSK9-driven familial hypercholesterolemia and elevated LDL cholesterol. Use live public evidence, identify disease-target mechanism, approved and investigational intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
+```
+
 Launch the interactive CLI workbench:
+
+```bash
+./infra/scripts/run_local_question.sh --interactive
+```
+
+Windows:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Interactive
