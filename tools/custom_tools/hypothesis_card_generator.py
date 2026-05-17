@@ -82,14 +82,15 @@ def extract_citations(evidence: list[dict], target: str) -> list[dict]:
 class HypothesisCardGeneratorTool(ScientificTool):
     name = "hypothesis_card_generator_tool"
     description = "Creates a structured candidate hypothesis card from disease, target, molecule, and evidence records."
-    example_input = {"target": "ACVR1", "disease": "FOP", "evidence": []}
+    example_input = {"target": "PCSK9", "disease": "familial hypercholesterolemia", "evidence": []}
 
     def _run(self, payload: dict) -> ToolResult:
-        target = payload.get("target", "ACVR1")
-        disease = payload.get("disease", "FOP")
+        target = payload.get("target", "disease-relevant target")
+        disease = payload.get("disease", "the specified disease context")
         evidence = payload.get("evidence", [])
         confidence = confidence_from_evidence(evidence)
         mechanism = mechanism_phrase(target, evidence)
+        local_only = bool(evidence) and all(str(item.get("source", "")).startswith("local_") for item in evidence)
         counts = label_counts(evidence)
         safety_items = [
             item for item in evidence if item.get("score", {}).get("label") == "safety_concern"
@@ -116,8 +117,13 @@ class HypothesisCardGeneratorTool(ScientificTool):
             output={
                 "title": f"{target} pathway modulation as a candidate strategy for {disease}",
                 "hypothesis": (
-                    f"Modulating {mechanism} is a candidate, evidence-supported but "
-                    f"not validated therapeutic hypothesis for {disease}."
+                    f"Modulating {mechanism} is a planning-level candidate hypothesis for {disease} "
+                    "that requires live external evidence before scientific interpretation."
+                    if local_only
+                    else (
+                        f"Modulating {mechanism} is a candidate, evidence-supported but "
+                        f"not validated therapeutic hypothesis for {disease}."
+                    )
                 ),
                 "evidence": evidence,
                 "evidence_label_counts": counts,
@@ -136,6 +142,9 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     ),
                 ],
                 "candidate_intervention_summary": (
+                    "No live candidate intervention records were retrieved in this local planning run."
+                    if local_only
+                    else (
                     "PubChem/literature candidate records were found, but none are asserted as clinically effective."
                     if candidate_items
                     else (
@@ -143,6 +152,7 @@ class HypothesisCardGeneratorTool(ScientificTool):
                         f"asserted as clinically effective: {'; '.join(literature_candidate_titles[:4])}."
                         if literature_candidate_titles
                         else "No candidate intervention records were retrieved in this run."
+                    )
                     )
                 ),
                 "contradictions": contradictions,

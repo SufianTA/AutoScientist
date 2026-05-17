@@ -293,7 +293,7 @@ def prompt_multiline_objective() -> str:
     objective = "\n".join(lines).strip()
     if objective:
         return objective
-    return "Generate a therapeutic hypothesis for ACVR1-driven Fibrodysplasia Ossificans Progressiva and propose validation experiments."
+    raise SystemExit("No scientific problem entered.")
 
 
 def prompt_agent_count(question: str) -> int:

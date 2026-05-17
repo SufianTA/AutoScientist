@@ -5,7 +5,7 @@ $reportPath = Join-Path $repoRoot.Path "outputs\smoke_cli_report.md"
 $provenancePath = Join-Path $repoRoot.Path "outputs\smoke_cli_provenance.json"
 
 & "$PSScriptRoot\run_local_question.ps1" `
-  -Question "Generate a therapeutic hypothesis for ACVR1-driven Fibrodysplasia Ossificans Progressiva and propose validation experiments." `
+  -Question "Generate a therapeutic hypothesis for PCSK9-driven familial hypercholesterolemia and propose validation experiments." `
   -Agents 3 `
   -Runtime 10 `
   -Strictness balanced `
@@ -21,8 +21,8 @@ if (-not (Test-Path $provenancePath)) {
 }
 
 $reportText = Get-Content $reportPath -Raw
-if ($reportText -notmatch "ACVR1" -or $reportText -notmatch "FOP" -or $reportText -notmatch "Guardrails") {
-  throw "CLI smoke report is missing expected ACVR1/FOP guardrail content."
+if ($reportText -notmatch "PCSK9" -or $reportText -notmatch "familial hypercholesterolemia" -or $reportText -notmatch "Guardrails") {
+  throw "CLI smoke report is missing expected PCSK9 guardrail content."
 }
 
 $provenance = Get-Content $provenancePath -Raw | ConvertFrom-Json

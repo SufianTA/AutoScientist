@@ -411,8 +411,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "DNA",
             "RNA",
             "AI",
-            "BMP",
-            "FOP",
             "LLM",
         }
         genes = [
@@ -429,7 +427,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             match = re.search(pattern, objective)
             if match:
                 diseases.append(match.group(1).strip())
-        candidates = re.findall(r"\b(?:palovarotene|dorsomorphin|LDN-193189|rapamycin|statin|inhibitor)\b", objective, re.I)
+        candidate_terms = re.findall(
+            r"\b[A-Za-z][A-Za-z0-9-]{3,}(?:mab|nib|tinib|limus|siran|statin|caftor)\b",
+            objective,
+            re.I,
+        )
+        intervention_classes = re.findall(
+            r"\b(?:inhibitor|antibody|siRNA|ASO|antisense|CRISPR|base editing|prime editing|gene therapy|small molecule)\b",
+            objective,
+            re.I,
+        )
+        candidates = [*candidate_terms, *intervention_classes]
         queries = []
         if genes and diseases:
             queries.append(f"{genes[0]} {diseases[0]} mechanism")
@@ -542,7 +550,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         return digest
 
     def _explicit_gene_symbols(self, objective: str) -> list[str]:
-        stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "FOP", "BMP", "LLM"}
+        stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "LLM"}
         genes = [
             value
             for value in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
@@ -634,8 +642,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             ]
         else:
             state.selected_tools = [
-                "acvr1_target_profile_tool",
-                "fop_disease_profile_tool",
                 "evidence_quality_scorer_tool",
                 "hypothesis_card_generator_tool",
                 "experiment_recommendation_tool",
@@ -655,11 +661,40 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "selection_policy": (
                     "live public APIs plus ToolUniverse/OpenTargets and configured model tools"
                     if config.get("real_data_enabled")
-                    else "local deterministic demo tools plus configured model tools"
+                    else "local deterministic planning and scoring tools plus configured model tools"
                 ),
             },
         )
         return state
+
+    def _local_context_evidence(self, state: ResearchRunState) -> list[dict[str, Any]]:
+        target = self._primary_target(state)
+        disease = self._primary_disease(state)
+        context = state.context.get("biomedical_context", {})
+        queries = context.get("pubmed_queries", [])
+        return [
+            {
+                "source": "local_objective_context",
+                "text": (
+                    f"The objective asks whether {target}-linked biology is relevant to {disease}. "
+                    "This is parsed planning context, not external biomedical evidence."
+                ),
+                "structured": {
+                    "target": target,
+                    "disease": disease,
+                    "objective": state.objective,
+                    "biomedical_context": context,
+                },
+            },
+            {
+                "source": "local_retrieval_plan",
+                "text": (
+                    "Live evidence has not been retrieved in this mode. The run should be treated as a "
+                    f"workflow dry run; suggested retrieval queries include: {', '.join(queries[:3]) or state.objective[:160]}."
+                ),
+                "structured": {"requires_real_data": True, "planned_queries": queries},
+            },
+        ]
 
     def _execute_evidence_collection(
         self,
@@ -670,24 +705,24 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.current_state = AgentStateName.EXECUTE_EVIDENCE_COLLECTION
         if config.get("real_data_enabled"):
             return self._execute_live_evidence_collection(state, trace, config)
-        acvr1 = self.tools["acvr1_target_profile_tool"].run({"gene_symbol": "ACVR1"}).model_dump()
-        fop = self.tools["fop_disease_profile_tool"].run(
-            {"disease_name": "Fibrodysplasia Ossificans Progressiva"}
-        ).model_dump()
-        state.tool_outputs.extend(
-            [
-                {"tool_name": "acvr1_target_profile_tool", "result": acvr1},
-                {"tool_name": "fop_disease_profile_tool", "result": fop},
-            ]
-        )
+        state.evidence = self._local_context_evidence(state)
         model_tool_outputs = []
+        target = self._primary_target(state)
+        disease = self._primary_disease(state)
+        hypothesis_seed = f"Modulating {target}-linked mechanisms may be relevant to {disease}."
         for model_tool in config.get("model_tool_configs", []):
             model_result = execute_model_tool(
                 model_tool,
                 {
-                    "hypothesis": "Modulating ACVR1-linked BMP signaling may reduce FOP-relevant osteogenic signaling.",
-                    "evidence_text": "ACVR1 and FOP evidence collection includes target, disease, and pathway context.",
-                    "entity_context": {"gene": "ACVR1", "disease": "FOP"},
+                    "hypothesis": hypothesis_seed,
+                    "evidence_text": (
+                        "Local planning context was extracted from the objective; live external evidence was not retrieved."
+                    ),
+                    "entity_context": {
+                        "gene": target,
+                        "disease": disease,
+                        "biomedical_context": state.context.get("biomedical_context", {}),
+                    },
                 },
             )
             state.tool_outputs.append(
@@ -698,18 +733,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 }
             )
             model_tool_outputs.append({"tool_name": model_tool["name"], "result": model_result})
-        state.evidence = [
-            {
-                "source": "acvr1_target_profile_tool",
-                "text": "ACVR1 activating variants are linked to FOP and BMP/osteogenic signaling.",
-                "structured": acvr1["output"],
-            },
-            {
-                "source": "fop_disease_profile_tool",
-                "text": "FOP is a rare disorder with progressive heterotopic ossification and strong ACVR1 causal link.",
-                "structured": fop["output"],
-            },
-        ]
         for model_output in model_tool_outputs:
             result = model_output["result"]
             if result["status"] in {"success", "partial"}:
@@ -730,6 +753,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "tool_output_count": len(state.tool_outputs),
                 "custom_model_tool_count": len(model_tool_outputs),
                 "live_public_tool_count": 0,
+                "tooluniverse_tool_count": 0,
             },
         )
         return state
@@ -936,6 +960,12 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             }
         if tool_name == "pubchem_candidate_lookup_tool":
             compounds = output.get("compounds", [])
+            if not compounds:
+                return {
+                    "source": "PubChem candidate lookup",
+                    "text": "PubChem returned no candidate compound records for the supplied intervention names.",
+                    "structured": output,
+                }
             names = ", ".join(compound.get("name", "") for compound in compounds)
             return {
                 "source": "PubChem candidate lookup",
@@ -951,6 +981,23 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
 
     def _summarize_tooluniverse_output(self, tool_name: str, raw: Any) -> str:
         try:
+            associated = raw.get("data", {}).get("disease", {}).get("associatedTargets", {})
+            rows = associated.get("rows", [])
+            disease_name = raw.get("data", {}).get("disease", {}).get("name", "disease")
+            if rows:
+                target_summaries = []
+                for row in rows[:4]:
+                    target = row.get("target", {})
+                    symbol = target.get("approvedSymbol") or target.get("id")
+                    score = row.get("score")
+                    if symbol:
+                        target_summaries.append(
+                            f"{symbol} association score {round(float(score), 3) if isinstance(score, (int, float)) else score}"
+                        )
+                return (
+                    f"{tool_name} returned {associated.get('count', len(rows))} associated targets for "
+                    f"{disease_name}; top retrieved targets: " + "; ".join(target_summaries)
+                )
             hits = raw.get("data", {}).get("search", {}).get("hits", [])
             if hits:
                 summaries = []
@@ -1014,6 +1061,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                         "evidence_source": item["source"],
                     }
                 ).model_dump()
+                state.tool_outputs.append(
+                    {
+                        "tool_name": "evidence_quality_scorer_tool",
+                        "tool_source": "custom",
+                        "result": score,
+                    }
+                )
                 score_output = score["output"]
             scored.append({**item, "score": score_output})
         state.evidence = scored
@@ -1267,7 +1321,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "consensus": "support_with_limits",
             }
             adjudication = {
-                "accepted_claims": ["ACVR1-linked pathway modulation is biologically plausible in the disease context."],
+                "accepted_claims": [
+                    f"{self._primary_target(state)}-linked pathway modulation is biologically plausible enough to investigate in {self._primary_disease(state)} only if external evidence supports it."
+                ],
                 "softened_or_rejected_claims": ["Any claim of efficacy or safety is rejected without direct evidence."],
                 "revised_hypothesis": state.hypothesis_card.get("hypothesis", ""),
                 "confidence_adjustment": -0.03,

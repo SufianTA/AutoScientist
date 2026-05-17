@@ -46,7 +46,7 @@ def fetch_json(url: str, timeout: int = 20) -> dict[str, Any]:
 class NCBIGeneProfileTool(ScientificTool):
     name = "ncbi_gene_profile_tool"
     description = "Retrieves a live NCBI Gene summary for a human gene symbol."
-    example_input = {"gene_symbol": "ACVR1", "organism": "Homo sapiens"}
+    example_input = {"gene_symbol": "PCSK9", "organism": "Homo sapiens"}
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -60,7 +60,15 @@ class NCBIGeneProfileTool(ScientificTool):
         }
 
     def _run(self, payload: dict[str, Any]) -> ToolResult:
-        gene = payload.get("gene_symbol", "ACVR1")
+        gene = payload.get("gene_symbol")
+        if not gene:
+            return ToolResult(
+                status="failure",
+                input=payload,
+                output={"message": "gene_symbol is required."},
+                confidence=0.0,
+                warnings=["No gene symbol was supplied."],
+            )
         organism = payload.get("organism", "Homo sapiens")
         term = f"{gene}[Gene Name] AND {organism}[Organism]"
         search_url = (
@@ -106,7 +114,7 @@ class NCBIGeneProfileTool(ScientificTool):
 class PubMedLiteratureSearchTool(ScientificTool):
     name = "pubmed_literature_search_tool"
     description = "Searches PubMed live and returns PMID, title, journal, and publication date summaries."
-    example_input = {"query": "ACVR1 FOP BMP signaling", "retmax": 5}
+    example_input = {"query": "PCSK9 familial hypercholesterolemia LDLR", "retmax": 5}
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -120,7 +128,15 @@ class PubMedLiteratureSearchTool(ScientificTool):
         }
 
     def _run(self, payload: dict[str, Any]) -> ToolResult:
-        query = payload.get("query", "ACVR1 FOP BMP signaling")
+        query = payload.get("query")
+        if not query:
+            return ToolResult(
+                status="failure",
+                input=payload,
+                output={"message": "query is required."},
+                confidence=0.0,
+                warnings=["No PubMed query was supplied."],
+            )
         retmax = int(payload.get("retmax", 5))
         search_url = (
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
@@ -171,7 +187,7 @@ class PubMedLiteratureSearchTool(ScientificTool):
 class PubChemCandidateTool(ScientificTool):
     name = "pubchem_candidate_lookup_tool"
     description = "Looks up candidate intervention names in PubChem and returns identifiers and properties."
-    example_input = {"names": ["palovarotene", "LDN-193189", "dorsomorphin"]}
+    example_input = {"names": ["evolocumab", "inclisiran"]}
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -182,7 +198,15 @@ class PubChemCandidateTool(ScientificTool):
         }
 
     def _run(self, payload: dict[str, Any]) -> ToolResult:
-        names = payload.get("names") or ["palovarotene", "LDN-193189", "dorsomorphin"]
+        names = payload.get("names") or []
+        if not names:
+            return ToolResult(
+                status="failure",
+                input=payload,
+                output={"message": "names is required."},
+                confidence=0.0,
+                warnings=["No candidate names were supplied."],
+            )
         compounds = []
         warnings = []
         for name in names:

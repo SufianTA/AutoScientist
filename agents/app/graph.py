@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 from typing import Any
 
 from agents.app.state import AgentStateName, ResearchRunState
@@ -9,6 +10,26 @@ class AgentOrchestrator:
     def __init__(self) -> None:
         self.tools = build_custom_tools()
 
+    def _context_from_objective(self, objective: str) -> dict[str, str]:
+        stop = {"AND", "THE", "USE", "NOT", "FOR", "WITH", "DNA", "RNA", "LLM"}
+        genes = [
+            match
+            for match in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
+            if match not in stop
+        ]
+        disease = "the specified disease context"
+        for pattern in [
+            r"for ([A-Za-z][A-Za-z0-9 /'-]+?)(?:\.|,|;| and | with | by |$)",
+            r"driven ([A-Za-z][A-Za-z0-9 /'-]+?)(?:\.|,|;| and | with | by |$)",
+            r"in ([A-Za-z][A-Za-z0-9 /'-]+?)(?:\.|,|;| and | with | by |$)",
+        ]:
+            match = re.search(pattern, objective)
+            if match:
+                disease = re.sub(r"^[A-Z0-9]+-driven\s+", "", match.group(1), flags=re.I).strip()
+                break
+        target = genes[0] if genes else "disease-relevant target"
+        return {"target": target, "disease": disease}
+
     def run_demo(
         self,
         run_id: str,
@@ -18,6 +39,9 @@ class AgentOrchestrator:
     ) -> tuple[ResearchRunState, list[dict[str, Any]]]:
         state = ResearchRunState(run_id=run_id, objective_id=objective_id, objective=objective)
         config = run_config or {}
+        context = self._context_from_objective(objective)
+        target = context["target"]
+        disease = context["disease"]
         trace: list[dict[str, Any]] = []
 
         def record(agent: str, state_name: AgentStateName, output: dict[str, Any]) -> None:
@@ -34,7 +58,7 @@ class AgentOrchestrator:
         state.current_state = AgentStateName.PLAN_RESEARCH
         state.plan = [
             "Ground disease and target identity.",
-            "Collect ACVR1/FOP mechanism evidence.",
+            "Collect available mechanism, literature, target, and intervention evidence.",
             "Generate candidate therapeutic hypothesis.",
             "Score evidence and apply skeptical critique.",
             "Publish board post and final report with guardrails.",
@@ -52,8 +76,6 @@ class AgentOrchestrator:
 
         state.current_state = AgentStateName.FIND_TOOLS
         state.selected_tools = [
-            "acvr1_target_profile_tool",
-            "fop_disease_profile_tool",
             "evidence_quality_scorer_tool",
             "hypothesis_card_generator_tool",
             "experiment_recommendation_tool",
@@ -61,19 +83,22 @@ class AgentOrchestrator:
         record("finder_agent", state.current_state, {"selected_tools": state.selected_tools})
 
         state.current_state = AgentStateName.EXECUTE_EVIDENCE_COLLECTION
-        acvr1 = self.tools["acvr1_target_profile_tool"].run({"gene_symbol": "ACVR1"}).model_dump()
-        fop = self.tools["fop_disease_profile_tool"].run({"disease_name": "Fibrodysplasia Ossificans Progressiva"}).model_dump()
-        state.tool_outputs.extend([{"tool_name": "acvr1_target_profile_tool", "result": acvr1}, {"tool_name": "fop_disease_profile_tool", "result": fop}])
         state.evidence = [
             {
-                "source": "acvr1_target_profile_tool",
-                "text": "ACVR1 activating variants are linked to FOP and BMP/osteogenic signaling.",
-                "structured": acvr1["output"],
+                "source": "local_objective_context",
+                "text": (
+                    f"The user objective asks whether {target}-linked biology is relevant to "
+                    f"{disease}. This is planning context, not external evidence."
+                ),
+                "structured": {"target": target, "disease": disease, "objective": objective},
             },
             {
-                "source": "fop_disease_profile_tool",
-                "text": "FOP is a rare disorder with progressive heterotopic ossification and strong ACVR1 causal link.",
-                "structured": fop["output"],
+                "source": "local_guardrail_context",
+                "text": (
+                    "No live biomedical databases or real LLM were used in this fallback path; "
+                    "claims must remain provisional until live evidence is retrieved."
+                ),
+                "structured": {"requires_live_validation": True},
             },
         ]
         record("mechanism_agent", state.current_state, {"evidence": state.evidence})
@@ -83,7 +108,7 @@ class AgentOrchestrator:
         for item in state.evidence:
             score = self.tools["evidence_quality_scorer_tool"].run(
                 {
-                    "hypothesis": "Modulating ACVR1-linked BMP signaling may reduce FOP-relevant osteogenic signaling.",
+                    "hypothesis": f"Modulating {target}-linked mechanisms may be relevant to {disease}.",
                     "evidence_text": item["text"],
                     "evidence_source": item["source"],
                 }
@@ -94,7 +119,7 @@ class AgentOrchestrator:
 
         state.current_state = AgentStateName.GENERATE_HYPOTHESES
         card = self.tools["hypothesis_card_generator_tool"].run(
-            {"target": "ACVR1", "disease": "FOP", "evidence": scored}
+            {"target": target, "disease": disease, "evidence": scored}
         ).model_dump()
         state.hypothesis_card = card["output"]
         record("mechanism_agent", state.current_state, {"hypothesis_card": state.hypothesis_card})
@@ -103,8 +128,14 @@ class AgentOrchestrator:
         state.critique = {
             "critique_type": "translation_gap",
             "severity": "medium",
-            "critique": "The mechanism is plausible, but mock evidence is not sufficient to rank clinical candidates or claim efficacy.",
-            "recommended_fix": "Replace mock profiles with ToolUniverse target-disease, literature, ChEMBL, and safety calls before escalation.",
+            "critique": (
+                "This fallback run used only local objective context. It is not sufficient to rank "
+                "clinical candidates or claim efficacy."
+            ),
+            "recommended_fix": (
+                "Run strict real mode with a real LLM, live public APIs, ToolUniverse target-disease "
+                "tools, intervention evidence, and safety review before escalation."
+            ),
         }
         record("critic_agent", state.current_state, state.critique)
 
@@ -115,7 +146,7 @@ class AgentOrchestrator:
 
         state.current_state = AgentStateName.GENERATE_REPORT
         state.report = {
-            "title": "ACVR1/FOP Candidate Therapeutic Hypothesis Report",
+            "title": f"{target} / {disease} Candidate Therapeutic Hypothesis Report",
             "summary": state.hypothesis_card.get("hypothesis"),
             "confidence": state.hypothesis_card.get("confidence", 0.0),
             "guardrails": [

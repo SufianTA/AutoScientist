@@ -259,7 +259,7 @@ export default function NewObjectivePage() {
             <select value={executionMode} onChange={(event) => setExecutionMode(event.target.value)}>
               <option value="background">Background</option>
               <option value="queued">Queued worker</option>
-              <option value="inline">Inline demo</option>
+              <option value="inline">Run now</option>
             </select>
           </label>
           <label className="selectCard">

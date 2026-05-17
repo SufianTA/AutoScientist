@@ -76,9 +76,26 @@ def test_cli_runner_returns_full_provenance() -> None:
     assert result["trace_summary"]["tool_calls"] >= 2
     assert result["provenance"]["agent_steps"][0]["state_name"] == "INITIALIZE_FRAMEWORK"
     assert any(
-        call["tool_name"] == "acvr1_target_profile_tool"
+        call["tool_name"] == "evidence_quality_scorer_tool"
         for call in result["provenance"]["tool_calls"]
     )
+
+
+def test_cli_runner_is_not_acvr1_hardcoded_for_other_targets() -> None:
+    result = run_question(
+        "Generate a therapeutic hypothesis for PCSK9-driven familial hypercholesterolemia.",
+        {"agent_count": 3, "max_runtime_minutes": 5, "evidence_strictness": "balanced"},
+    )
+    assert result["status"] == "completed"
+    hypothesis = result["report"]["hypothesis"]["text"]
+    title = result["report"]["hypothesis"]["title"]
+    assert "PCSK9" in title
+    assert "familial hypercholesterolemia" in hypothesis
+    assert "ACVR1" not in hypothesis
+    assert "FOP" not in hypothesis
+    assert "BMP signaling" not in hypothesis
+    assert any("Local planning mode only" in guardrail for guardrail in result["report"]["guardrails"])
+    assert not any("Computationally prioritized and evidence-supported" in guardrail for guardrail in result["report"]["guardrails"])
 
 
 def test_interactive_helpers_choose_agents_and_render_progress() -> None:

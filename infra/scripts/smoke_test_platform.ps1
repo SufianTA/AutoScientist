@@ -6,8 +6,8 @@ $health = Invoke-RestMethod "$baseUrl/health"
 Write-Host "API health:" $health.status
 
 $objectiveBody = @{
-  title = "Smoke test ACVR1/FOP run"
-  objective = "Generate a smoke-test therapeutic hypothesis for ACVR1-driven FOP."
+  title = "Smoke test PCSK9/FH run"
+  objective = "Generate a smoke-test therapeutic hypothesis for PCSK9-driven familial hypercholesterolemia."
   constraints = @{
     require_critic = $true
     require_citations = $true

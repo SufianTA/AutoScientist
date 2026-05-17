@@ -3,7 +3,7 @@ from tools.custom_tools.base import ScientificTool, ToolResult
 
 class Acvr1TargetProfileTool(ScientificTool):
     name = "acvr1_target_profile_tool"
-    description = "Returns a curated mock ACVR1 target profile with disease links and pathway notes."
+    description = "Returns a curated local ACVR1 example profile with disease links and pathway notes."
     example_input = {"gene_symbol": "ACVR1"}
 
     @property
@@ -11,9 +11,23 @@ class Acvr1TargetProfileTool(ScientificTool):
         return {"type": "object", "required": ["gene_symbol"], "properties": {"gene_symbol": {"type": "string"}}}
 
     def _run(self, payload: dict) -> ToolResult:
-        gene = payload.get("gene_symbol", "ACVR1").upper()
+        raw_gene = payload.get("gene_symbol")
+        if not raw_gene:
+            return ToolResult(
+                status="failure",
+                input=payload,
+                output={"message": "gene_symbol is required for this local ACVR1 example tool."},
+                confidence=0.0,
+                warnings=["No gene_symbol was supplied."],
+            )
+        gene = str(raw_gene).upper()
         if gene != "ACVR1":
-            return ToolResult(status="partial", input=payload, output={"message": "Mock data only covers ACVR1"}, confidence=0.2)
+            return ToolResult(
+                status="partial",
+                input=payload,
+                output={"message": "Local example data only covers ACVR1; use live generic tools for other targets."},
+                confidence=0.2,
+            )
         return ToolResult(
             status="success",
             input=payload,
@@ -29,9 +43,8 @@ class Acvr1TargetProfileTool(ScientificTool):
                 "known_variants": [{"variant": "R206H", "context": "canonical FOP-associated activating variant"}],
             },
             sources=[
-                {"name": "Curated mock profile", "id": "mock-acvr1-v0.1"},
+                {"name": "Curated local example profile", "id": "local-acvr1-v0.1"},
                 {"name": "Placeholder for ToolUniverse/OpenTargets/ClinVar integration"},
             ],
             confidence=0.78,
         )
-

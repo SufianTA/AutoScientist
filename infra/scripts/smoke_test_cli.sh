@@ -13,13 +13,13 @@ PROVENANCE_PATH="$REPO_ROOT/outputs/smoke_cli_provenance.json"
   --output-format markdown \
   --output-file "$REPORT_PATH" \
   --provenance-file "$PROVENANCE_PATH" \
-  "Generate a therapeutic hypothesis for ACVR1-driven Fibrodysplasia Ossificans Progressiva and propose validation experiments."
+  "Generate a therapeutic hypothesis for PCSK9-driven familial hypercholesterolemia and propose validation experiments."
 
 [[ -f "$REPORT_PATH" ]] || { echo "CLI smoke report was not written: $REPORT_PATH" >&2; exit 1; }
 [[ -f "$PROVENANCE_PATH" ]] || { echo "CLI smoke provenance was not written: $PROVENANCE_PATH" >&2; exit 1; }
 
-grep -q "ACVR1" "$REPORT_PATH"
-grep -q "FOP" "$REPORT_PATH"
+grep -q "PCSK9" "$REPORT_PATH"
+grep -q "familial hypercholesterolemia" "$REPORT_PATH"
 grep -q "Guardrails" "$REPORT_PATH"
 
 python - "$PROVENANCE_PATH" <<'PY'
