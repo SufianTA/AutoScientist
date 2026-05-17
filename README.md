@@ -37,6 +37,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[tooluniverse,dev]"
 Copy-Item .\bioautosci.settings.example.json .\bioautosci.settings.json
+Copy-Item .\.env.example .\.env
 ```
 
 macOS/Linux:
@@ -46,9 +47,11 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[tooluniverse,dev]"
 cp bioautosci.settings.example.json bioautosci.settings.json
+cp .env.example .env
 ```
 
-Edit `bioautosci.settings.json` with your provider and key, then run.
+Edit `.env` with your provider key. Keep `bioautosci.settings.json` for provider/model/run settings only.
+Both files are ignored by git.
 
 Windows:
 
@@ -58,6 +61,8 @@ bioautosci --settings .\bioautosci.settings.json --stream-progress `
   --output-file .\outputs\test_report.md `
   --provenance-file .\outputs\test_provenance.json `
   "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
+```
+
 macOS/Linux:
 
 ```bash
@@ -241,10 +246,9 @@ Run the non-interactive CLI with live public data:
 
 Live-data mode calls NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets where the extracted entities provide valid inputs. ToolUniverse health is available at `/tools/health`; the local environment was fixed by replacing the broken editable ToolUniverse checkout with a clean `tooluniverse==1.0.4` install.
 
-Run the fully real autonomous mode with a real LLM key:
+Run the fully real autonomous mode with a real LLM key configured in ignored `.env`:
 
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."
 .\infra\scripts\run_local_question.ps1 `
   -Question "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy." `
   -Agents 7 `

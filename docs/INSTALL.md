@@ -5,8 +5,8 @@ BioAutoScientist can run as a local CLI or as a browser workbench. The easiest f
 ## 1. Clone
 
 ```bash
-git clone https://github.com/YOUR_ORG/bio-auto-scientist.git
-cd bio-auto-scientist
+git clone https://github.com/SufianTA/AutoScientist.git
+cd AutoScientist
 ```
 
 ## 2. Install Python Package
@@ -43,26 +43,23 @@ Windows:
 
 ```powershell
 Copy-Item .\bioautosci.settings.example.json .\bioautosci.settings.json
+Copy-Item .\.env.example .\.env
 ```
 
 macOS/Linux:
 
 ```bash
 cp bioautosci.settings.example.json bioautosci.settings.json
+cp .env.example .env
 ```
 
-Edit `bioautosci.settings.json` and choose one provider:
+Edit `bioautosci.settings.json` and choose one provider. Store the actual provider secret in ignored `.env`, not in the settings JSON:
 
 ```json
 {
   "llm_provider": "anthropic",
   "llm_model": "claude-sonnet-4-6",
   "llm_api_key_env_var": "ANTHROPIC_API_KEY",
-  "api_keys": {
-    "ANTHROPIC_API_KEY": "your-key-here",
-    "OPENAI_API_KEY": "",
-    "GEMINI_API_KEY": ""
-  },
   "real_data_enabled": true,
   "require_real_llm": true,
   "evidence_strictness": "strict",
@@ -70,7 +67,15 @@ Edit `bioautosci.settings.json` and choose one provider:
 }
 ```
 
-You can also leave `api_keys` empty and set environment variables yourself:
+Then put the key in `.env`:
+
+```text
+ANTHROPIC_API_KEY=your-key
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+```
+
+You can also set environment variables in the shell:
 
 Windows:
 

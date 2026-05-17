@@ -12,6 +12,25 @@ function Test-PortListening {
   return $null -ne $connection
 }
 
+function Stop-PortProcess {
+  param([int]$Port)
+  $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+  foreach ($connection in $connections) {
+    if ($connection.OwningProcess) {
+      Stop-Process -Id $connection.OwningProcess -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+
+function Test-FrontendHealthy {
+  try {
+    $response = Invoke-WebRequest "http://127.0.0.1:3000/objectives/new" -UseBasicParsing -TimeoutSec 10
+    return $response.StatusCode -eq 200 -and $response.Content -match 'stylesheet'
+  } catch {
+    return $false
+  }
+}
+
 if (-not (Test-PortListening -Port 8000)) {
   $pythonPath = "$($repoRoot.Path);$($apiRoot.Path)"
   Start-Process powershell -WindowStyle Hidden -WorkingDirectory $apiRoot.Path -ArgumentList @(
@@ -24,6 +43,16 @@ if (-not (Test-PortListening -Port 8000)) {
   Write-Host "Started API on http://127.0.0.1:8000"
 } else {
   Write-Host "API already listening on http://127.0.0.1:8000"
+}
+
+if ((Test-PortListening -Port 3000) -and -not (Test-FrontendHealthy)) {
+  Write-Host "Frontend on port 3000 is unhealthy; restarting it"
+  Stop-PortProcess -Port 3000
+  $nextDir = Join-Path $frontendRoot.Path ".next"
+  if (Test-Path -LiteralPath $nextDir) {
+    Remove-Item -LiteralPath $nextDir -Recurse -Force
+  }
+  Start-Sleep -Seconds 1
 }
 
 if (-not (Test-PortListening -Port 3000)) {

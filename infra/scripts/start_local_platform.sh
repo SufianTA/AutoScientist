@@ -26,6 +26,20 @@ finally:
 PY
 }
 
+frontend_healthy() {
+  python - <<'PY'
+from urllib.error import URLError
+from urllib.request import urlopen
+
+try:
+    with urlopen("http://127.0.0.1:3000/objectives/new", timeout=10) as response:
+        body = response.read().decode("utf-8", errors="replace")
+        raise SystemExit(0 if response.status == 200 and "stylesheet" in body else 1)
+except URLError:
+    raise SystemExit(1)
+PY
+}
+
 export PYTHONPATH="$REPO_ROOT:$API_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
@@ -40,6 +54,30 @@ if ! port_listening 8000; then
   echo "Started API on http://127.0.0.1:8000"
 else
   echo "API already listening on http://127.0.0.1:8000"
+fi
+
+if port_listening 3000 && ! frontend_healthy; then
+  echo "Frontend on port 3000 is unhealthy; restarting it"
+  python - <<'PY'
+import os
+import signal
+import socket
+import subprocess
+
+if os.name == "nt":
+    raise SystemExit(0)
+try:
+    output = subprocess.check_output(["lsof", "-ti", "tcp:3000"], text=True)
+except Exception:
+    output = ""
+for pid_text in output.split():
+    try:
+        os.kill(int(pid_text), signal.SIGTERM)
+    except OSError:
+        pass
+PY
+  rm -rf "$FRONTEND_ROOT/.next"
+  sleep 1
 fi
 
 if ! port_listening 3000; then

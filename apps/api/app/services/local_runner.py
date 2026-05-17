@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 from app.db.models import AgentStep, Objective, ToolCall
 from app.db.session import SessionLocal, init_db
 from app.routes.reports import build_report, render_markdown_report
@@ -131,11 +133,13 @@ def run_question(
 
 
 def load_cli_settings(path: str | None) -> dict[str, Any]:
+    load_dotenv()
     if not path:
         return {}
     settings_path = Path(path)
     if not settings_path.exists():
         raise FileNotFoundError(f"Settings file not found: {settings_path}")
+    load_dotenv(settings_path.with_name(".env"))
     data = json.loads(settings_path.read_text(encoding="utf-8-sig"))
     api_keys = data.get("api_keys", {})
     if isinstance(api_keys, dict):

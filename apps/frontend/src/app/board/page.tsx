@@ -19,7 +19,7 @@ export default async function BoardPage() {
           <article className="card" key={post.id}>
             <span className="badge">{post.post_type}</span>
             <h2>{String(post.content.title ?? post.content.critique_type ?? "Board post")}</h2>
-            <p className="muted">{post.agent_author} · {new Date(post.created_at).toLocaleString()}</p>
+            <p className="muted">{post.agent_author} / {new Date(post.created_at).toLocaleString()}</p>
             <pre>{JSON.stringify(post.content, null, 2)}</pre>
           </article>
         ))}
@@ -27,4 +27,3 @@ export default async function BoardPage() {
     </main>
   );
 }
-
