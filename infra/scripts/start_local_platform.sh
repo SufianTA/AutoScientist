@@ -79,11 +79,55 @@ except URLError:
 PY
 }
 
+api_secrets_loaded() {
+  python - "$REPO_ROOT/.env" "$API_ROOT/.env" <<'PY'
+from pathlib import Path
+from urllib.error import URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
+import json
+import sys
+
+provider_env_vars = {
+    "OPENAI_API_KEY": "openai",
+    "ANTHROPIC_API_KEY": "anthropic",
+    "GEMINI_API_KEY": "gemini",
+}
+
+try:
+    for env_file_text in sys.argv[1:]:
+        env_file = Path(env_file_text)
+        if not env_file.exists():
+            continue
+        for line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            env_var, value = stripped.split("=", 1)
+            env_var = env_var.strip()
+            value = value.strip().strip('"').strip("'")
+            provider = provider_env_vars.get(env_var)
+            if not provider or not value:
+                continue
+            query = urlencode({"api_key_env_var": env_var})
+            with urlopen(
+                f"http://127.0.0.1:8000/framework/llm-providers/{provider}/validate?{query}",
+                timeout=10,
+            ) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            if not payload.get("has_key"):
+                raise SystemExit(1)
+    raise SystemExit(0)
+except URLError:
+    raise SystemExit(1)
+PY
+}
+
 export PYTHONPATH="$REPO_ROOT:$API_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
 
-if port_listening 8000 && ! api_healthy; then
+if port_listening 8000 && { ! api_healthy || ! api_secrets_loaded; }; then
   echo "API on port 8000 is unhealthy; restarting it"
   python - <<'PY'
 import os

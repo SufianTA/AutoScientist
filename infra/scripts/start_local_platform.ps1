@@ -66,7 +66,45 @@ function Test-ApiHealthy {
   }
 }
 
-if ((Test-PortListening -Port 8000) -and -not (Test-ApiHealthy)) {
+function Test-ApiSecretsLoaded {
+  $providerEnvVars = @{
+    "OPENAI_API_KEY" = "openai"
+    "ANTHROPIC_API_KEY" = "anthropic"
+    "GEMINI_API_KEY" = "gemini"
+  }
+  $envFiles = @(
+    (Join-Path $repoRoot.Path ".env"),
+    (Join-Path $apiRoot.Path ".env")
+  )
+  try {
+    foreach ($envFile in $envFiles) {
+      if (-not (Test-Path -LiteralPath $envFile)) {
+        continue
+      }
+      foreach ($line in Get-Content -LiteralPath $envFile) {
+        $trimmed = $line.Trim()
+        if ($trimmed.Length -eq 0 -or $trimmed.StartsWith("#") -or $trimmed -notmatch "^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$") {
+          continue
+        }
+        $envVar = $Matches[1]
+        $value = $Matches[2].Trim().Trim('"').Trim("'")
+        if (-not $providerEnvVars.ContainsKey($envVar) -or [string]::IsNullOrWhiteSpace($value)) {
+          continue
+        }
+        $provider = $providerEnvVars[$envVar]
+        $validation = Invoke-RestMethod "http://127.0.0.1:8000/framework/llm-providers/$provider/validate?api_key_env_var=$envVar" -TimeoutSec 10
+        if (-not $validation.has_key) {
+          return $false
+        }
+      }
+    }
+    return $true
+  } catch {
+    return $false
+  }
+}
+
+if ((Test-PortListening -Port 8000) -and ((-not (Test-ApiHealthy)) -or (-not (Test-ApiSecretsLoaded)))) {
   Write-Host "API on port 8000 is unhealthy; restarting it"
   Stop-PortProcess -Port 8000
   Start-Sleep -Seconds 1

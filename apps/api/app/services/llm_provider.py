@@ -8,6 +8,11 @@ from urllib.error import HTTPError
 from urllib.parse import urljoin, urlencode
 from urllib.request import Request, urlopen
 
+from app.env import load_environment
+
+
+load_environment()
+
 
 SUPPORTED_PROVIDERS = {
     "mock": {

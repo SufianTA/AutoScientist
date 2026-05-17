@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.env import load_environment
+
+load_environment()
+
 from app.db.session import init_db
 from app.routes import billing, board, frameworks, models, objectives, reports, runs, score, tools
 

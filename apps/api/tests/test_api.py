@@ -1,5 +1,8 @@
+import os
+
 from fastapi.testclient import TestClient
 
+from app.env import load_environment
 from app.main import app
 from app.services.local_runner import format_result, optimized_agent_count, render_progress_event, run_question
 
@@ -23,6 +26,17 @@ def test_cors_allows_127_frontend_origin() -> None:
     )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+
+
+def test_load_environment_loads_extra_env_file(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("BIOAUTOSCI_TEST_KEY", raising=False)
+    env_file = tmp_path / ".env"
+    env_file.write_text("BIOAUTOSCI_TEST_KEY=loaded-from-test\n", encoding="utf-8")
+
+    loaded = load_environment([env_file])
+
+    assert str(env_file.resolve()) in loaded
+    assert os.getenv("BIOAUTOSCI_TEST_KEY") == "loaded-from-test"
 
 
 def test_rejects_raw_secret_in_run_config() -> None:
