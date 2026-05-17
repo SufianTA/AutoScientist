@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, ModelTool, Objective, Run, ToolCall
 from app.db.session import SessionLocal
+from app.security import validate_env_var_name
 from agents.app.runtime import build_agent_runtime
 
 
@@ -45,6 +46,10 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         normalized["agent_framework"] = "langgraph"
     if normalized["llm_provider"] not in {"mock", "openai", "anthropic", "gemini", "openai_compatible", "local_http"}:
         normalized["llm_provider"] = "mock"
+    normalized["llm_api_key_env_var"] = validate_env_var_name(
+        normalized.get("llm_api_key_env_var"),
+        "llm_api_key_env_var",
+    )
     normalized["llm_base_url"] = str(normalized.get("llm_base_url") or "")
     normalized["require_real_llm"] = bool(normalized.get("require_real_llm", False))
     if not isinstance(normalized["model_tool_names"], list):

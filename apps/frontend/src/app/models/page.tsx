@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "@/lib/api";
+import { validateEnvVarName } from "@/lib/secrets";
 
 type ModelTool = {
   id: string;
@@ -21,6 +22,7 @@ export default function ModelsPage() {
   const [provider, setProvider] = useState("local_http");
   const [endpointUrl, setEndpointUrl] = useState("http://localhost:9000/score");
   const [apiKeyEnvVar, setApiKeyEnvVar] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function loadTools() {
     const data = await apiGet<{ model_tools: ModelTool[] }>("/models");
@@ -28,6 +30,12 @@ export default function ModelsPage() {
   }
 
   async function registerTool() {
+    const envVarError = validateEnvVarName(apiKeyEnvVar);
+    if (envVarError) {
+      setError(envVarError);
+      return;
+    }
+    setError(null);
     await apiPost("/models", {
       name,
       description,
@@ -68,7 +76,21 @@ export default function ModelsPage() {
           </label>
           <label>
             <span className="label">API key env var</span>
-            <input value={apiKeyEnvVar} onChange={(event) => setApiKeyEnvVar(event.target.value)} />
+            <input
+              value={apiKeyEnvVar}
+              placeholder="MODEL_API_KEY"
+              onChange={(event) => {
+                const nextValue = event.target.value.trim();
+                const validation = validateEnvVarName(nextValue);
+                if (validation) {
+                  setError(validation);
+                  setApiKeyEnvVar("");
+                  return;
+                }
+                setError(null);
+                setApiKeyEnvVar(nextValue);
+              }}
+            />
           </label>
         </div>
         <div style={{ height: 14 }} />
@@ -77,6 +99,7 @@ export default function ModelsPage() {
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
         <button type="button" onClick={registerTool}>Register model tool</button>
+        {error && <p className="muted">{error}</p>}
       </section>
       <section className="panel" style={{ marginTop: 18 }}>
         <h2>Registered models</h2>

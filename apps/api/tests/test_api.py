@@ -13,6 +13,41 @@ def test_health() -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_cors_allows_127_frontend_origin() -> None:
+    response = client.options(
+        "/models",
+        headers={
+            "Origin": "http://127.0.0.1:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+
+
+def test_rejects_raw_secret_in_run_config() -> None:
+    response = client.post(
+        "/runs/estimate",
+        json={"run_config": {"llm_api_key_env_var": "sk-" + "ant-api03-not-an-env-var"}},
+    )
+    assert response.status_code == 400
+    assert "environment variable name" in response.json()["detail"]
+
+
+def test_rejects_raw_secret_in_model_tool_config() -> None:
+    response = client.post(
+        "/models",
+        json={
+            "name": "unsafe_secret_model",
+            "description": "Should not accept raw keys",
+            "provider": "local_http",
+            "api_key_env_var": "sk-" + "proj-not-an-env-var",
+        },
+    )
+    assert response.status_code == 400
+    assert "environment variable name" in response.json()["detail"]
+
+
 def test_inventory_contains_custom_tools() -> None:
     response = client.get("/tools/inventory")
     assert response.status_code == 200

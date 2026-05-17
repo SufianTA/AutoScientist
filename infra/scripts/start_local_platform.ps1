@@ -36,10 +36,40 @@ function Test-FrontendHealthy {
         return $false
       }
     }
+    $proxyHealth = Invoke-WebRequest "http://127.0.0.1:3000/api/health" -UseBasicParsing -TimeoutSec 10
+    if ($proxyHealth.StatusCode -ne 200) {
+      return $false
+    }
     return $assetMatches.Count -gt 0
   } catch {
     return $false
   }
+}
+
+function Test-ApiHealthy {
+  try {
+    $health = Invoke-WebRequest "http://127.0.0.1:8000/health" -UseBasicParsing -TimeoutSec 10
+    if ($health.StatusCode -ne 200) {
+      return $false
+    }
+    $cors = Invoke-WebRequest "http://127.0.0.1:8000/models" `
+      -Method Options `
+      -Headers @{
+        Origin = "http://127.0.0.1:3000"
+        "Access-Control-Request-Method" = "GET"
+      } `
+      -UseBasicParsing `
+      -TimeoutSec 10
+    return $cors.Headers["Access-Control-Allow-Origin"] -eq "http://127.0.0.1:3000"
+  } catch {
+    return $false
+  }
+}
+
+if ((Test-PortListening -Port 8000) -and -not (Test-ApiHealthy)) {
+  Write-Host "API on port 8000 is unhealthy; restarting it"
+  Stop-PortProcess -Port 8000
+  Start-Sleep -Seconds 1
 }
 
 if (-not (Test-PortListening -Port 8000)) {

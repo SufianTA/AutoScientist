@@ -33,7 +33,10 @@ class RunExecuteRequest(BaseModel):
 
 @router.post("/estimate")
 def estimate_run(payload: RunEstimateRequest) -> dict:
-    return estimate_run_cost(payload.run_config)
+    try:
+        return estimate_run_cost(payload.run_config)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("")
@@ -46,7 +49,10 @@ def create_run(
     if objective is None:
         raise HTTPException(status_code=404, detail="Objective not found")
 
-    config = normalize_run_config(payload.run_config)
+    try:
+        config = normalize_run_config(payload.run_config)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     run = create_run_record(db, objective, config)
     run.payment_status = "not_required"
     db.commit()

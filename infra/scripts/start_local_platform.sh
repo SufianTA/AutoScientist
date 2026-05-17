@@ -44,7 +44,36 @@ try:
             with urlopen("http://127.0.0.1:3000" + asset, timeout=10) as asset_response:
                 if asset_response.status != 200:
                     raise SystemExit(1)
+        with urlopen("http://127.0.0.1:3000/api/health", timeout=10) as proxy_response:
+            if proxy_response.status != 200:
+                raise SystemExit(1)
         raise SystemExit(0)
+except URLError:
+    raise SystemExit(1)
+PY
+}
+
+api_healthy() {
+  python - <<'PY'
+from urllib.error import URLError
+from urllib.request import Request, urlopen
+
+try:
+    with urlopen("http://127.0.0.1:8000/health", timeout=10) as response:
+        if response.status != 200:
+            raise SystemExit(1)
+    request = Request(
+        "http://127.0.0.1:8000/models",
+        method="OPTIONS",
+        headers={
+            "Origin": "http://127.0.0.1:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    with urlopen(request, timeout=10) as response:
+        if response.headers.get("access-control-allow-origin") != "http://127.0.0.1:3000":
+            raise SystemExit(1)
+    raise SystemExit(0)
 except URLError:
     raise SystemExit(1)
 PY
@@ -53,6 +82,28 @@ PY
 export PYTHONPATH="$REPO_ROOT:$API_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
+
+if port_listening 8000 && ! api_healthy; then
+  echo "API on port 8000 is unhealthy; restarting it"
+  python - <<'PY'
+import os
+import signal
+import subprocess
+
+if os.name == "nt":
+    raise SystemExit(0)
+try:
+    output = subprocess.check_output(["lsof", "-ti", "tcp:8000"], text=True)
+except Exception:
+    output = ""
+for pid_text in output.split():
+    try:
+        os.kill(int(pid_text), signal.SIGTERM)
+    except OSError:
+        pass
+PY
+  sleep 1
+fi
 
 if ! port_listening 8000; then
   (

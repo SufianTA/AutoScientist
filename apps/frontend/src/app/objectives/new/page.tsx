@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BrainCircuit, DatabaseZap, KeyRound, Play, ShieldCheck, Sparkles } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
+import { validateEnvVarName } from "@/lib/secrets";
 
 const presets = [
   {
@@ -121,6 +122,12 @@ export default function NewObjectivePage() {
   }
 
   async function estimateRun() {
+    const envVarError = validateEnvVarName(llmApiKeyEnvVar);
+    if (envVarError) {
+      setError(envVarError);
+      return;
+    }
+    setError(null);
     const result = await apiPost<{ estimated_cost_usd: number }>("/runs/estimate", { run_config: runConfig });
     setEstimate(result.estimated_cost_usd);
   }
@@ -129,6 +136,10 @@ export default function NewObjectivePage() {
     setBusy(true);
     setError(null);
     try {
+      const envVarError = validateEnvVarName(llmApiKeyEnvVar);
+      if (envVarError) {
+        throw new Error(envVarError);
+      }
       const created = await apiPost<{ id: string }>("/objectives", {
         title,
         objective,
@@ -275,7 +286,21 @@ export default function NewObjectivePage() {
             </label>
             <label>
               <span className="label">API key env var</span>
-              <input value={llmApiKeyEnvVar} placeholder="ANTHROPIC_API_KEY" onChange={(event) => setLlmApiKeyEnvVar(event.target.value)} />
+              <input
+                value={llmApiKeyEnvVar}
+                placeholder="ANTHROPIC_API_KEY"
+                onChange={(event) => {
+                  const nextValue = event.target.value.trim();
+                  const validation = validateEnvVarName(nextValue);
+                  if (validation) {
+                    setError(validation);
+                    setLlmApiKeyEnvVar("");
+                    return;
+                  }
+                  setError(null);
+                  setLlmApiKeyEnvVar(nextValue);
+                }}
+              />
             </label>
             <label>
               <span className="label">Provider base URL</span>
