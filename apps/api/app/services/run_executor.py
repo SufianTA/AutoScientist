@@ -125,6 +125,7 @@ def execute_run(
     run.started_at = run.started_at or datetime.utcnow()
     run.run_config_json = resolve_model_tool_configs(db, run.run_config_json)
     db.commit()
+    orchestrator = None
     try:
         orchestrator = build_agent_runtime(run.run_config_json)
         state, trace = orchestrator.run_demo(
@@ -141,6 +142,18 @@ def execute_run(
     except Exception as exc:
         run.status = "failed"
         run.completed_at = datetime.utcnow()
+        partial_trace = getattr(orchestrator, "_active_trace", []) if orchestrator is not None else []
+        for trace_item in partial_trace:
+            db.add(
+                AgentStep(
+                    run_id=run.id,
+                    agent_name=trace_item["agent_name"],
+                    state_name=trace_item["state_name"],
+                    input_json=trace_item.get("input", {}),
+                    output_json=trace_item.get("output", {}),
+                    completed_at=datetime.utcnow(),
+                )
+            )
         db.add(
             AgentStep(
                 run_id=run.id,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Any, Callable
@@ -26,6 +27,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         super().__init__()
         self.fallback = fallback or AgentOrchestrator()
         self.langgraph_available = self._check_langgraph()
+        self._active_trace: list[dict[str, Any]] = []
+        self._progress_lock = threading.Lock()
 
     def _check_langgraph(self) -> bool:
         try:
@@ -51,6 +54,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.context["agent_roster"] = self._agent_roster(config.get("agent_count", 6))
         state.context["real_mode"] = bool(config.get("real_data_enabled") and config.get("require_real_llm"))
         trace: list[dict[str, Any]] = []
+        self._active_trace = trace
         try:
             self._record(
                 trace,
@@ -154,10 +158,33 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "output": output,
             "completed_at": datetime.utcnow().isoformat(),
         }
-        trace.append(trace_item)
+        with self._progress_lock:
+            trace.append(trace_item)
+        self._emit_callback(trace_item)
+
+    def _emit_callback(self, trace_item: dict[str, Any]) -> None:
         callback = getattr(self, "_progress_callback", None)
         if callable(callback):
             callback(trace_item)
+
+    def _runtime_event(
+        self,
+        agent: str,
+        state_name: str,
+        output: dict[str, Any],
+        input_payload: dict[str, Any] | None = None,
+    ) -> None:
+        trace_item = {
+            "agent_name": agent,
+            "state_name": state_name,
+            "input": input_payload or {},
+            "output": output,
+            "completed_at": datetime.utcnow().isoformat(),
+            "event": True,
+        }
+        with self._progress_lock:
+            self._active_trace.append(trace_item)
+        self._emit_callback(trace_item)
 
     def _agent_roster(self, count: int) -> list[dict[str, Any]]:
         roles = [
@@ -193,16 +220,29 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         prompt: str,
         max_tokens: int = 1200,
     ) -> dict[str, Any]:
-        result = call_llm(
-            provider=config["llm_provider"],
-            model=config["llm_model"],
-            api_key_env_var=config.get("llm_api_key_env_var") or None,
-            base_url=config.get("llm_base_url") or None,
-            system_prompt=system_prompt,
-            prompt=prompt,
-            temperature=0.2,
-            max_tokens=max_tokens,
+        self._runtime_event(
+            agent_name,
+            "LLM_CALL_STARTED",
+            {"task": task, "provider": config["llm_provider"], "model": config["llm_model"]},
         )
+        try:
+            result = call_llm(
+                provider=config["llm_provider"],
+                model=config["llm_model"],
+                api_key_env_var=config.get("llm_api_key_env_var") or None,
+                base_url=config.get("llm_base_url") or None,
+                system_prompt=system_prompt,
+                prompt=prompt,
+                temperature=0.2,
+                max_tokens=max_tokens,
+            )
+        except Exception as exc:
+            self._runtime_event(
+                agent_name,
+                "LLM_CALL_FAILED",
+                {"task": task, "provider": config["llm_provider"], "model": config["llm_model"], "error": str(exc)[:500]},
+            )
+            raise
         try:
             result["json"] = parse_json_object(result["text"])
         except RuntimeError:
@@ -225,6 +265,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 result["json"] = parse_json_object(result["text"])
             except RuntimeError:
                 result["json"] = self._fallback_llm_json(task, result["text"])
+        self._runtime_event(
+            agent_name,
+            "LLM_CALL_COMPLETED",
+            {
+                "task": task,
+                "provider": result["provider"],
+                "model": result["model"],
+                "latency_ms": result["latency_ms"],
+                "response_excerpt": result["text"][:220],
+            },
+        )
         call_summary = {
             "agent_name": agent_name,
             "task": task,
@@ -247,16 +298,29 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         prompt: str,
         max_tokens: int = 1200,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
-        result = call_llm(
-            provider=config["llm_provider"],
-            model=config["llm_model"],
-            api_key_env_var=config.get("llm_api_key_env_var") or None,
-            base_url=config.get("llm_base_url") or None,
-            system_prompt=system_prompt,
-            prompt=prompt,
-            temperature=0.2,
-            max_tokens=max_tokens,
+        self._runtime_event(
+            agent_name,
+            "LLM_CALL_STARTED",
+            {"task": task, "provider": config["llm_provider"], "model": config["llm_model"]},
         )
+        try:
+            result = call_llm(
+                provider=config["llm_provider"],
+                model=config["llm_model"],
+                api_key_env_var=config.get("llm_api_key_env_var") or None,
+                base_url=config.get("llm_base_url") or None,
+                system_prompt=system_prompt,
+                prompt=prompt,
+                temperature=0.2,
+                max_tokens=max_tokens,
+            )
+        except Exception as exc:
+            self._runtime_event(
+                agent_name,
+                "LLM_CALL_FAILED",
+                {"task": task, "provider": config["llm_provider"], "model": config["llm_model"], "error": str(exc)[:500]},
+            )
+            raise
         try:
             parsed = parse_json_object(result["text"])
         except RuntimeError:
@@ -279,6 +343,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 parsed = parse_json_object(result["text"])
             except RuntimeError:
                 parsed = self._fallback_llm_json(task, result["text"])
+        self._runtime_event(
+            agent_name,
+            "LLM_CALL_COMPLETED",
+            {
+                "task": task,
+                "provider": result["provider"],
+                "model": result["model"],
+                "latency_ms": result["latency_ms"],
+                "response_excerpt": result["text"][:220],
+            },
+        )
         summary = {
             "agent_name": agent_name,
             "task": task,
@@ -509,7 +584,12 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             return [str(item).strip() for item in value if str(item).strip()]
         return []
 
-    def _evidence_digest(self, state: ResearchRunState, limit: int = 12) -> list[dict[str, Any]]:
+    def _evidence_digest(
+        self,
+        state: ResearchRunState,
+        limit: int = 12,
+        text_chars: int = 900,
+    ) -> list[dict[str, Any]]:
         def rank(item: dict[str, Any]) -> tuple[float, int]:
             score = item.get("score", {}).get("score")
             try:
@@ -543,11 +623,108 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "source": item.get("source"),
                     "label": item.get("score", {}).get("label"),
                     "score": item.get("score", {}).get("score"),
-                    "text": str(item.get("text", ""))[:900],
+                    "text": str(item.get("text", ""))[:text_chars],
                     "citations": citations,
                 }
             )
         return digest
+
+    def _deterministic_score_evidence_item(
+        self,
+        item: dict[str, Any],
+        hypothesis_seed: str,
+        state: ResearchRunState | None = None,
+    ) -> dict[str, Any]:
+        if item.get("source", "").startswith("PubMed:") and item.get("structured", {}).get("count") == 0:
+            return {
+                "label": "irrelevant",
+                "score": 0.1,
+                "evidence_type": "literature_search",
+                "rationale": "The live PubMed query returned zero records, so it cannot support the hypothesis.",
+                "warnings": ["Absence of retrieved records is not evidence against the hypothesis."],
+            }
+        score = self.tools["evidence_quality_scorer_tool"].run(
+            {
+                "hypothesis": hypothesis_seed,
+                "evidence_text": item["text"],
+                "evidence_source": item["source"],
+            }
+        ).model_dump()
+        if state is not None:
+            state.tool_outputs.append(
+                {
+                    "tool_name": "evidence_quality_scorer_tool",
+                    "tool_source": "custom",
+                    "result": score,
+                }
+            )
+        self._runtime_event(
+            "critic_agent",
+            "TOOL_CALL_COMPLETED",
+            {
+                "tool_name": "evidence_quality_scorer_tool",
+                "tool_source": "custom",
+                "status": score.get("status"),
+                "latency_ms": score.get("runtime_ms"),
+            },
+            score.get("input", {}),
+        )
+        return score["output"]
+
+    def _score_evidence_with_llm_batch(
+        self,
+        state: ResearchRunState,
+        config: dict[str, Any],
+        hypothesis_seed: str,
+    ) -> list[dict[str, Any]]:
+        compact_items = [
+            {
+                "index": index,
+                "source": item.get("source"),
+                "text": str(item.get("text", ""))[:650],
+            }
+            for index, item in enumerate(state.evidence)
+        ]
+        scoring_json = self._llm_json(
+            state,
+            config,
+            agent_name="critic_agent",
+            task="evidence_quality_scoring",
+            system_prompt=(
+                "You are a skeptical biomedical evidence evaluator. Score each evidence item for how it "
+                "supports a candidate hypothesis. Be conservative and do not overclaim."
+            ),
+            prompt=(
+                "Return only JSON with key scores. scores must be an array with one object per evidence item. "
+                "Each object needs index, label, score, evidence_type, rationale, warnings. "
+                "Allowed labels: strong_support, weak_support, mechanistic_relevance, irrelevant, "
+                "contradicts, safety_concern. Scores must be 0-1. Keep rationales short.\n"
+                f"Hypothesis: {hypothesis_seed}\n"
+                f"Evidence items: {json.dumps(compact_items, default=str)[:9000]}"
+            ),
+            max_tokens=1400,
+        )
+        scores_by_index: dict[int, dict[str, Any]] = {}
+        for score in scoring_json.get("scores", []) if isinstance(scoring_json.get("scores"), list) else []:
+            try:
+                index = int(score.get("index"))
+                score["score"] = float(score.get("score", 0.0))
+            except (TypeError, ValueError):
+                continue
+            scores_by_index[index] = {
+                "label": score.get("label", "mechanistic_relevance"),
+                "score": max(0.0, min(1.0, score["score"])),
+                "evidence_type": score.get("evidence_type", "biomedical_evidence"),
+                "rationale": score.get("rationale", "Batch LLM scorer produced a bounded evidence assessment."),
+                "warnings": score.get("warnings", []),
+            }
+        scored = []
+        for index, item in enumerate(state.evidence):
+            score_output = scores_by_index.get(index)
+            if score_output is None:
+                score_output = self._deterministic_score_evidence_item(item, hypothesis_seed, state)
+            scored.append({**item, "score": score_output})
+        return scored
 
     def _explicit_gene_symbols(self, objective: str) -> list[str]:
         stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "LLM"}
@@ -794,6 +971,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             )
 
         def execute_call(agent_name: str, tool_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+            starting_source = "live_public_biomedical" if tool_name in self.tools else "tooluniverse"
+            self._runtime_event(
+                agent_name,
+                "TOOL_CALL_STARTED",
+                {"tool_name": tool_name, "tool_source": starting_source},
+                payload,
+            )
             if tool_name in self.tools:
                 result = self.tools[tool_name].run(payload).model_dump()
                 source = "live_public_biomedical"
@@ -801,6 +985,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 tooluniverse_adapter = ToolUniverseAdapter(scan_all=False)
                 result = tooluniverse_adapter.execute(tool_name, payload)
                 source = "tooluniverse"
+            self._runtime_event(
+                agent_name,
+                "TOOL_CALL_COMPLETED",
+                {
+                    "tool_name": tool_name,
+                    "tool_source": source,
+                    "status": result.get("status"),
+                    "latency_ms": result.get("runtime_ms"),
+                },
+                payload,
+            )
             return {
                 "agent_name": agent_name,
                 "tool_name": tool_name,
@@ -929,7 +1124,24 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             return outputs
         adapter = ToolUniverseAdapter(scan_all=False)
         for efo_id in list(dict.fromkeys(efo_ids))[:2]:
+            self._runtime_event(
+                "tooluniverse_agent",
+                "TOOL_CALL_STARTED",
+                {"tool_name": "OpenTargets_get_associated_targets_by_disease_efoId", "tool_source": "tooluniverse"},
+                {"efoId": efo_id},
+            )
             result = adapter.execute("OpenTargets_get_associated_targets_by_disease_efoId", {"efoId": efo_id})
+            self._runtime_event(
+                "tooluniverse_agent",
+                "TOOL_CALL_COMPLETED",
+                {
+                    "tool_name": "OpenTargets_get_associated_targets_by_disease_efoId",
+                    "tool_source": "tooluniverse",
+                    "status": result.get("status"),
+                    "latency_ms": result.get("runtime_ms"),
+                },
+                {"efoId": efo_id},
+            )
             outputs.append(
                 {
                     "agent_name": "tooluniverse_agent",
@@ -1021,55 +1233,12 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         hypothesis_seed = (
             f"Modulating {self._primary_target(state)}-linked mechanisms may be relevant to {self._primary_disease(state)}."
         )
-        for item in state.evidence:
-            if item.get("source", "").startswith("PubMed:") and item.get("structured", {}).get("count") == 0:
-                score_output = {
-                    "label": "irrelevant",
-                    "score": 0.1,
-                    "evidence_type": "literature_search",
-                    "rationale": "The live PubMed query returned zero records, so it cannot support the hypothesis.",
-                    "warnings": ["Absence of retrieved records is not evidence against the hypothesis."],
-                }
-            elif self._llm_enabled(config):
-                score_output = self._llm_json(
-                    state,
-                    config,
-                    agent_name="critic_agent",
-                    task="evidence_quality_scoring",
-                    system_prompt=(
-                        "You are a skeptical biomedical evidence evaluator. Classify whether the evidence "
-                        "supports, weakly supports, is mechanistically relevant, is irrelevant, contradicts, "
-                        "or indicates safety/translational concern. Do not overclaim."
-                    ),
-                    prompt=(
-                        "Return only JSON with keys label, score, evidence_type, rationale, warnings. "
-                        "Allowed labels: strong_support, weak_support, mechanistic_relevance, irrelevant, "
-                        "contradicts, safety_concern. Score must be 0-1.\n"
-                        f"Hypothesis: {hypothesis_seed}\n"
-                        f"Evidence source: {item['source']}\n"
-                        f"Evidence text: {item['text']}\n"
-                        f"Structured evidence: {json.dumps(item.get('structured', {}), default=str)[:3500]}"
-                    ),
-                    max_tokens=700,
-                )
-                score_output["score"] = float(score_output.get("score", 0.0))
-            else:
-                score = self.tools["evidence_quality_scorer_tool"].run(
-                    {
-                        "hypothesis": hypothesis_seed,
-                        "evidence_text": item["text"],
-                        "evidence_source": item["source"],
-                    }
-                ).model_dump()
-                state.tool_outputs.append(
-                    {
-                        "tool_name": "evidence_quality_scorer_tool",
-                        "tool_source": "custom",
-                        "result": score,
-                    }
-                )
-                score_output = score["output"]
-            scored.append({**item, "score": score_output})
+        if self._llm_enabled(config):
+            scored = self._score_evidence_with_llm_batch(state, config, hypothesis_seed)
+        else:
+            for item in state.evidence:
+                score_output = self._deterministic_score_evidence_item(item, hypothesis_seed, state)
+                scored.append({**item, "score": score_output})
         state.evidence = scored
         self._record(
             trace,
@@ -1111,7 +1280,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "Do not assert ligand-independent constitutive signaling unless the retrieved evidence directly supports it; "
                     "when evidence is mixed, use broader wording such as aberrant or neomorphic pathway signaling.\n"
                     f"Objective: {state.objective}\n"
-                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:9000]}"
+                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 12, 450), default=str)[:5500]}"
                 ),
                 max_tokens=1000,
             )
@@ -1246,8 +1415,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 f"Discipline: {role['discipline']}\n"
                 f"Debate stance: {role['stance']}\n"
                 f"Objective: {state.objective}\n"
-                f"Current hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
-                f"Scored evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:10000]}"
+                f"Current hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:2400]}\n"
+                f"Scored evidence digest: {json.dumps(self._evidence_digest(state, 8, 280), default=str)[:4200]}"
             ),
             max_tokens=900,
         )
@@ -1266,13 +1435,32 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         llm_calls: list[dict[str, Any]] = []
         if self._llm_enabled(config):
             positions = []
-            max_workers = max(1, min(int(config.get("agent_count", 6)), len(roles)))
+            provider_parallel_cap = 3 if config.get("llm_provider") == "anthropic" else len(roles)
+            max_workers = max(1, min(int(config.get("agent_count", 6)), len(roles), provider_parallel_cap))
+            self._runtime_event(
+                "scientist_panel",
+                "AGENT_PANEL_STARTED",
+                {
+                    "roles": [role["agent_name"] for role in roles],
+                    "parallel_workers": max_workers,
+                    "mode": "parallel_llm_scientist_panel",
+                },
+            )
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [executor.submit(self._scientist_position_from_llm, state, config, role) for role in roles]
                 for future in as_completed(futures):
                     position, call_summary = future.result()
                     positions.append(position)
                     llm_calls.append(call_summary)
+                    self._runtime_event(
+                        position.get("agent_name", "scientist_agent"),
+                        "AGENT_POSITION_COMPLETED",
+                        {
+                            "vote": position.get("vote", "review"),
+                            "discipline": position.get("discipline"),
+                            "position": str(position.get("position", ""))[:260],
+                        },
+                    )
             state.context.setdefault("llm_calls", []).extend(llm_calls)
             debate = self._llm_json(
                 state,
@@ -1287,8 +1475,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "Return only JSON with keys agreements, disagreements, overclaims, required_revisions, consensus. "
                     "consensus must be support, support_with_limits, revise, or abstain. Lists must be short.\n"
                     f"Objective: {state.objective}\n"
-                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
-                    f"Scientist positions: {json.dumps(positions, default=str)[:10000]}"
+                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:2400]}\n"
+                    f"Scientist positions: {json.dumps(positions, default=str)[:6500]}"
                 ),
                 max_tokens=1000,
             )
@@ -1305,9 +1493,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "Return only JSON with keys accepted_claims, softened_or_rejected_claims, revised_hypothesis, "
                     "confidence_adjustment, final_confidence, rationale. final_confidence must be 0-1 or null.\n"
                     f"Objective: {state.objective}\n"
-                    f"Current hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
-                    f"Scientist positions: {json.dumps(positions, default=str)[:10000]}\n"
-                    f"Debate critique: {json.dumps(debate, default=str)[:5000]}"
+                    f"Current hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:2400]}\n"
+                    f"Scientist positions: {json.dumps(positions, default=str)[:6500]}\n"
+                    f"Debate critique: {json.dumps(debate, default=str)[:2400]}"
                 ),
                 max_tokens=1000,
             )

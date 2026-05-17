@@ -48,6 +48,13 @@ STATE_COLORS = {
     "CRITIQUE_AND_REFINE": "red",
     "PROPOSE_EXPERIMENTS": "magenta",
     "GENERATE_REPORT": "cyan",
+    "TOOL_CALL_STARTED": "yellow",
+    "TOOL_CALL_COMPLETED": "green",
+    "LLM_CALL_STARTED": "magenta",
+    "LLM_CALL_COMPLETED": "magenta",
+    "LLM_CALL_FAILED": "red",
+    "AGENT_PANEL_STARTED": "magenta",
+    "AGENT_POSITION_COMPLETED": "cyan",
 }
 
 
@@ -196,6 +203,58 @@ def render_progress_event(event: dict[str, Any], color: bool = True) -> str:
     output = event.get("output", {})
     state_color = STATE_COLORS.get(state_name, "white")
     lines = [paint(f"[{state_name}]", state_color, color) + f" {paint(agent_name, 'bold', color)}"]
+    if state_name == "TOOL_CALL_STARTED":
+        lines.append(
+            f"  {paint('tool started', 'yellow', color)}: {output.get('tool_name')} "
+            f"({output.get('tool_source', 'tool')})"
+        )
+        return "\n".join(lines)
+    if state_name == "TOOL_CALL_COMPLETED":
+        status = str(output.get("status", "unknown"))
+        status_color = "green" if status == "success" else "yellow" if status == "partial" else "red"
+        lines.append(
+            f"  {paint('tool finished', status_color, color)}: {output.get('tool_name')} "
+            f"-> {paint(status, status_color, color)} ({output.get('latency_ms')} ms)"
+        )
+        return "\n".join(lines)
+    if state_name == "LLM_CALL_STARTED":
+        lines.append(
+            f"  {paint('llm started', 'magenta', color)}: {output.get('task')} "
+            f"via {output.get('provider')}/{output.get('model')}"
+        )
+        return "\n".join(lines)
+    if state_name == "LLM_CALL_COMPLETED":
+        lines.append(
+            f"  {paint('llm finished', 'magenta', color)}: {output.get('task')} "
+            f"({output.get('latency_ms')} ms)"
+        )
+        if output.get("response_excerpt"):
+            lines.append(f"  excerpt: {str(output.get('response_excerpt'))[:180]}")
+        return "\n".join(lines)
+    if state_name == "LLM_CALL_FAILED":
+        lines.append(
+            f"  {paint('llm failed', 'red', color)}: {output.get('task')} - "
+            f"{str(output.get('error', 'unknown error'))[:260]}"
+        )
+        return "\n".join(lines)
+    if state_name == "AGENT_PANEL_STARTED":
+        roles = output.get("roles", [])
+        lines.append(
+            f"  launching {len(roles)} debating agents with "
+            f"{output.get('parallel_workers')} parallel workers"
+        )
+        if roles:
+            lines.append(f"  roles: {', '.join(roles)}")
+        return "\n".join(lines)
+    if state_name == "AGENT_POSITION_COMPLETED":
+        vote = str(output.get("vote", "review"))
+        vote_color = "green" if vote in {"support", "support_with_limits"} else "yellow"
+        lines.append(f"  vote: {paint(vote, vote_color, color)}")
+        if output.get("discipline"):
+            lines.append(f"  discipline: {output.get('discipline')}")
+        if output.get("position"):
+            lines.append(f"  position: {str(output.get('position'))[:220]}")
+        return "\n".join(lines)
     if "framework" in output:
         lines.append(f"  runtime: {output['framework']} ({output.get('mode')})")
         roster = output.get("agent_roster", [])
@@ -436,7 +495,7 @@ def main() -> None:
 
     if args.stream_progress:
         print(
-            paint("BioAutoScientist strict local run", "bold", not args.no_color),
+            paint("BioAutoScientist local scientist run", "bold", not args.no_color),
             flush=True,
         )
         print(f"Question: {args.question}", flush=True)
