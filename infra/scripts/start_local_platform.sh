@@ -30,11 +30,21 @@ frontend_healthy() {
   python - <<'PY'
 from urllib.error import URLError
 from urllib.request import urlopen
+import re
 
 try:
     with urlopen("http://127.0.0.1:3000/objectives/new", timeout=10) as response:
         body = response.read().decode("utf-8", errors="replace")
-        raise SystemExit(0 if response.status == 200 and "stylesheet" in body else 1)
+        if response.status != 200 or "stylesheet" not in body:
+            raise SystemExit(1)
+        assets = re.findall(r'(?:href|src)="([^"]*?_next/static/[^"]+)"', body)
+        if not assets:
+            raise SystemExit(1)
+        for asset in assets:
+            with urlopen("http://127.0.0.1:3000" + asset, timeout=10) as asset_response:
+                if asset_response.status != 200:
+                    raise SystemExit(1)
+        raise SystemExit(0)
 except URLError:
     raise SystemExit(1)
 PY

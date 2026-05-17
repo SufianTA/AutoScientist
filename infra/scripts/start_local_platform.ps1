@@ -25,7 +25,18 @@ function Stop-PortProcess {
 function Test-FrontendHealthy {
   try {
     $response = Invoke-WebRequest "http://127.0.0.1:3000/objectives/new" -UseBasicParsing -TimeoutSec 10
-    return $response.StatusCode -eq 200 -and $response.Content -match 'stylesheet'
+    if ($response.StatusCode -ne 200 -or $response.Content -notmatch 'stylesheet') {
+      return $false
+    }
+    $assetMatches = [regex]::Matches($response.Content, '(?:href|src)="([^"]*?_next/static/[^"]+)"')
+    foreach ($match in $assetMatches) {
+      $assetPath = $match.Groups[1].Value
+      $assetResponse = Invoke-WebRequest "http://127.0.0.1:3000$assetPath" -UseBasicParsing -TimeoutSec 10
+      if ($assetResponse.StatusCode -ne 200) {
+        return $false
+      }
+    }
+    return $assetMatches.Count -gt 0
   } catch {
     return $false
   }
@@ -49,8 +60,12 @@ if ((Test-PortListening -Port 3000) -and -not (Test-FrontendHealthy)) {
   Write-Host "Frontend on port 3000 is unhealthy; restarting it"
   Stop-PortProcess -Port 3000
   $nextDir = Join-Path $frontendRoot.Path ".next"
+  $resolvedFrontend = (Resolve-Path -LiteralPath $frontendRoot.Path).Path
   if (Test-Path -LiteralPath $nextDir) {
-    Remove-Item -LiteralPath $nextDir -Recurse -Force
+    $resolvedNext = (Resolve-Path -LiteralPath $nextDir).Path
+    if ($resolvedNext.StartsWith($resolvedFrontend)) {
+      Remove-Item -LiteralPath $resolvedNext -Recurse -Force
+    }
   }
   Start-Sleep -Seconds 1
 }
