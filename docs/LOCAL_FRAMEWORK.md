@@ -62,14 +62,14 @@ Flow:
 4. Watch realtime agent-state events, queued tools, tool-call counts, evidence scores, critique, and report confidence.
 5. Receive the final summary plus Markdown and provenance JSON files.
 
-When live public data is enabled, the run calls NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets when the extracted entities provide valid inputs. Calls are recorded as `live_public_biomedical` or `tooluniverse` tool calls. If a local ToolUniverse installation is broken, the framework does not fake those calls.
+When live public data is enabled, the run calls NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets when the extracted entities provide valid inputs. Calls are recorded as `live_public_biomedical` or `tooluniverse` tool calls. If ToolUniverse is unavailable, the framework reports the limitation instead of fabricating tool results.
 
 Strict real autonomous mode requires both live data and a real LLM provider:
 
 Windows:
 
 ```powershell
-$env:OPENAI_API_KEY = "..."
+$env:OPENAI_API_KEY = "your-provider-key"
 .\infra\scripts\run_local_question.ps1 `
   -Question "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy." `
   -Agents 7 `
@@ -86,7 +86,7 @@ $env:OPENAI_API_KEY = "..."
 macOS/Linux:
 
 ```bash
-export OPENAI_API_KEY="..."
+export OPENAI_API_KEY="your-provider-key"
 ./infra/scripts/run_local_question.sh \
   --agents 7 \
   --strictness strict \
@@ -182,21 +182,21 @@ The framework supports provider config for:
 - `openai_compatible`
 - `local_http`
 
-Pass keys through environment variables rather than storing raw secrets in the database.
+Pass keys through environment variables or ignored `.env`; do not store raw secrets in settings JSON, browser forms, or the database.
 
 Example:
 
 Windows:
 
 ```powershell
-$env:OPENAI_API_KEY = "..."
+$env:OPENAI_API_KEY = "your-provider-key"
 .\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -LlmProvider openai -LlmModel gpt-4.1
 ```
 
 macOS/Linux:
 
 ```bash
-export OPENAI_API_KEY="..."
+export OPENAI_API_KEY="your-provider-key"
 ./infra/scripts/run_local_question.sh --llm-provider openai --llm-model gpt-4.1 \
   "Generate a therapeutic hypothesis for ACVR1-driven FOP."
 ```

@@ -1,53 +1,61 @@
 # ToolUniverse Setup
 
-The adapter supports ToolUniverse and reports ToolUniverse health through `/tools/health`.
+BioAutoScientist can run without ToolUniverse in deterministic/mock mode, but ToolUniverse is recommended for real scientific tool discovery and execution. The API reports ToolUniverse availability through:
 
-The local environment previously had two issues:
-
-1. `tokenizers==0.22.2` conflicted with `transformers==4.44.0`.
-2. `tooluniverse` was installed as an editable checkout from a local ToolUniverse repo and failed with a circular import involving `candidate_tester_tool`.
-
-The working local fix was:
-
-```bash
-python -m pip uninstall -y tooluniverse
-python -m pip install "tokenizers>=0.19,<0.20"
-python -m pip install tooluniverse==1.0.4 --no-deps
+```text
+GET /tools/health
 ```
 
-After this, `from tooluniverse import ToolUniverse` and `ToolUniverse()` both initialize in the global Python environment.
+## Install
 
-Use an isolated virtual environment for the API instead of the global Python install.
-
-## Recommended Local Fix
+From the repository root:
 
 Windows:
 
 ```powershell
-cd apps/api
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -e ".[dev,tooluniverse]"
-pip install "tokenizers>=0.19,<0.20"
-$env:PYTHONPATH = (Resolve-Path ..\..).Path
+python -m pip install -e ".[tooluniverse,dev]"
 python -c "from tooluniverse import ToolUniverse; print('ToolUniverse ok')"
 ```
 
 macOS/Linux:
 
 ```bash
-cd apps/api
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -e ".[dev,tooluniverse]"
-pip install "tokenizers>=0.19,<0.20"
-export PYTHONPATH="$(cd ../.. && pwd):$(pwd)"
+python -m pip install -e ".[tooluniverse,dev]"
 python -c "from tooluniverse import ToolUniverse; print('ToolUniverse ok')"
 ```
 
-If ToolUniverse is installed editable from a local checkout, keep it isolated from unrelated ML packages. The API endpoint `/tools/health` reports import errors without crashing the platform.
+The root package pins the known-compatible ToolUniverse dependency set:
+
+```text
+tooluniverse==1.0.4
+tokenizers>=0.19,<0.20
+```
+
+## Health Check
+
+Start the local platform:
+
+```powershell
+.\infra\scripts\start_local_platform.ps1
+```
+
+```bash
+./infra/scripts/start_local_platform.sh
+```
+
+Then check:
+
+```text
+http://127.0.0.1:8000/tools/health
+```
+
+If ToolUniverse is unavailable or has dependency conflicts, the adapter reports the error in `/tools/health` instead of crashing the API. Runs can still use custom/local tools, but strict ToolUniverse-backed analyses should treat missing ToolUniverse calls as a limitation.
 
 ## Inventory Export
 
@@ -63,8 +71,8 @@ macOS/Linux:
 ./infra/scripts/export_tool_inventory.sh
 ```
 
-When ToolUniverse imports correctly, `tool_inventory.json` will include real ToolUniverse specs in addition to custom mock tools.
+When ToolUniverse imports correctly, `tool_inventory.json` includes ToolUniverse specs in addition to BioAutoScientist custom tools.
 
 ## Custom Model Tools
 
-Use `/models` or the Models page to register specialized model tools. The framework emits a ToolUniverse-style JSON config that can later be converted into a native ToolUniverse custom tool file.
+Use the Models page or `POST /models` to register specialized model tools. The framework emits ToolUniverse-style model tool configs so custom evidence scorers, rerankers, or local HTTP models can participate in the same provenance-bearing workflow.

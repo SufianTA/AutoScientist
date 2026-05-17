@@ -1,6 +1,6 @@
 # Install And Run BioAutoScientist
 
-BioAutoScientist can run as a local CLI or as a browser workbench. The easiest first run is local CLI with a settings file.
+BioAutoScientist can run as a local CLI or as a browser workbench. The easiest first run is local CLI with a settings file and provider keys stored in `.env`.
 
 ## 1. Clone
 
@@ -67,10 +67,10 @@ Edit `bioautosci.settings.json` and choose one provider. Store the actual provid
 }
 ```
 
-Then put the key in `.env`:
+Then put the raw provider key in ignored `.env`:
 
 ```text
-ANTHROPIC_API_KEY=your-key
+ANTHROPIC_API_KEY=your-provider-key
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 ```
@@ -80,20 +80,20 @@ You can also set environment variables in the shell:
 Windows:
 
 ```powershell
-$env:ANTHROPIC_API_KEY = "your-key"
-$env:OPENAI_API_KEY = "your-key"
-$env:GEMINI_API_KEY = "your-key"
+$env:ANTHROPIC_API_KEY = "your-provider-key"
+$env:OPENAI_API_KEY = "your-provider-key"
+$env:GEMINI_API_KEY = "your-provider-key"
 ```
 
 macOS/Linux:
 
 ```bash
-export ANTHROPIC_API_KEY="your-key"
-export OPENAI_API_KEY="your-key"
-export GEMINI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-provider-key"
+export OPENAI_API_KEY="your-provider-key"
+export GEMINI_API_KEY="your-provider-key"
 ```
 
-The settings file is ignored by git. Do not commit raw keys.
+The settings file and `.env` are ignored by git. Do not commit raw keys. In the browser workbench, enter only the environment variable name, such as `ANTHROPIC_API_KEY`; never paste the raw provider key into the UI.
 
 ## 4. Run CLI With Live Agent Activity
 
@@ -169,7 +169,7 @@ cp .env.example .env
 Set your provider key in `.env`:
 
 ```text
-ANTHROPIC_API_KEY=your-key
+ANTHROPIC_API_KEY=your-provider-key
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 ```
@@ -193,6 +193,8 @@ Open:
 ```text
 http://127.0.0.1:3000
 ```
+
+On the New Objective page, the API key field is intentionally named "API key env var". Enter `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`. The backend reads the actual value from `.env` or the shell environment.
 
 ## Provider Examples
 

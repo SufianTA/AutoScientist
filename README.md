@@ -1,34 +1,34 @@
 # BioAutoScientist
 
-Open-source local framework for auditable biomedical hypothesis generation on top of ToolUniverse-style tools, LangGraph orchestration, optional OpenClaw integration, configurable model providers, and a CLAW-like research board.
+BioAutoScientist is a local, open-source workbench for auditable biomedical hypothesis generation. It combines LangGraph agent orchestration, ToolUniverse-style scientific tools, live public biomedical data sources, configurable LLM providers, provenance logging, and a CLAW-like research board.
 
-Use it from the CLI or browser workbench with OpenAI, Anthropic, Gemini, OpenAI-compatible endpoints, or local HTTP models.
+The project is designed for scientific workflow prototyping, not clinical decision-making. It produces candidate hypotheses, evidence summaries, critiques, and validation plans with explicit guardrails.
 
-The first slice now has two execution contracts:
+## What It Does
 
-- **Deterministic/dev mode** for local tests and demos without paid model keys.
-- **Strict real mode** for autonomous runs with a real LLM provider, live public biomedical APIs, ToolUniverse/OpenTargets calls, streamed agent events, and provenance.
+- Runs biomedical scientist-agent workflows from the CLI or browser.
+- Supports OpenAI, Anthropic, Gemini, OpenAI-compatible endpoints, and local HTTP models.
+- Uses deterministic mock mode for development and strict real mode for real LLM-backed runs.
+- Calls local/custom tools, live public biomedical APIs, and ToolUniverse/OpenTargets where available.
+- Streams agent activity in the CLI, including planning, tool calls, LLM calls, debate, critique, and report synthesis.
+- Stores auditable traces, tool calls, evidence items, board posts, hypotheses, reports, and provenance.
+- Lets users register custom model tools and include them in the scientific workflow.
 
-- FastAPI backend with objectives, runs, tools, research board, traces, and reports.
-- Custom scientific tool interface with provenance-bearing outputs.
-- Custom scientific tools for ACVR1/FOP demo support, RDKit-like descriptors, evidence scoring, hypothesis cards, and experiment recommendations.
-- Structured agent state machine for intake, planning, evidence collection, hypothesis generation, critique, board publication, and reporting.
-- Next.js frontend skeleton with objective intake, live run trace, tool inventory, research board, and report views.
-- Docker Compose for API, frontend, Postgres, and Redis.
-- Async research-run controls for agent count, runtime, tool budget units, evidence strictness, local model provider, and queued/background execution.
-- Custom model onboarding that emits ToolUniverse-style model tool configs and executes selected mock/local HTTP model tools inside the run.
-- LangGraph node workflow with deterministic fallback if LangGraph is unavailable.
-- Real LLM provider calls through OpenAI, Anthropic, Gemini, OpenAI-compatible endpoints, or local HTTP models.
-- Question-derived biomedical entity extraction, not an ACVR1-only real-data path.
-- Specialist agent roster and live CLI progress for PI, finder, ToolUniverse, literature, knowledge, molecule, critic, experiment, and publisher roles.
+## Repository Layout
+
+```text
+apps/api/        FastAPI backend, database models, routes, run execution
+apps/frontend/   Next.js browser workbench
+agents/          LangGraph and fallback agent runtime
+tools/           Custom scientific tools and tests
+models/          Evidence scorer prototype scaffolding
+infra/scripts/   Local startup, CLI wrappers, smoke tests
+docs/            Install, ToolUniverse, local framework, and cloud notes
+```
 
 ## Quick Start
 
-Full setup guide:
-
-- [docs/INSTALL.md](docs/INSTALL.md)
-
-Fast local CLI setup:
+### 1. Install
 
 Windows PowerShell:
 
@@ -50,16 +50,43 @@ cp bioautosci.settings.example.json bioautosci.settings.json
 cp .env.example .env
 ```
 
-Edit `.env` with your provider key. Keep `bioautosci.settings.json` for provider/model/run settings only.
-Both files are ignored by git.
+### 2. Configure Provider Keys
+
+Put raw provider keys only in ignored `.env` or your shell environment:
+
+```text
+ANTHROPIC_API_KEY=your-provider-key
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+```
+
+Keep `bioautosci.settings.json` limited to non-secret run settings:
+
+```json
+{
+  "llm_provider": "anthropic",
+  "llm_model": "claude-sonnet-4-6",
+  "llm_api_key_env_var": "ANTHROPIC_API_KEY",
+  "real_data_enabled": true,
+  "require_real_llm": true,
+  "evidence_strictness": "strict",
+  "agent_count": 7,
+  "max_runtime_minutes": 30,
+  "output_dir": "outputs"
+}
+```
+
+The browser UI also expects an environment variable name such as `ANTHROPIC_API_KEY`; do not paste raw keys into the browser.
+
+### 3. Run From CLI
 
 Windows:
 
 ```powershell
 bioautosci --settings .\bioautosci.settings.json --stream-progress `
   --output-format markdown `
-  --output-file .\outputs\test_report.md `
-  --provenance-file .\outputs\test_provenance.json `
+  --output-file .\outputs\acvr1_report.md `
+  --provenance-file .\outputs\acvr1_provenance.json `
   "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
 ```
 
@@ -68,229 +95,117 @@ macOS/Linux:
 ```bash
 bioautosci --settings ./bioautosci.settings.json --stream-progress \
   --output-format markdown \
-  --output-file ./outputs/test_report.md \
-  --provenance-file ./outputs/test_provenance.json \
+  --output-file ./outputs/acvr1_report.md \
+  --provenance-file ./outputs/acvr1_provenance.json \
   "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy."
 ```
 
-After PyPI publishing:
-
-```bash
-python -m pip install "bio-auto-scientist[tooluniverse]"
-```
-
-Browser workbench setup:
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-API: http://localhost:8000
-
-Frontend: http://localhost:3000
-
-Start both local dev servers without Docker:
-
-Windows:
-
-```powershell
-.\infra\scripts\start_local_platform.ps1
-```
-
-macOS/Linux:
-
-```bash
-./infra/scripts/start_local_platform.sh
-```
-
-Then open http://127.0.0.1:3000 and launch a run from **New Objective**.
-
-## Local API Development
-
-Windows:
-
-```powershell
-cd apps/api
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-$env:PYTHONPATH = (Resolve-Path ..\..).Path
-uvicorn app.main:app --reload
-```
-
-macOS/Linux:
-
-```bash
-cd apps/api
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-export PYTHONPATH="$(cd ../.. && pwd):$(pwd)"
-uvicorn app.main:app --reload
-```
-
-Run tests:
-
-```bash
-python -m pytest
-```
-
-Export the current ToolUniverse plus custom tool inventory:
-
-Windows:
-
-```powershell
-.\infra\scripts\export_tool_inventory.ps1
-```
-
-macOS/Linux:
-
-```bash
-./infra/scripts/export_tool_inventory.sh
-```
-
-If ToolUniverse is installed but import fails, check `/tools/health`. The adapter reports dependency conflicts instead of crashing the API.
-
-Process one queued run locally:
-
-```bash
-./infra/scripts/process_next_run.sh
-```
-
-Windows:
-
-```powershell
-.\infra\scripts\process_next_run.ps1
-```
-
-Run a live API smoke test after the API is running:
-
-```bash
-./infra/scripts/smoke_test_platform.sh
-```
-
-Windows:
-
-```powershell
-.\infra\scripts\smoke_test_platform.ps1
-```
-
-Run one scientific question locally without opening the web UI:
-
-Windows:
-
-```powershell
-.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -Agents 6 -Runtime 30 -Strictness balanced
-```
-
-macOS/Linux:
-
-```bash
-./infra/scripts/run_local_question.sh --agents 6 --runtime 30 --strictness balanced \
-  "Generate a therapeutic hypothesis for ACVR1-driven FOP."
-```
-
-Run with settings and live colored agent progress:
-
-Windows:
-
-```powershell
-.\infra\scripts\run_local_question.ps1 `
-  -Settings .\bioautosci.settings.json `
-  -StreamProgress `
-  -OutputFormat markdown `
-  -OutputFile .\outputs\pcsk9_report.md `
-  -ProvenanceFile .\outputs\pcsk9_provenance.json `
-  -Question "Generate a scientist-grade therapeutic hypothesis analysis for PCSK9-driven familial hypercholesterolemia and elevated LDL cholesterol. Use live public evidence, identify disease-target mechanism, approved and investigational intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
-```
-
-macOS/Linux:
-
-```bash
-./infra/scripts/run_local_question.sh \
-  --settings ./bioautosci.settings.json \
-  --stream-progress \
-  --output-format markdown \
-  --output-file ./outputs/pcsk9_report.md \
-  --provenance-file ./outputs/pcsk9_provenance.json \
-  "Generate a scientist-grade therapeutic hypothesis analysis for PCSK9-driven familial hypercholesterolemia and elevated LDL cholesterol. Use live public evidence, identify disease-target mechanism, approved and investigational intervention classes, safety concerns, citations, and validation experiments. Do not claim efficacy beyond retrieved evidence."
-```
-
-Launch the interactive CLI workbench:
-
-```bash
-./infra/scripts/run_local_question.sh --interactive
-```
-
-Windows:
+Interactive CLI:
 
 ```powershell
 .\infra\scripts\run_local_question.ps1 -Interactive
 ```
 
-Interactive mode asks for the scientific problem, lets you choose an exact agent count or optimized agent count, streams each agent state as it runs, and writes both a Markdown report and JSON provenance trace.
-Choose live public biomedical data when prompted to use NCBI Gene, PubMed, and PubChem calls in the run.
-
-Write a command-line report artifact:
-
-```powershell
-.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md
+```bash
+./infra/scripts/run_local_question.sh --interactive
 ```
 
-Run the non-interactive CLI with live public data:
+### 4. Run Browser Workbench
 
-```powershell
-.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -RealData -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_real_report.md -ProvenanceFile .\outputs\acvr1_fop_real_provenance.json
+Install frontend dependencies once:
+
+```bash
+cd apps/frontend
+npm install
+cd ../..
 ```
 
-Live-data mode calls NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets where the extracted entities provide valid inputs. ToolUniverse health is available at `/tools/health`; the local environment was fixed by replacing the broken editable ToolUniverse checkout with a clean `tooluniverse==1.0.4` install.
-
-Run the fully real autonomous mode with a real LLM key configured in ignored `.env`:
+Start both local servers:
 
 ```powershell
-.\infra\scripts\run_local_question.ps1 `
-  -Question "Generate a scientist-grade therapeutic hypothesis analysis for ACVR1-driven Fibrodysplasia Ossificans Progressiva. Use live public evidence, identify disease-target mechanism, candidate interventions, safety concerns, citations, and validation experiments. Do not claim clinical efficacy." `
-  -Agents 7 `
-  -Runtime 30 `
-  -Strictness strict `
-  -RealData `
-  -LlmProvider openai `
-  -LlmModel gpt-4.1 `
-  -RequireRealLlm `
-  -OutputFormat markdown `
-  -OutputFile .\outputs\strict_real_report.md `
-  -ProvenanceFile .\outputs\strict_real_provenance.json
+.\infra\scripts\start_local_platform.ps1
 ```
 
-If `-RequireRealLlm` is used and the provider/key is missing, the run fails instead of silently falling back to mock behavior.
+```bash
+./infra/scripts/start_local_platform.sh
+```
 
-Write both a report and full provenance trace:
+Open:
+
+```text
+http://127.0.0.1:3000
+```
+
+The startup scripts verify API health, frontend static assets, API proxying, CORS, and whether configured provider keys are visible to the running API process.
+
+## Modes
+
+- `mock`: deterministic local mode for tests and demos without paid providers.
+- `strict real`: real LLM calls, live public data, provenance, and fail-fast behavior if keys are missing.
+- `real-data`: enables NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets calls where valid inputs are available.
+- `background` / `queued`: lets longer browser runs execute outside the initial request.
+
+## Agent Workflow
+
+The default runtime is LangGraph. The workflow includes:
+
+1. Research planning by a PI agent.
+2. Tool discovery and input mapping.
+3. Evidence collection from live/custom tools.
+4. Evidence scoring.
+5. Hypothesis synthesis.
+6. Parallel specialist-agent debate.
+7. Skeptical critique and confidence adjustment.
+8. Experiment recommendation.
+9. Report and research-board publication.
+
+Every step writes trace/provenance records.
+
+## ToolUniverse
+
+ToolUniverse integration is optional but recommended:
+
+```bash
+python -m pip install -e ".[tooluniverse,dev]"
+```
+
+Check tool health:
+
+```text
+http://127.0.0.1:8000/tools/health
+```
+
+Export the inventory:
 
 ```powershell
-.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -OutputFormat markdown -OutputFile .\outputs\acvr1_fop_report.md -ProvenanceFile .\outputs\acvr1_fop_provenance.json
+.\infra\scripts\export_tool_inventory.ps1
 ```
 
-Run the repeatable CLI smoke test:
-
-```powershell
-.\infra\scripts\smoke_test_cli.ps1
+```bash
+./infra/scripts/export_tool_inventory.sh
 ```
 
-Register a custom evidence model in the Models UI, then select it on the New Objective page. The selected model name is passed as `model_tool_names`; the backend resolves it to a ToolUniverse-style config and records the model invocation as a provenance-bearing tool call.
+See [docs/TOOLUNIVERSE_SETUP.md](docs/TOOLUNIVERSE_SETUP.md) for dependency notes.
 
-CLI runs can select registered model tools too:
+## PyPI Install
 
-```powershell
-.\infra\scripts\run_local_question.ps1 -Question "Generate a therapeutic hypothesis for ACVR1-driven FOP." -ModelTools mock_acvr1_evidence_model
+After publishing:
+
+```bash
+python -m pip install "bio-auto-scientist[tooluniverse]"
 ```
 
-More deployment detail:
+Then copy `bioautosci.settings.example.json` and `.env.example` from the repository or package docs, add provider keys to `.env`, and run `bioautosci`.
 
-- `docs/INSTALL.md`
-- `docs/TOOLUNIVERSE_SETUP.md`
-- `docs/CLOUD_DEPLOYMENT.md`
+## Documentation
+
+- [docs/INSTALL.md](docs/INSTALL.md)
+- [docs/LOCAL_FRAMEWORK.md](docs/LOCAL_FRAMEWORK.md)
+- [docs/TOOLUNIVERSE_SETUP.md](docs/TOOLUNIVERSE_SETUP.md)
+- [docs/CLOUD_DEPLOYMENT.md](docs/CLOUD_DEPLOYMENT.md)
 
 ## Scientific Guardrails
 
-The system labels outputs as candidate hypotheses. It must not claim clinical efficacy, safety, or validation unless direct evidence supports that claim. Reports should use cautious wording such as "computationally prioritized", "evidence-supported but not validated", and "requires experimental validation".
+BioAutoScientist generates candidate hypotheses. It must not claim clinical efficacy, safety, or validation unless direct evidence supports that claim. Reports should use cautious wording such as "computationally prioritized", "evidence-supported but not validated", "insufficient evidence", and "requires experimental validation".
+
+This project is for research workflow automation and human-reviewed scientific analysis. It is not medical advice.
