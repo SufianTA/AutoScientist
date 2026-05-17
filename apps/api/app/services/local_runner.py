@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,16 @@ ANSI = {
 }
 
 
+def configure_console_io() -> None:
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
 STATE_COLORS = {
     "INITIALIZE_FRAMEWORK": "cyan",
     "PLAN_RESEARCH": "blue",
@@ -33,6 +44,7 @@ STATE_COLORS = {
     "EXECUTE_EVIDENCE_COLLECTION": "green",
     "SCORE_EVIDENCE": "yellow",
     "GENERATE_HYPOTHESES": "blue",
+    "DEBATE_AND_REVISE": "magenta",
     "CRITIQUE_AND_REFINE": "red",
     "PROPOSE_EXPERIMENTS": "magenta",
     "GENERATE_REPORT": "cyan",
@@ -227,6 +239,30 @@ def render_progress_event(event: dict[str, Any], color: bool = True) -> str:
     if "scored_evidence" in output:
         labels = [item.get("score", {}).get("label", "unscored") for item in output["scored_evidence"]]
         lines.append(f"  evidence scored: {', '.join(labels)}")
+    if "scientist_positions" in output:
+        positions = output.get("scientist_positions", [])
+        lines.append(paint(f"  scientist debate: {len(positions)} positions collected", "magenta", color))
+        for position in positions[:8]:
+            vote = position.get("vote", "review")
+            vote_color = "green" if vote in {"support", "support_with_limits"} else "yellow"
+            lines.append(
+                f"    {paint(position.get('agent_name', 'agent'), 'bold', color)} "
+                f"({paint(str(vote), vote_color, color)}): {str(position.get('position', ''))[:180]}"
+            )
+    if "debate" in output:
+        debate = output["debate"]
+        consensus = debate.get("consensus")
+        if consensus:
+            lines.append(f"  consensus: {paint(str(consensus), 'yellow', color)}")
+        revisions = debate.get("required_revisions") or []
+        if revisions:
+            lines.append(f"  required revisions: {len(revisions)}")
+    if "pi_adjudication" in output:
+        adjudication = output["pi_adjudication"]
+        if adjudication.get("final_confidence") is not None:
+            lines.append(f"  PI final confidence: {adjudication.get('final_confidence')}")
+        if adjudication.get("rationale"):
+            lines.append(f"  PI rationale: {str(adjudication.get('rationale'))[:220]}")
     if "llm_calls" in output and output["llm_calls"]:
         latest = output["llm_calls"][-1]
         lines.append(
@@ -349,6 +385,7 @@ def run_interactive() -> None:
 
 
 def main() -> None:
+    configure_console_io()
     parser = argparse.ArgumentParser(description="Run a local BioAutoScientist question.")
     parser.add_argument("question", nargs="?", help="Scientific question or objective")
     parser.add_argument("--settings", help="Path to bioautosci.settings.json")

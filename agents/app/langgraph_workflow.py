@@ -133,6 +133,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             ("execute_evidence_collection", self._execute_evidence_collection),
             ("score_evidence", self._score_evidence),
             ("generate_hypotheses", self._generate_hypotheses),
+            ("debate_and_revise", self._debate_and_revise),
             ("critique_and_refine", self._critique_and_refine),
             ("propose_experiments", self._propose_experiments),
             ("generate_report", self._generate_report),
@@ -236,6 +237,59 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.context.setdefault("llm_calls", []).append(call_summary)
         return result["json"]
 
+    def _llm_json_detached(
+        self,
+        config: dict[str, Any],
+        *,
+        agent_name: str,
+        task: str,
+        system_prompt: str,
+        prompt: str,
+        max_tokens: int = 1200,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        result = call_llm(
+            provider=config["llm_provider"],
+            model=config["llm_model"],
+            api_key_env_var=config.get("llm_api_key_env_var") or None,
+            base_url=config.get("llm_base_url") or None,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            temperature=0.2,
+            max_tokens=max_tokens,
+        )
+        try:
+            parsed = parse_json_object(result["text"])
+        except RuntimeError:
+            compact_prompt = (
+                f"{prompt}\n\nYour previous response was not parseable JSON. "
+                "Return one compact JSON object only, with no markdown and no commentary. "
+                "Keep every array to at most 5 short strings."
+            )
+            result = call_llm(
+                provider=config["llm_provider"],
+                model=config["llm_model"],
+                api_key_env_var=config.get("llm_api_key_env_var") or None,
+                base_url=config.get("llm_base_url") or None,
+                system_prompt=system_prompt,
+                prompt=compact_prompt,
+                temperature=0.0,
+                max_tokens=min(max_tokens, 900),
+            )
+            try:
+                parsed = parse_json_object(result["text"])
+            except RuntimeError:
+                parsed = self._fallback_llm_json(task, result["text"])
+        summary = {
+            "agent_name": agent_name,
+            "task": task,
+            "provider": result["provider"],
+            "model": result["model"],
+            "status": result["status"],
+            "latency_ms": result["latency_ms"],
+            "response_excerpt": result["text"][:600],
+        }
+        return parsed, summary
+
     def _fallback_llm_json(self, task: str, text: str) -> dict[str, Any]:
         excerpt = text.strip()[:1200]
         if task == "biomedical_context_extraction":
@@ -281,6 +335,36 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "recommended_fix": "Review raw LLM response in provenance and rerun with a stricter model/prompt if needed.",
                 "abstention_required": False,
                 "claim_boundary": "candidate hypothesis; no clinical efficacy or safety claim",
+                "_parse_fallback": True,
+            }
+        if task == "scientist_panel_position":
+            return {
+                "position": excerpt or "Agent returned an unstructured position.",
+                "key_claims": [],
+                "supporting_evidence_sources": [],
+                "concerns": ["Unstructured LLM response; raw text preserved in provenance."],
+                "requested_followups": [],
+                "confidence_delta": 0,
+                "vote": "revise",
+                "_parse_fallback": True,
+            }
+        if task == "cross_agent_debate":
+            return {
+                "agreements": [],
+                "disagreements": [],
+                "overclaims": ["Unstructured debate response; use raw text in provenance."],
+                "required_revisions": [excerpt] if excerpt else [],
+                "consensus": "revise",
+                "_parse_fallback": True,
+            }
+        if task == "pi_debate_adjudication":
+            return {
+                "accepted_claims": [],
+                "softened_or_rejected_claims": [],
+                "revised_hypothesis": "",
+                "confidence_adjustment": -0.05,
+                "final_confidence": None,
+                "rationale": excerpt or "Unstructured PI adjudication response.",
                 "_parse_fallback": True,
             }
         if task == "final_report_synthesis":
@@ -416,6 +500,46 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if isinstance(value, list):
             return [str(item).strip() for item in value if str(item).strip()]
         return []
+
+    def _evidence_digest(self, state: ResearchRunState, limit: int = 12) -> list[dict[str, Any]]:
+        def rank(item: dict[str, Any]) -> tuple[float, int]:
+            score = item.get("score", {}).get("score")
+            try:
+                numeric_score = float(score)
+            except (TypeError, ValueError):
+                numeric_score = 0.0
+            source = str(item.get("source", ""))
+            source_bonus = 0
+            if "ToolUniverse" in source or "OpenTargets" in source:
+                source_bonus += 2
+            if source.startswith("PubMed"):
+                source_bonus += 1
+            if source == "NCBI Gene":
+                source_bonus += 1
+            return (numeric_score, source_bonus)
+
+        digest = []
+        for item in sorted(state.evidence, key=rank, reverse=True)[:limit]:
+            structured = item.get("structured", {})
+            citations = []
+            for article in structured.get("articles", [])[:3] if isinstance(structured, dict) else []:
+                citations.append(
+                    {
+                        "pmid": article.get("pmid"),
+                        "title": article.get("title"),
+                        "url": article.get("url"),
+                    }
+                )
+            digest.append(
+                {
+                    "source": item.get("source"),
+                    "label": item.get("score", {}).get("label"),
+                    "score": item.get("score", {}).get("score"),
+                    "text": str(item.get("text", ""))[:900],
+                    "citations": citations,
+                }
+            )
+        return digest
 
     def _explicit_gene_symbols(self, objective: str) -> list[str]:
         stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "FOP", "BMP", "LLM"}
@@ -933,7 +1057,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "Do not assert ligand-independent constitutive signaling unless the retrieved evidence directly supports it; "
                     "when evidence is mixed, use broader wording such as aberrant or neomorphic pathway signaling.\n"
                     f"Objective: {state.objective}\n"
-                    f"Evidence: {json.dumps(state.evidence, default=str)[:9000]}"
+                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:9000]}"
                 ),
                 max_tokens=1000,
             )
@@ -958,6 +1082,237 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         )
         return state
 
+    def _debate_scientist_roles(self, config: dict[str, Any]) -> list[dict[str, str]]:
+        roles = [
+            {
+                "agent_name": "mechanism_agent",
+                "discipline": "disease mechanism and causal pathway biology",
+                "stance": "argue from target-disease mechanism, pathway plausibility, and causal evidence",
+            },
+            {
+                "agent_name": "literature_agent",
+                "discipline": "biomedical literature and citation grounding",
+                "stance": "argue from PubMed records, publication type, and citation strength",
+            },
+            {
+                "agent_name": "tooluniverse_agent",
+                "discipline": "ToolUniverse/OpenTargets target and intervention evidence",
+                "stance": "argue from ToolUniverse records, target association scores, and drug records",
+            },
+            {
+                "agent_name": "molecule_agent",
+                "discipline": "candidate intervention and chemistry review",
+                "stance": "argue from compound identity, target relevance, and molecule-level gaps",
+            },
+            {
+                "agent_name": "safety_agent",
+                "discipline": "clinical safety and translation risk",
+                "stance": "challenge efficacy/safety overclaims and identify translational risks",
+            },
+            {
+                "agent_name": "omics_agent",
+                "discipline": "omics, pathway, and perturbation evidence",
+                "stance": "check whether pathway and cellular evidence justify the proposed mechanism",
+            },
+            {
+                "agent_name": "critic_agent",
+                "discipline": "skeptical scientific review",
+                "stance": "find contradictions, weak links, missing controls, and abstention triggers",
+            },
+        ]
+        count = max(2, min(int(config.get("agent_count", 6)), len(roles)))
+        return roles[:count]
+
+    def _deterministic_scientist_positions(self, state: ResearchRunState, config: dict[str, Any]) -> list[dict[str, Any]]:
+        evidence_sources = [item.get("source", "unknown") for item in state.evidence[:6]]
+        positions = []
+        for role in self._debate_scientist_roles(config):
+            agent = role["agent_name"]
+            if agent == "critic_agent":
+                position = "The hypothesis is plausible but must remain bounded to computational prioritization."
+                concerns = [
+                    "Tool and literature evidence do not prove clinical efficacy.",
+                    "Candidate interventions require potency, selectivity, dose, and safety review.",
+                ]
+                vote = "revise"
+                confidence_delta = -0.05
+            elif agent == "safety_agent":
+                position = "Safety and translation gaps should lower confidence until intervention-specific safety is reviewed."
+                concerns = [
+                    "No safety claim should be made from target/pathway evidence alone.",
+                    "Pediatric and rare-disease translation risks require explicit review.",
+                ]
+                vote = "revise"
+                confidence_delta = -0.05
+            else:
+                position = (
+                    "Retrieved evidence supports a bounded mechanistic hypothesis, but not validated therapeutic efficacy."
+                )
+                concerns = ["Evidence should be separated into direct support, indirect pathway relevance, and gaps."]
+                vote = "support_with_limits"
+                confidence_delta = 0.02
+            positions.append(
+                {
+                    "agent_name": agent,
+                    "discipline": role["discipline"],
+                    "position": position,
+                    "key_claims": [state.hypothesis_card.get("hypothesis", "")],
+                    "supporting_evidence_sources": evidence_sources,
+                    "concerns": concerns,
+                    "requested_followups": ["Run intervention-specific potency, selectivity, and safety evidence retrieval."],
+                    "confidence_delta": confidence_delta,
+                    "vote": vote,
+                    "mode": "deterministic_local",
+                }
+            )
+        return positions
+
+    def _scientist_position_from_llm(
+        self,
+        state: ResearchRunState,
+        config: dict[str, Any],
+        role: dict[str, str],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        agent_name = role["agent_name"]
+        position, call_summary = self._llm_json_detached(
+            config,
+            agent_name=agent_name,
+            task="scientist_panel_position",
+            system_prompt=(
+                "You are an autonomous AI scientist: an LLM reasoner operating over ToolUniverse and "
+                "live biomedical tool evidence. Take a specialist role, make evidence-grounded claims, "
+                "challenge weak links, and do not claim clinical efficacy or safety without direct evidence."
+            ),
+            prompt=(
+                "Return only JSON with keys position, key_claims, supporting_evidence_sources, concerns, "
+                "requested_followups, confidence_delta, vote. "
+                "vote must be one of support, support_with_limits, revise, abstain. "
+                "confidence_delta must be between -0.2 and 0.2. Keep lists to at most 4 short strings.\n"
+                f"Agent: {agent_name}\n"
+                f"Discipline: {role['discipline']}\n"
+                f"Debate stance: {role['stance']}\n"
+                f"Objective: {state.objective}\n"
+                f"Current hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
+                f"Scored evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:10000]}"
+            ),
+            max_tokens=900,
+        )
+        position["agent_name"] = agent_name
+        position["discipline"] = role["discipline"]
+        return position, call_summary
+
+    def _debate_and_revise(
+        self,
+        state: ResearchRunState,
+        trace: list[dict[str, Any]],
+        config: dict[str, Any],
+    ) -> ResearchRunState:
+        state.current_state = AgentStateName.DEBATE_AND_REVISE
+        roles = self._debate_scientist_roles(config)
+        llm_calls: list[dict[str, Any]] = []
+        if self._llm_enabled(config):
+            positions = []
+            max_workers = max(1, min(int(config.get("agent_count", 6)), len(roles)))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(self._scientist_position_from_llm, state, config, role) for role in roles]
+                for future in as_completed(futures):
+                    position, call_summary = future.result()
+                    positions.append(position)
+                    llm_calls.append(call_summary)
+            state.context.setdefault("llm_calls", []).extend(llm_calls)
+            debate = self._llm_json(
+                state,
+                config,
+                agent_name="critic_agent",
+                task="cross_agent_debate",
+                system_prompt=(
+                    "You moderate a scientific debate between AI scientist agents. Identify consensus, "
+                    "disagreement, overclaims, and required revisions. Be skeptical and evidence-bound."
+                ),
+                prompt=(
+                    "Return only JSON with keys agreements, disagreements, overclaims, required_revisions, consensus. "
+                    "consensus must be support, support_with_limits, revise, or abstain. Lists must be short.\n"
+                    f"Objective: {state.objective}\n"
+                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
+                    f"Scientist positions: {json.dumps(positions, default=str)[:10000]}"
+                ),
+                max_tokens=1000,
+            )
+            adjudication = self._llm_json(
+                state,
+                config,
+                agent_name="pi_agent",
+                task="pi_debate_adjudication",
+                system_prompt=(
+                    "You are the principal investigator adjudicating a debate among AI scientist agents. "
+                    "Revise the hypothesis to preserve supported claims, soften unsupported claims, and enforce guardrails."
+                ),
+                prompt=(
+                    "Return only JSON with keys accepted_claims, softened_or_rejected_claims, revised_hypothesis, "
+                    "confidence_adjustment, final_confidence, rationale. final_confidence must be 0-1 or null.\n"
+                    f"Objective: {state.objective}\n"
+                    f"Current hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
+                    f"Scientist positions: {json.dumps(positions, default=str)[:10000]}\n"
+                    f"Debate critique: {json.dumps(debate, default=str)[:5000]}"
+                ),
+                max_tokens=1000,
+            )
+        else:
+            positions = self._deterministic_scientist_positions(state, config)
+            debate = {
+                "agreements": ["Mechanistic relevance is plausible and evidence-supported."],
+                "disagreements": ["Strength of intervention-specific support is not established."],
+                "overclaims": ["Do not imply clinical efficacy or safety."],
+                "required_revisions": ["State the result as a candidate hypothesis requiring validation."],
+                "consensus": "support_with_limits",
+            }
+            adjudication = {
+                "accepted_claims": ["ACVR1-linked pathway modulation is biologically plausible in the disease context."],
+                "softened_or_rejected_claims": ["Any claim of efficacy or safety is rejected without direct evidence."],
+                "revised_hypothesis": state.hypothesis_card.get("hypothesis", ""),
+                "confidence_adjustment": -0.03,
+                "final_confidence": None,
+                "rationale": "Local deterministic debate preserves the bounded hypothesis and lowers confidence slightly.",
+            }
+
+        base_confidence = float(state.hypothesis_card.get("confidence", 0.5) or 0.5)
+        revised_hypothesis = str(adjudication.get("revised_hypothesis") or "").strip()
+        if revised_hypothesis:
+            state.hypothesis_card["hypothesis"] = revised_hypothesis
+        if adjudication.get("final_confidence") is not None:
+            final_confidence = float(adjudication.get("final_confidence"))
+        else:
+            final_confidence = base_confidence + float(adjudication.get("confidence_adjustment", 0.0) or 0.0)
+        state.hypothesis_card["confidence"] = max(0.0, min(1.0, round(final_confidence, 2)))
+        softened = self._string_list(adjudication.get("softened_or_rejected_claims"))
+        if softened:
+            limitations = state.hypothesis_card.setdefault("limitations", [])
+            for item in softened:
+                if item not in limitations:
+                    limitations.append(item)
+        debate_record = {
+            "scientist_positions": positions,
+            "debate": debate,
+            "pi_adjudication": adjudication,
+            "collaboration_model": (
+                "parallel_llm_scientist_panel" if self._llm_enabled(config) else "deterministic_local_scientist_panel"
+            ),
+        }
+        state.context["agent_debate"] = debate_record
+        state.hypothesis_card["agent_debate"] = debate_record
+        self._record(
+            trace,
+            "scientist_panel",
+            state.current_state.value,
+            {
+                "hypothesis_card": state.hypothesis_card,
+                "evidence_count": len(state.evidence),
+                "roles": roles,
+            },
+            {**debate_record, "revised_hypothesis": state.hypothesis_card.get("hypothesis"), "llm_calls": state.context.get("llm_calls", [])},
+        )
+        return state
+
     def _critique_and_refine(
         self,
         state: ResearchRunState,
@@ -979,7 +1334,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "Return only JSON with keys critique_type, severity, critique, recommended_fix, "
                     "abstention_required, claim_boundary.\n"
                     f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:6000]}\n"
-                    f"Evidence: {json.dumps(state.evidence, default=str)[:8000]}"
+                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:8000]}"
                 ),
                 max_tokens=1000,
             )

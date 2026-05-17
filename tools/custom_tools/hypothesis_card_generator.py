@@ -24,6 +24,25 @@ def confidence_from_evidence(evidence: list[dict]) -> float:
     return round(max(0.05, min(score, 0.78)), 2)
 
 
+def mechanism_phrase(target: str, evidence: list[dict]) -> str:
+    combined = " ".join(
+        [
+            target,
+            *[
+                str(item.get("text", ""))
+                for item in evidence[:8]
+            ],
+        ]
+    ).lower()
+    if "acvr1" in target.lower() or "bmp" in combined or "ossification" in combined:
+        return f"{target}-linked BMP/activin pathway signaling"
+    if "pcsk9" in target.lower() or "ldlr" in combined or "cholesterol" in combined:
+        return f"{target}-linked LDL receptor and cholesterol-clearance biology"
+    if "cftr" in target.lower() or "cystic fibrosis" in combined:
+        return f"{target}-linked epithelial ion-transport biology"
+    return f"{target}-linked disease mechanism"
+
+
 def extract_citations(evidence: list[dict], target: str) -> list[dict]:
     citations = []
     for item in evidence:
@@ -70,6 +89,7 @@ class HypothesisCardGeneratorTool(ScientificTool):
         disease = payload.get("disease", "FOP")
         evidence = payload.get("evidence", [])
         confidence = confidence_from_evidence(evidence)
+        mechanism = mechanism_phrase(target, evidence)
         counts = label_counts(evidence)
         safety_items = [
             item for item in evidence if item.get("score", {}).get("label") == "safety_concern"
@@ -96,7 +116,7 @@ class HypothesisCardGeneratorTool(ScientificTool):
             output={
                 "title": f"{target} pathway modulation as a candidate strategy for {disease}",
                 "hypothesis": (
-                    f"Modulating {target}-linked BMP signaling is a candidate, evidence-supported but "
+                    f"Modulating {mechanism} is a candidate, evidence-supported but "
                     f"not validated therapeutic hypothesis for {disease}."
                 ),
                 "evidence": evidence,

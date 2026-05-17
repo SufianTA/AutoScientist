@@ -1,7 +1,17 @@
+import json
+import logging
+import os
+import sys
+import threading
 import time
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from io import StringIO
 from typing import Any
 
 from tools.custom_tools.registry import build_custom_tools
+
+
+_TOOLUNIVERSE_IO_LOCK = threading.Lock()
 
 
 class ToolUniverseAdapter:
@@ -48,13 +58,51 @@ class ToolUniverseAdapter:
         if self._tooluniverse_error is not None:
             return None
         try:
-            from tooluniverse import ToolUniverse
+            os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+            os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+            with self._quiet_tooluniverse_io():
+                from tooluniverse import ToolUniverse
 
-            self._tooluniverse = ToolUniverse()
+                self._patch_tooluniverse_runtime()
+                self._tooluniverse = ToolUniverse()
         except Exception as exc:  # ToolUniverse imports optional ML deps at module import time.
             self._tooluniverse_error = str(exc)
             return None
         return self._tooluniverse
+
+    @contextmanager
+    def _quiet_tooluniverse_io(self) -> Any:
+        if os.getenv("BIOAUTOSCI_VERBOSE_TOOLUNIVERSE") == "1":
+            yield
+            return
+        with _TOOLUNIVERSE_IO_LOCK:
+            sink = StringIO()
+            with redirect_stdout(sink), redirect_stderr(sink):
+                yield
+
+    def _patch_tooluniverse_runtime(self) -> None:
+        for stream_name in ("stdout", "stderr"):
+            stream = getattr(sys, stream_name, None)
+            if hasattr(stream, "reconfigure"):
+                try:
+                    stream.reconfigure(encoding="utf-8", errors="replace")
+                except Exception:
+                    pass
+        for logger_name in ("tooluniverse", "ToolUniverse", "tensorflow"):
+            logging.getLogger(logger_name).setLevel(logging.ERROR)
+        try:
+            import tooluniverse.execute_function as execute_function
+            import tooluniverse.utils as utils
+
+            def read_json_list_utf8(file_path: str) -> list[dict[str, Any]]:
+                with open(file_path, "r", encoding="utf-8") as file:
+                    data = json.load(file)
+                return data if isinstance(data, list) else [data]
+
+            utils.read_json_list = read_json_list_utf8
+            execute_function.read_json_list = read_json_list_utf8
+        except Exception:
+            pass
 
     def _list_tooluniverse_tools(self) -> list[dict[str, Any]]:
         tooluniverse = self._get_tooluniverse()
@@ -72,7 +120,8 @@ class ToolUniverseAdapter:
                 }
             ]
         try:
-            specs = tooluniverse.list_built_in_tools(mode="list_spec", scan_all=self.scan_all)
+            with self._quiet_tooluniverse_io():
+                specs = tooluniverse.list_built_in_tools(mode="list_spec", scan_all=self.scan_all)
         except Exception as exc:
             return [
                 {
@@ -161,8 +210,9 @@ class ToolUniverseAdapter:
         if tooluniverse is None:
             raise KeyError(f"ToolUniverse unavailable: {self._tooluniverse_error}")
         try:
-            tooluniverse.load_tools(include_tools=[tool_name])
-            raw_output = tooluniverse.run({"name": tool_name, "arguments": payload}, verbose=False)
+            with self._quiet_tooluniverse_io():
+                tooluniverse.load_tools(include_tools=[tool_name])
+                raw_output = tooluniverse.run({"name": tool_name, "arguments": payload}, verbose=False)
             if raw_output is None:
                 status = "partial"
                 warnings = ["ToolUniverse returned no data."]

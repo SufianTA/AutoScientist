@@ -118,11 +118,19 @@ def test_demo_run_generates_report() -> None:
     assert "FIND_TOOLS" in states
     assert "EXECUTE_EVIDENCE_COLLECTION" in states
     assert "SCORE_EVIDENCE" in states
+    assert "DEBATE_AND_REVISE" in states
+    debate_step = next(step for step in trace.json()["steps"] if step["state_name"] == "DEBATE_AND_REVISE")
+    assert debate_step["output"]["scientist_positions"]
+    assert debate_step["output"]["collaboration_model"] in {
+        "deterministic_local_scientist_panel",
+        "parallel_llm_scientist_panel",
+    }
     markdown = client.get(f"/reports/{run_id}/download?format=markdown")
     assert markdown.status_code == 200
     assert markdown.text.startswith("# ")
     assert "ACVR1" in markdown.text
     assert "FOP" in markdown.text
+    assert "Agent Debate And Revision" in markdown.text
     report_json = client.get(f"/reports/{run_id}/download?format=json")
     assert report_json.status_code == 200
     assert report_json.json()["run"]["id"] == run_id

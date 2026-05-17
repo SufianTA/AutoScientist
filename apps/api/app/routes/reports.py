@@ -152,6 +152,23 @@ def render_markdown_report(report: dict) -> str:
     lines.extend(["", "## Limitations", ""])
     for limitation in hypothesis_post.get("limitations", []):
         lines.append(f"- {limitation}")
+    debate = hypothesis_post.get("agent_debate", {})
+    if debate:
+        lines.extend(["", "## Agent Debate And Revision", ""])
+        lines.append(f"Collaboration model: `{debate.get('collaboration_model', 'not recorded')}`")
+        lines.append("")
+        for position in debate.get("scientist_positions", []):
+            lines.append(
+                f"- **{position.get('agent_name')}** ({position.get('vote', 'review')}): "
+                f"{ascii_safe(position.get('position', ''))}"
+            )
+        adjudication = debate.get("pi_adjudication", {})
+        if adjudication:
+            lines.extend(["", "PI adjudication:", ""])
+            if adjudication.get("rationale"):
+                lines.append(f"- Rationale: {ascii_safe(adjudication.get('rationale'))}")
+            for item in adjudication.get("softened_or_rejected_claims", []):
+                lines.append(f"- Softened/rejected: {ascii_safe(item)}")
     lines.extend(["", "## Proposed Next Experiments", ""])
     for experiment in hypothesis_post.get("next_experiments", []):
         lines.append(
