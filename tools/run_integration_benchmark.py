@@ -40,9 +40,9 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
             provider = "gemini"
             api_key_env_var = "GEMINI_API_KEY"
             model = model or "gemini-2.5-flash"
-        else:
-            provider = "mock"
-            model = model or "mock-scientist"
+    else:
+        provider = "mock"
+        model = model or "mock-scientist"
     medea_python = args.medea_python or os.getenv("MEDEA_PYTHON")
     return {
         "execution_mode": "inline",
@@ -83,6 +83,7 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
         ),
         None,
     )
+    qworld_mode = (qworld_step or {}).get("output", {}).get("qworld", {}).get("mode")
     return {
         "anthropic_llm": {
             "configured": bool(os.getenv("ANTHROPIC_API_KEY")),
@@ -90,8 +91,8 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
         },
         "qworld": {
             "healthy": bool(health.get("open_scientist", {}).get("qworld", {}).get("available")),
-            "executed": qworld_step is not None,
-            "mode": (qworld_step or {}).get("output", {}).get("qworld", {}).get("mode"),
+            "executed": qworld_step is not None and qworld_mode != "disabled",
+            "mode": qworld_mode,
         },
         "medea": {
             "healthy": bool(health.get("open_scientist", {}).get("medea", {}).get("available")),
