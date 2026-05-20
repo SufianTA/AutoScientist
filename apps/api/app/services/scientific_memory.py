@@ -298,6 +298,7 @@ def train_workflow_policy_model(
     name: str = "scientific_workflow_policy",
     artifact_dir: str | Path = "outputs/models",
 ) -> WorkflowPolicyModel:
+    _refresh_policy_example_rewards(db)
     examples = db.query(WorkflowPolicyExample).all()
     action_counts: Counter[str] = Counter()
     feature_action_counts: dict[str, Counter[str]] = defaultdict(Counter)
@@ -341,6 +342,17 @@ def train_workflow_policy_model(
     )
     db.add(row)
     return row
+
+
+def _refresh_policy_example_rewards(db: Session) -> None:
+    run_rewards = {
+        run.id: _run_reward(run)
+        for run in db.query(Run).all()
+    }
+    for example in db.query(WorkflowPolicyExample).all():
+        reward = run_rewards.get(example.run_id)
+        if reward is not None:
+            example.reward = reward
 
 
 def predict_next_actions(
