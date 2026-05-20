@@ -414,3 +414,46 @@ def test_openclaw_optional_adapter_trace() -> None:
     framework_step = next(step for step in trace["steps"] if step["state_name"] == "INITIALIZE_FRAMEWORK")
     assert framework_step["output"]["framework"] == "openclaw"
     assert framework_step["output"]["mode"] == "optional_adapter_placeholder"
+
+
+def test_scientific_memory_replay_and_policy_model() -> None:
+    objective = client.post(
+        "/objectives",
+        json={
+            "title": "Scientific memory ACVR1/FOP run",
+            "objective": "Generate a therapeutic hypothesis for ACVR1-driven FOP with replayable memory.",
+            "constraints": {"require_critic": True},
+        },
+    )
+    assert objective.status_code == 200
+    run = client.post(
+        "/runs",
+        json={
+            "objective_id": objective.json()["id"],
+            "execute_demo": True,
+            "run_config": {"execution_mode": "inline", "agent_count": 2},
+        },
+    )
+    assert run.status_code == 200
+    run_id = run.json()["id"]
+
+    summary = client.get("/memory/summary")
+    assert summary.status_code == 200
+    assert summary.json()["replays"] >= 1
+    assert summary.json()["policy_examples"] >= 1
+
+    replay = client.get(f"/memory/runs/{run_id}/replay")
+    assert replay.status_code == 200
+    assert replay.json()["bundle"]["run"]["id"] == run_id
+    assert replay.json()["replay_hash"]
+
+    train = client.post("/memory/policy/train", json={"name": "test_policy_model"})
+    assert train.status_code == 200
+    assert train.json()["metrics"]["num_examples"] >= 1
+
+    prediction = client.post(
+        "/memory/policy/predict",
+        json={"context": {"objective": "ACVR1 FOP", "state_name": "TOOL_SELECTION"}, "top_k": 3},
+    )
+    assert prediction.status_code == 200
+    assert prediction.json()["predictions"]

@@ -6,7 +6,7 @@ from app.env import load_environment
 load_environment()
 
 from app.db.session import init_db
-from app.routes import billing, board, frameworks, models, objectives, reports, runs, score, tools
+from app.routes import billing, board, frameworks, memory, models, objectives, reports, runs, score, tools
 
 
 app = FastAPI(title="BioAutoScientist API", version="0.1.0")
@@ -40,3 +40,4 @@ app.include_router(billing.router)
 app.include_router(models.router)
 app.include_router(frameworks.router)
 app.include_router(score.router)
+app.include_router(memory.router)

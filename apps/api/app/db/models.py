@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -175,4 +175,137 @@ class ModelTool(Base):
     output_schema_json: Mapped[dict] = mapped_column(JSON, default=dict)
     tooluniverse_config_json: Mapped[dict] = mapped_column(JSON, default=dict)
     status: Mapped[str] = mapped_column(String(40), default="registered")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ScientificEntity(Base):
+    __tablename__ = "scientific_entities"
+    __table_args__ = (UniqueConstraint("entity_type", "normalized_name", name="uq_scientific_entity"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("entity"))
+    entity_type: Mapped[str] = mapped_column(String(80))
+    name: Mapped[str] = mapped_column(String(255))
+    normalized_name: Mapped[str] = mapped_column(String(255))
+    aliases_json: Mapped[list] = mapped_column(JSON, default=list)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    first_seen_run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    last_seen_run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    mention_count: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ScientificHypothesisMemory(Base):
+    __tablename__ = "scientific_hypothesis_memory"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("memhyp"))
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"))
+    hypothesis_id: Mapped[str | None] = mapped_column(ForeignKey("hypotheses.id"), nullable=True)
+    title: Mapped[str] = mapped_column(String(255))
+    hypothesis_text: Mapped[str] = mapped_column(Text)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    status: Mapped[str] = mapped_column(String(80), default="candidate")
+    entity_ids_json: Mapped[list] = mapped_column(JSON, default=list)
+    evidence_summary_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    failure_modes_json: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ScientificCausalLink(Base):
+    __tablename__ = "scientific_causal_links"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("causal"))
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"))
+    source_entity_id: Mapped[str | None] = mapped_column(ForeignKey("scientific_entities.id"), nullable=True)
+    target_entity_id: Mapped[str | None] = mapped_column(ForeignKey("scientific_entities.id"), nullable=True)
+    relation: Mapped[str] = mapped_column(String(120))
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    evidence_ids_json: Mapped[list] = mapped_column(JSON, default=list)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ExperimentMemory(Base):
+    __tablename__ = "experiment_memory"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("exp"))
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"))
+    hypothesis_memory_id: Mapped[str | None] = mapped_column(
+        ForeignKey("scientific_hypothesis_memory.id"), nullable=True
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    experiment_type: Mapped[str] = mapped_column(String(120), default="unknown")
+    expected_information_gain: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    feasibility: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    status: Mapped[str] = mapped_column(String(80), default="proposed")
+    protocol_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    result_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class RunReplay(Base):
+    __tablename__ = "run_replays"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("replay"))
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), unique=True)
+    replay_hash: Mapped[str] = mapped_column(String(80))
+    bundle_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ToolBenchmark(Base):
+    __tablename__ = "tool_benchmarks"
+    __table_args__ = (UniqueConstraint("tool_name", "tool_source", name="uq_tool_benchmark"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("toolbench"))
+    tool_name: Mapped[str] = mapped_column(String(160))
+    tool_source: Mapped[str] = mapped_column(String(80))
+    call_count: Mapped[int] = mapped_column(Integer, default=0)
+    success_count: Mapped[int] = mapped_column(Integer, default=0)
+    failure_count: Mapped[int] = mapped_column(Integer, default=0)
+    avg_latency_ms: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_usefulness: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AgentRoleMemory(Base):
+    __tablename__ = "agent_role_memory"
+    __table_args__ = (UniqueConstraint("agent_name", name="uq_agent_role_memory"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("agentmem"))
+    agent_name: Mapped[str] = mapped_column(String(120))
+    role_summary: Mapped[str] = mapped_column(Text)
+    run_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    memory_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class WorkflowPolicyExample(Base):
+    __tablename__ = "workflow_policy_examples"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("policyex"))
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"))
+    step_index: Mapped[int] = mapped_column(Integer)
+    state_name: Mapped[str] = mapped_column(String(120))
+    action_type: Mapped[str] = mapped_column(String(80))
+    action_name: Mapped[str] = mapped_column(String(160))
+    context_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    outcome_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    reward: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class WorkflowPolicyModel(Base):
+    __tablename__ = "workflow_policy_models"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("policymodel"))
+    name: Mapped[str] = mapped_column(String(160))
+    version: Mapped[str] = mapped_column(String(80))
+    model_type: Mapped[str] = mapped_column(String(120), default="scientific_workflow_policy")
+    training_summary_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    artifact_path: Mapped[str] = mapped_column(String(512))
+    metrics_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

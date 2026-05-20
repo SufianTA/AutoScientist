@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, ModelTool, Objective, Run, ToolCall
 from app.db.session import SessionLocal
 from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
+from app.services.scientific_memory import persist_scientific_memory
 from app.security import validate_env_var_name
 from agents.app.runtime import build_agent_runtime
 
@@ -269,6 +270,8 @@ def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[d
             content_json=state.critique,
         )
     )
+    db.flush()
+    persist_scientific_memory(db, run, state)
 
 
 def resolve_model_tool_configs(db: Session, config: dict[str, Any]) -> dict[str, Any]:

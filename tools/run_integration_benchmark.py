@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from app.env import load_environment
+from app.db.session import SessionLocal
 from app.services.local_runner import run_question
 from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
+from app.services.scientific_memory import train_workflow_policy_model
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 
 
@@ -181,6 +183,19 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
         "open_scientist": registry.health(),
     }
     result = run_question(args.objective, config)
+    policy_model = None
+    if not args.skip_policy_training:
+        db = SessionLocal()
+        try:
+            policy_model = train_workflow_policy_model(
+                db,
+                name=args.policy_model_name,
+                artifact_dir=args.policy_artifact_dir,
+            )
+            db.commit()
+            db.refresh(policy_model)
+        finally:
+            db.close()
     integrations = summarize_integrations(result, health)
     score = value_score(result, integrations)
     return {
@@ -193,6 +208,16 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
         "health": health,
         "integrations": integrations,
         "value_assessment": score,
+        "policy_model": {
+            "id": policy_model.id,
+            "name": policy_model.name,
+            "version": policy_model.version,
+            "artifact_path": policy_model.artifact_path,
+            "training_summary": policy_model.training_summary_json,
+            "metrics": policy_model.metrics_json,
+        }
+        if policy_model
+        else None,
         "trace_summary": result.get("trace_summary"),
         "hypothesis": result.get("report", {}).get("hypothesis", {}),
         "evidence_count": len(result.get("report", {}).get("evidence", [])),
@@ -238,6 +263,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--medea-debate-rounds", type=int, default=0)
     parser.add_argument("--medea-timeout-seconds", type=int, default=1200)
     parser.add_argument("--medea-subprocess-timeout-seconds", type=int, default=180)
+    parser.add_argument("--skip-policy-training", action="store_true")
+    parser.add_argument("--policy-model-name", default="scientific_workflow_policy")
+    parser.add_argument("--policy-artifact-dir", default="outputs/models")
     return parser.parse_args(argv)
 
 
@@ -252,6 +280,7 @@ def main(argv: list[str] | None = None) -> int:
         "score": artifact["value_assessment"]["score"],
         "interpretation": artifact["value_assessment"]["interpretation"],
         "integrations": artifact["integrations"],
+        "policy_model": artifact["policy_model"],
     }, indent=2))
     return 0 if artifact["status"] == "completed" else 1
 
