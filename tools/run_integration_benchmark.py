@@ -91,7 +91,7 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
         },
         "qworld": {
             "healthy": bool(health.get("open_scientist", {}).get("qworld", {}).get("available")),
-            "executed": qworld_step is not None and qworld_mode != "disabled",
+            "executed": qworld_step is not None and qworld_mode == "qworld",
             "mode": qworld_mode,
         },
         "medea": {
