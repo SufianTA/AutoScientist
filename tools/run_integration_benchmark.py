@@ -39,7 +39,7 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         elif os.getenv("GEMINI_API_KEY"):
             provider = "gemini"
             api_key_env_var = "GEMINI_API_KEY"
-            model = model or "gemini-1.5-pro"
+            model = model or "gemini-2.5-flash"
         else:
             provider = "mock"
             model = model or "mock-scientist"
