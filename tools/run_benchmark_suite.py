@@ -75,6 +75,7 @@ def suite_args(base: argparse.Namespace, case: dict[str, Any]) -> SimpleNamespac
         llm_max_tokens=base.llm_max_tokens,
         qworld_model=base.qworld_model,
         qworld_api_key_env_var=base.qworld_api_key_env_var,
+        disable_qworld=base.disable_qworld,
         agent_count=base.agent_count,
         max_runtime_minutes=base.max_runtime_minutes,
         tool_budget_usd=base.tool_budget_usd,
@@ -287,6 +288,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-max-tokens", type=int, default=192)
     parser.add_argument("--qworld-model", default="")
     parser.add_argument("--qworld-api-key-env-var", default="")
+    parser.add_argument("--disable-qworld", action="store_true")
     parser.add_argument("--agent-count", type=int, default=2)
     parser.add_argument("--max-runtime-minutes", type=int, default=5)
     parser.add_argument("--tool-budget-usd", type=float, default=1.0)

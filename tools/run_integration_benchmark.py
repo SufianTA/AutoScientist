@@ -51,7 +51,7 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "tool_budget_usd": args.tool_budget_usd,
         "evidence_strictness": "strict",
         "real_data_enabled": True,
-        "qworld_enabled": True,
+        "qworld_enabled": not args.disable_qworld,
         "qworld_model": args.qworld_model or model or "",
         "qworld_api_key_env_var": args.qworld_api_key_env_var or api_key_env_var or "",
         "llm_provider": provider,
@@ -253,6 +253,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-max-tokens", type=int, default=256)
     parser.add_argument("--qworld-model", default="")
     parser.add_argument("--qworld-api-key-env-var", default="")
+    parser.add_argument("--disable-qworld", action="store_true")
     parser.add_argument("--agent-count", type=int, default=6)
     parser.add_argument("--max-runtime-minutes", type=int, default=30)
     parser.add_argument("--tool-budget-usd", type=float, default=10.0)
