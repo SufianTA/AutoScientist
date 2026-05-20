@@ -191,6 +191,7 @@ def update_tool_benchmarks(
         if benchmark is None:
             benchmark = ToolBenchmark(tool_name=call.tool_name, tool_source=call.tool_source)
             db.add(benchmark)
+            db.flush()
         benchmark.call_count = benchmark.call_count or 0
         benchmark.success_count = benchmark.success_count or 0
         benchmark.failure_count = benchmark.failure_count or 0
