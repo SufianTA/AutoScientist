@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, ModelTool, Objective, Run, ToolCall
 from app.db.session import SessionLocal
+from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
 from app.security import validate_env_var_name
 from agents.app.runtime import build_agent_runtime
 
@@ -28,6 +29,12 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "require_real_llm": False,
     "model_tool_names": [],
     "real_data_enabled": False,
+    "qworld_enabled": True,
+    "qworld_model": "",
+    "qworld_api_key_env_var": "",
+    "qworld_base_url": "",
+    "txagent_enabled": False,
+    "medea_enabled": False,
 }
 
 
@@ -55,6 +62,15 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
     if not isinstance(normalized["model_tool_names"], list):
         normalized["model_tool_names"] = []
     normalized["real_data_enabled"] = bool(normalized.get("real_data_enabled", False))
+    normalized["qworld_enabled"] = bool(normalized.get("qworld_enabled", True))
+    normalized["qworld_model"] = str(normalized.get("qworld_model") or "")
+    normalized["qworld_base_url"] = str(normalized.get("qworld_base_url") or "")
+    normalized["qworld_api_key_env_var"] = validate_env_var_name(
+        normalized.get("qworld_api_key_env_var"),
+        "qworld_api_key_env_var",
+    )
+    normalized["txagent_enabled"] = bool(normalized.get("txagent_enabled", False))
+    normalized["medea_enabled"] = bool(normalized.get("medea_enabled", False))
     return normalized
 
 
@@ -176,6 +192,7 @@ def execute_run(
 
 
 def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[dict[str, Any]]) -> None:
+    open_scientist = OpenScientistCapabilityRegistry()
     for trace_item in trace:
         db.add(
             AgentStep(
@@ -219,18 +236,26 @@ def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[d
     )
     db.add(hypothesis)
     db.flush()
+    hypothesis_content = {
+        **state.hypothesis_card,
+        "next_experiments": state.experiments,
+        "critique": state.critique,
+        "objective_classification": state.context.get("objective_classification", {}),
+        "capability_plan": state.context.get("capability_plan", {}),
+        "evaluation_criteria": state.context.get("evaluation_criteria", []),
+        "report_evaluation": state.report.get("report_evaluation", {}),
+        "abstention": state.context.get("abstention", {}),
+        "open_scientist": state.report.get("open_scientist", {}),
+        "run_config": run.run_config_json,
+    }
+    hypothesis_content.update(open_scientist.local_board_post_metadata("hypothesis", hypothesis_content))
     db.add(
         BoardPost(
             post_type="hypothesis",
             run_id=run.id,
             hypothesis_id=hypothesis.id,
             agent_author="publisher_agent",
-            content_json={
-                **state.hypothesis_card,
-                "next_experiments": state.experiments,
-                "critique": state.critique,
-                "run_config": run.run_config_json,
-            },
+            content_json=hypothesis_content,
         )
     )
     db.add(

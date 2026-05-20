@@ -9,6 +9,15 @@ from datetime import datetime
 from typing import Any, Callable
 
 from app.services.llm_provider import call_llm, parse_json_object, require_real_provider
+from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
+from app.services.scientific_planning import (
+    build_abstention_assessment,
+    build_capability_plan,
+    build_claim_graph,
+    classify_objective,
+    evaluate_report_against_criteria,
+    type_evidence_items,
+)
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
@@ -29,6 +38,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         self.langgraph_available = self._check_langgraph()
         self._active_trace: list[dict[str, Any]] = []
         self._progress_lock = threading.Lock()
+        self.open_scientist = OpenScientistCapabilityRegistry()
 
     def _check_langgraph(self) -> bool:
         try:
@@ -132,6 +142,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         self,
     ) -> list[tuple[str, Callable[[ResearchRunState, list[dict[str, Any]], dict[str, Any]], ResearchRunState]]]:
         return [
+            ("classify_objective", self._classify_objective),
             ("plan_research", self._plan_research),
             ("find_tools", self._find_tools),
             ("execute_evidence_collection", self._execute_evidence_collection),
@@ -743,6 +754,44 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         diseases = state.context.get("biomedical_context", {}).get("diseases", [])
         return diseases[0] if diseases else "the disease context"
 
+    def _classify_objective(
+        self,
+        state: ResearchRunState,
+        trace: list[dict[str, Any]],
+        config: dict[str, Any],
+    ) -> ResearchRunState:
+        state.current_state = AgentStateName.CLASSIFY_OBJECTIVE
+        biomedical_context = self._extract_context(state, config)
+        state.context["biomedical_context"] = biomedical_context
+        classification = classify_objective(state.objective, biomedical_context).model_dump()
+        capability_plan = build_capability_plan(classification)
+        criteria_result = self.open_scientist.generate_qworld_criteria(state.objective, classification, config)
+        state.context["objective_classification"] = classification
+        state.context["capability_plan"] = capability_plan
+        state.context["evaluation_criteria"] = criteria_result["criteria"]
+        state.context["qworld"] = {
+            "status": criteria_result["status"],
+            "mode": criteria_result["mode"],
+            "warnings": criteria_result["warnings"],
+            "runtime_ms": criteria_result["runtime_ms"],
+        }
+        state.context["open_scientist_health"] = self.open_scientist.health()
+        self._record(
+            trace,
+            "pi_agent",
+            state.current_state.value,
+            {"objective": state.objective, "run_config": config},
+            {
+                "biomedical_context": biomedical_context,
+                "objective_classification": classification,
+                "capability_plan": capability_plan,
+                "evaluation_criteria": criteria_result["criteria"],
+                "qworld": state.context["qworld"],
+                "open_scientist_health": state.context["open_scientist_health"],
+            },
+        )
+        return state
+
     def _plan_research(
         self,
         state: ResearchRunState,
@@ -750,7 +799,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         state.current_state = AgentStateName.PLAN_RESEARCH
-        biomedical_context = self._extract_context(state, config)
+        biomedical_context = state.context.get("biomedical_context") or self._extract_context(state, config)
         state.context["biomedical_context"] = biomedical_context
         if self._llm_enabled(config):
             plan_json = self._llm_json(
@@ -793,6 +842,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "evidence_strictness": config.get("evidence_strictness", "balanced"),
                 "llm_provider": config.get("llm_provider", "mock"),
                 "llm_model": config.get("llm_model", "mock-scientist"),
+                "objective_classification": state.context.get("objective_classification", {}),
+                "capability_plan": state.context.get("capability_plan", {}),
+                "evaluation_criteria_count": len(state.context.get("evaluation_criteria", [])),
                 "llm_calls": state.context.get("llm_calls", []),
             },
         )
@@ -824,6 +876,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "experiment_recommendation_tool",
                 *[tool["name"] for tool in config.get("model_tool_configs", [])],
             ]
+        routed_capabilities = state.context.get("objective_classification", {}).get("required_capabilities", [])
+        capability_tools = []
+        if "qworld" in routed_capabilities:
+            capability_tools.append("qworld_criteria_generator")
+        if "medea" in routed_capabilities:
+            capability_tools.append("medea_agent")
+        if "txagent" in routed_capabilities:
+            capability_tools.append("txagent_agent")
+        if "clawinstitute_board" in routed_capabilities:
+            capability_tools.append("clawinstitute_board_publisher")
+        state.selected_tools = list(dict.fromkeys([*state.selected_tools, *capability_tools]))
         self._record(
             trace,
             "finder_agent",
@@ -831,10 +894,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "objective": state.objective,
                 "biomedical_context": state.context.get("biomedical_context", {}),
+                "objective_classification": state.context.get("objective_classification", {}),
                 "available_custom_tools": sorted(self.tools.keys()),
+                "available_open_scientist_capabilities": self.open_scientist.health(),
             },
             {
                 "selected_tools": state.selected_tools,
+                "capability_plan": state.context.get("capability_plan", {}),
                 "selection_policy": (
                     "live public APIs plus ToolUniverse/OpenTargets and configured model tools"
                     if config.get("real_data_enabled")
@@ -872,6 +938,71 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "structured": {"requires_real_data": True, "planned_queries": queries},
             },
         ]
+
+    def _execute_enabled_open_scientist_capabilities(
+        self,
+        state: ResearchRunState,
+        config: dict[str, Any],
+    ) -> None:
+        capabilities = set(state.context.get("objective_classification", {}).get("required_capabilities", []))
+        if config.get("txagent_enabled") and "txagent" in capabilities:
+            self._runtime_event(
+                "txagent_agent",
+                "TOOL_CALL_STARTED",
+                {"tool_name": "txagent_agent", "tool_source": "open_scientist"},
+                {"objective": state.objective},
+            )
+            result = self.open_scientist.execute_txagent(state.objective, config)
+            self._runtime_event(
+                "txagent_agent",
+                "TOOL_CALL_COMPLETED",
+                {
+                    "tool_name": "txagent_agent",
+                    "tool_source": "open_scientist",
+                    "status": result.get("status"),
+                    "latency_ms": result.get("runtime_ms"),
+                },
+                {"objective": state.objective},
+            )
+            state.tool_outputs.append({"tool_name": "txagent_agent", "tool_source": "open_scientist", "result": result})
+            if result["status"] in {"success", "partial"}:
+                state.evidence.append(
+                    {
+                        "source": "txagent_agent",
+                        "text": str(result.get("output", {}).get("answer") or result.get("output", ""))[:4000],
+                        "structured": result,
+                    }
+                )
+        if config.get("medea_enabled") and "medea" in capabilities:
+            self._runtime_event(
+                "omics_agent",
+                "TOOL_CALL_STARTED",
+                {"tool_name": "medea_agent", "tool_source": "open_scientist"},
+                {"objective": state.objective},
+            )
+            result = self.open_scientist.execute_medea(state.objective, config)
+            self._runtime_event(
+                "omics_agent",
+                "TOOL_CALL_COMPLETED",
+                {
+                    "tool_name": "medea_agent",
+                    "tool_source": "open_scientist",
+                    "status": result.get("status"),
+                    "latency_ms": result.get("runtime_ms"),
+                },
+                {"objective": state.objective},
+            )
+            state.tool_outputs.append({"tool_name": "medea_agent", "tool_source": "open_scientist", "result": result})
+            if result["status"] in {"success", "partial"}:
+                output = result.get("output", {})
+                text = output.get("final") if isinstance(output, dict) else str(output)
+                state.evidence.append(
+                    {
+                        "source": "medea_agent",
+                        "text": str(text or output)[:4000],
+                        "structured": result,
+                    }
+                )
 
     def _execute_evidence_collection(
         self,
@@ -920,6 +1051,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                         "structured": result["output"],
                     }
                 )
+        self._execute_enabled_open_scientist_capabilities(state, config)
+        state.evidence = type_evidence_items(state.evidence)
         self._record(
             trace,
             "mechanism_agent",
@@ -927,6 +1060,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {"selected_tools": state.selected_tools},
             {
                 "evidence": state.evidence,
+                "evidence_types": sorted({item.get("evidence_type", "unknown") for item in state.evidence}),
                 "tool_output_count": len(state.tool_outputs),
                 "custom_model_tool_count": len(model_tool_outputs),
                 "live_public_tool_count": 0,
@@ -1073,6 +1207,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                         "structured": model_result["output"],
                     }
                 )
+        self._execute_enabled_open_scientist_capabilities(state, config)
+        state.evidence = type_evidence_items(state.evidence)
         self._record(
             trace,
             "mechanism_agent",
@@ -1084,6 +1220,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             },
             {
                 "evidence": state.evidence,
+                "evidence_types": sorted({item.get("evidence_type", "unknown") for item in state.evidence}),
                 "tool_output_count": len(state.tool_outputs),
                 "custom_model_tool_count": len(model_tool_outputs),
                 "live_public_tool_count": len(
@@ -1296,12 +1433,19 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     values = self._string_list(hypothesis_json.get(key))
                     if values:
                         state.hypothesis_card[key] = values
+        claim_graph = build_claim_graph(state.hypothesis_card, state.evidence)
+        state.context["claim_graph"] = claim_graph
+        state.hypothesis_card["claim_graph"] = claim_graph
         self._record(
             trace,
             "mechanism_agent",
             state.current_state.value,
             {"scored_evidence": state.evidence},
-            {"hypothesis_card": state.hypothesis_card, "llm_calls": state.context.get("llm_calls", [])},
+            {
+                "hypothesis_card": state.hypothesis_card,
+                "claim_graph": claim_graph,
+                "llm_calls": state.context.get("llm_calls", []),
+            },
         )
         return state
 
@@ -1598,6 +1742,16 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "abstention_required": False,
                 "claim_boundary": "candidate hypothesis; no clinical efficacy or safety claim",
             }
+        abstention = build_abstention_assessment(
+            state.context.get("objective_classification", {}),
+            state.evidence,
+            state.context.get("claim_graph", {}),
+        )
+        state.context["abstention"] = abstention
+        state.critique["abstention"] = abstention
+        if abstention["abstention_required"]:
+            state.critique["abstention_required"] = True
+            state.critique["claim_boundary"] = abstention["allowed_output"]
         self._record(
             trace,
             "critic_agent",
@@ -1647,6 +1801,15 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "run_config": config,
             "agent_framework": "langgraph",
             "biomedical_context": state.context.get("biomedical_context", {}),
+            "objective_classification": state.context.get("objective_classification", {}),
+            "capability_plan": state.context.get("capability_plan", {}),
+            "evaluation_criteria": state.context.get("evaluation_criteria", []),
+            "claim_graph": state.context.get("claim_graph", {}),
+            "abstention": state.context.get("abstention", {}),
+            "open_scientist": {
+                "qworld": state.context.get("qworld", {}),
+                "health": state.context.get("open_scientist_health", {}),
+            },
             "llm_calls": state.context.get("llm_calls", []),
         }
         if self._llm_enabled(config):
@@ -1671,6 +1834,10 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 state.report["title"] = report_json["title"]
             if report_json.get("summary"):
                 state.report["summary"] = report_json["summary"]
+        state.report["report_evaluation"] = evaluate_report_against_criteria(
+            state.report,
+            state.context.get("evaluation_criteria", []),
+        )
         self._record(
             trace,
             "publisher_agent",
@@ -1680,6 +1847,10 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "critique": state.critique,
                 "experiments": state.experiments,
             },
-            {"report": state.report, "llm_calls": state.context.get("llm_calls", [])},
+            {
+                "report": state.report,
+                "report_evaluation": state.report["report_evaluation"],
+                "llm_calls": state.context.get("llm_calls", []),
+            },
         )
         return state

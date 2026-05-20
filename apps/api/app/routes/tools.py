@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db.models import ToolCall
 from app.db.session import get_db
+from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 
 router = APIRouter(prefix="/tools", tags=["tools"])
@@ -31,7 +32,10 @@ def inventory(adapter: ToolUniverseAdapter = Depends(get_adapter)) -> dict:
 
 @router.get("/health")
 def tool_health(adapter: ToolUniverseAdapter = Depends(get_adapter)) -> dict:
-    return {"tooluniverse": adapter.tooluniverse_health()}
+    return {
+        "tooluniverse": adapter.tooluniverse_health(),
+        "open_scientist": OpenScientistCapabilityRegistry().health(),
+    }
 
 
 @router.post("/execute")

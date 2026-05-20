@@ -104,6 +104,34 @@ def build_report(run_id: str, db: Session) -> dict:
             }
             for post in posts
         ],
+        "objective_classification": next(
+            (
+                post.content_json.get("objective_classification", {})
+                for post in posts
+                if post.post_type == "hypothesis"
+            ),
+            {},
+        ),
+        "capability_plan": next(
+            (post.content_json.get("capability_plan", {}) for post in posts if post.post_type == "hypothesis"),
+            {},
+        ),
+        "evaluation_criteria": next(
+            (post.content_json.get("evaluation_criteria", []) for post in posts if post.post_type == "hypothesis"),
+            [],
+        ),
+        "report_evaluation": next(
+            (post.content_json.get("report_evaluation", {}) for post in posts if post.post_type == "hypothesis"),
+            {},
+        ),
+        "claim_graph": next(
+            (post.content_json.get("claim_graph", {}) for post in posts if post.post_type == "hypothesis"),
+            {},
+        ),
+        "abstention": next(
+            (post.content_json.get("abstention", {}) for post in posts if post.post_type == "hypothesis"),
+            {},
+        ),
         "guardrails": guardrails,
     }
 
@@ -131,6 +159,31 @@ def render_markdown_report(report: dict) -> str:
     ]
     for item in hypothesis_post.get("scientific_assessment", []):
         lines.append(f"- {ascii_safe(item)}")
+    classification = report.get("objective_classification", {})
+    if classification:
+        lines.extend(["", "## Objective Classification", ""])
+        lines.append(f"- Primary task: `{classification.get('primary_task', 'unknown')}`")
+        lines.append(f"- Domain: `{classification.get('domain', 'unknown')}`")
+        lines.append(f"- Risk level: `{classification.get('risk_level', 'unknown')}`")
+        if classification.get("required_capabilities"):
+            lines.append(f"- Capabilities: {', '.join(classification['required_capabilities'])}")
+    evaluation = report.get("report_evaluation", {})
+    if evaluation:
+        lines.extend(["", "## Evaluation Criteria", ""])
+        lines.append(
+            f"Score: `{evaluation.get('score')}` "
+            f"({evaluation.get('earned_points')}/{evaluation.get('total_points')} points)"
+        )
+        for criterion in evaluation.get("criteria", [])[:8]:
+            mark = "met" if criterion.get("satisfied") else "gap"
+            lines.append(f"- [{mark}] {ascii_safe(criterion.get('criterion', ''))}")
+    abstention = report.get("abstention", {})
+    if abstention:
+        lines.extend(["", "## Abstention Assessment", ""])
+        lines.append(f"- Required: `{abstention.get('abstention_required')}`")
+        lines.append(f"- Allowed output: {ascii_safe(abstention.get('allowed_output', 'not recorded'))}")
+        for reason in abstention.get("reasons", []):
+            lines.append(f"- Reason: {ascii_safe(reason)}")
     lines.extend(
         [
             "",
