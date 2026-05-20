@@ -26,6 +26,7 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "llm_model": "mock-scientist",
     "llm_api_key_env_var": "",
     "llm_base_url": "",
+    "llm_max_tokens": 1200,
     "require_real_llm": False,
     "model_tool_names": [],
     "real_data_enabled": False,
@@ -58,6 +59,7 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         "llm_api_key_env_var",
     )
     normalized["llm_base_url"] = str(normalized.get("llm_base_url") or "")
+    normalized["llm_max_tokens"] = max(64, min(int(normalized.get("llm_max_tokens", 1200)), 4000))
     normalized["require_real_llm"] = bool(normalized.get("require_real_llm", False))
     if not isinstance(normalized["model_tool_names"], list):
         normalized["model_tool_names"] = []

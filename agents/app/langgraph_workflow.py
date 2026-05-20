@@ -231,6 +231,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         prompt: str,
         max_tokens: int = 1200,
     ) -> dict[str, Any]:
+        max_tokens = min(max_tokens, int(config.get("llm_max_tokens", max_tokens) or max_tokens))
         self._runtime_event(
             agent_name,
             "LLM_CALL_STARTED",
@@ -309,6 +310,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         prompt: str,
         max_tokens: int = 1200,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        max_tokens = min(max_tokens, int(config.get("llm_max_tokens", max_tokens) or max_tokens))
         self._runtime_event(
             agent_name,
             "LLM_CALL_STARTED",

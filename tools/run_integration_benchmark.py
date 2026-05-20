@@ -55,6 +55,7 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "llm_provider": provider,
         "llm_model": model or "",
         "llm_api_key_env_var": api_key_env_var or "",
+        "llm_max_tokens": args.llm_max_tokens,
         "require_real_llm": args.require_real_llm,
         "medea_enabled": bool(medea_python) and not args.disable_medea,
         "medea_python": medea_python or "",
@@ -224,6 +225,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-provider", default="auto")
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--llm-api-key-env-var", default="")
+    parser.add_argument("--llm-max-tokens", type=int, default=256)
     parser.add_argument("--qworld-model", default="")
     parser.add_argument("--qworld-api-key-env-var", default="")
     parser.add_argument("--agent-count", type=int, default=6)
