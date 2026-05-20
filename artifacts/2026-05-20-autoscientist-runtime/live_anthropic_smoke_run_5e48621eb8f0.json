@@ -1,0 +1,810 @@
+{
+  "created_at_unix": 1779255590,
+  "objective": "Generate a concise therapeutic hypothesis for PCSK9 familial hypercholesterolemia using public biomedical evidence, citations, safety concerns, and validation experiments.",
+  "run_id": "run_5e48621eb8f0",
+  "status": "completed",
+  "final_confidence": 0.27,
+  "run_config": {
+    "execution_mode": "inline",
+    "agent_count": 1,
+    "max_runtime_minutes": 5,
+    "tool_budget_usd": 1.0,
+    "evidence_strictness": "strict",
+    "real_data_enabled": true,
+    "qworld_enabled": false,
+    "qworld_model": "claude-sonnet-4-6",
+    "qworld_api_key_env_var": "ANTHROPIC_API_KEY",
+    "llm_provider": "anthropic",
+    "llm_model": "claude-sonnet-4-6",
+    "llm_api_key_env_var": "ANTHROPIC_API_KEY",
+    "llm_max_tokens": 128,
+    "require_real_llm": true,
+    "medea_enabled": false,
+    "medea_python": "/opt/medea-py312/bin/python",
+    "medea_smoke_only": false,
+    "medea_debate_rounds": 0,
+    "medea_timeout_seconds": 1200,
+    "medea_subprocess_timeout_seconds": 180,
+    "txagent_enabled": false
+  },
+  "health": {
+    "tooluniverse": {
+      "available": true,
+      "status": "ready",
+      "error": null
+    },
+    "open_scientist": {
+      "qworld": {
+        "available": true,
+        "status": "importable",
+        "version": "0.1.1",
+        "error": null
+      },
+      "txagent": {
+        "available": false,
+        "status": "not_installed_or_import_failed",
+        "error": "No module named 'txagent'"
+      },
+      "medea": {
+        "available": true,
+        "status": "importable_external_python",
+        "version": "1.0.0",
+        "python": "/opt/medea-py312/bin/python",
+        "error": null,
+        "recommended_mode": "external_service_or_isolated_subprocess"
+      },
+      "tooluniverse": {
+        "available": true,
+        "status": "importable",
+        "version": "1.1.11",
+        "error": null
+      },
+      "clawinstitute_board": {
+        "available": true,
+        "status": "local_board_ready",
+        "mode": "local_research_board"
+      }
+    }
+  },
+  "integrations": {
+    "anthropic_llm": {
+      "configured": true,
+      "executed": true
+    },
+    "qworld": {
+      "healthy": true,
+      "executed": false,
+      "mode": null
+    },
+    "medea": {
+      "healthy": true,
+      "executed": false,
+      "status": null
+    },
+    "tooluniverse": {
+      "healthy": true,
+      "executed": true,
+      "call_count": 5
+    },
+    "public_biomedical": {
+      "executed": true,
+      "call_count": 4
+    },
+    "local_board": {
+      "healthy": true,
+      "executed": true
+    }
+  },
+  "value_assessment": {
+    "score": 75,
+    "max_score": 100,
+    "checks": {
+      "completed_run": true,
+      "nonempty_hypothesis": true,
+      "evidence_collected": true,
+      "scored_evidence": true,
+      "experiments_proposed": false,
+      "guardrails_present": true,
+      "auditable_trace": true,
+      "medea_executed": false,
+      "qworld_executed": false,
+      "live_data_executed": true,
+      "board_written": true
+    },
+    "interpretation": "promising: useful workflow, but some integrations or evidence depth need work"
+  },
+  "policy_model": null,
+  "trace_summary": {
+    "agent_steps": 60,
+    "tool_calls": 17
+  },
+  "hypothesis": {
+    "title": "PCSK9 pathway modulation as a candidate strategy for PCSK9 familial hypercholesterolemia using public biomedical evidence",
+    "text": "Modulating PCSK9-linked LDL receptor and cholesterol-clearance biology is a candidate, evidence-supported but not validated therapeutic hypothesis for PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+    "confidence": 0.27,
+    "status": "candidate"
+  },
+  "evidence_count": 9,
+  "guardrails": [
+    "Candidate hypothesis only.",
+    "Computationally prioritized and evidence-supported, not validated.",
+    "Requires experimental validation before clinical interpretation."
+  ],
+  "experiments": [],
+  "tool_calls": [
+    {
+      "tool_name": "ncbi_gene_profile_tool",
+      "tool_source": "live_public_biomedical",
+      "input": {
+        "gene_symbol": "PCSK9",
+        "organism": "Homo sapiens"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "gene_symbol": "PCSK9",
+          "organism": "Homo sapiens"
+        },
+        "output": {
+          "gene_id": "255738",
+          "gene_symbol": "PCSK9",
+          "description": "proprotein convertase subtilisin/kexin type 9",
+          "summary": "This gene encodes a member of the subtilisin-like proprotein convertase family, which includes proteases that process protein and peptide precursors trafficking through regulated or constitutive branches of the secretory pathway. The encoded protein undergoes an autocatalytic processing event with its prosegment in the ER and is constitutively secreted as an inactive protease into the extracellular matrix and trans-Golgi network. It is expressed in liver, intestine and kidney tissues and escorts specific receptors for lysosomal degradation. It plays a role in cholesterol and fatty acid metabolism. Mutations in this gene have been associated with autosomal dominant familial hypercholesterolemia. Alternative splicing results in multiple transcript variants. [provided by RefSeq, Feb 2014]",
+          "organism": "Homo sapiens",
+          "map_location": "1p32.3",
+          "other_designations": "proprotein convertase subtilisin/kexin type 9|convertase subtilisin/kexin type 9 preproprotein|neural apoptosis regulated convertase 1|subtilisin/kexin-like protease PC9"
+        },
+        "sources": [
+          {
+            "name": "NCBI Gene",
+            "id": "255738",
+            "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&id=255738&retmode=json"
+          }
+        ],
+        "confidence": 0.86,
+        "warnings": [],
+        "runtime_ms": 419,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 419,
+      "created_at": "2026-05-20T05:39:50.274928"
+    },
+    {
+      "tool_name": "ncbi_gene_profile_tool",
+      "tool_source": "live_public_biomedical",
+      "input": {
+        "gene_symbol": "LDLR",
+        "organism": "Homo sapiens"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "gene_symbol": "LDLR",
+          "organism": "Homo sapiens"
+        },
+        "output": {
+          "gene_id": "3949",
+          "gene_symbol": "LDLR",
+          "description": "low density lipoprotein receptor",
+          "summary": "The low density lipoprotein receptor (LDLR) gene family consists of cell surface proteins involved in receptor-mediated endocytosis of specific ligands. The encoded protein is normally bound at the cell membrane, where it binds low density lipoprotein/cholesterol and is taken into the cell. Lysosomes release the cholesterol, which is made available for repression of microsomal enzyme 3-hydroxy-3-methylglutaryl coenzyme A (HMG CoA) reductase, the rate-limiting step in cholesterol synthesis. At the same time, a reciprocal stimulation of cholesterol ester synthesis takes place. Mutations in this gene cause the autosomal dominant disorder, familial hypercholesterolemia. Alternate splicing results in multiple transcript variants.[provided by RefSeq, May 2022]",
+          "organism": "Homo sapiens",
+          "map_location": "19p13.2",
+          "other_designations": "low-density lipoprotein receptor|LDL receptor|low-density lipoprotein receptor class A domain-containing protein 3"
+        },
+        "sources": [
+          {
+            "name": "NCBI Gene",
+            "id": "3949",
+            "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&id=3949&retmode=json"
+          }
+        ],
+        "confidence": 0.86,
+        "warnings": [],
+        "runtime_ms": 323,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 323,
+      "created_at": "2026-05-20T05:39:50.274945"
+    },
+    {
+      "tool_name": "pubmed_literature_search_tool",
+      "tool_source": "live_public_biomedical",
+      "input": {
+        "query": "{\"primary_genes\":[\"PCSK9\",\"LDLR\",\"APOB\",\"HMGCR\"],\"diseases\":[\"familial hypercholesterolemia\",\"atherosclerosis\",\"coronary artery disease\"],\"candidate_interventions\":[\"evolocumab\",\"a",
+        "retmax": 5
+      },
+      "output": {
+        "status": "partial",
+        "input": {
+          "query": "{\"primary_genes\":[\"PCSK9\",\"LDLR\",\"APOB\",\"HMGCR\"],\"diseases\":[\"familial hypercholesterolemia\",\"atherosclerosis\",\"coronary artery disease\"],\"candidate_interventions\":[\"evolocumab\",\"a",
+          "retmax": 5
+        },
+        "output": {
+          "query": "{\"primary_genes\":[\"PCSK9\",\"LDLR\",\"APOB\",\"HMGCR\"],\"diseases\":[\"familial hypercholesterolemia\",\"atherosclerosis\",\"coronary artery disease\"],\"candidate_interventions\":[\"evolocumab\",\"a",
+          "articles": [],
+          "count": 0
+        },
+        "sources": [
+          {
+            "name": "PubMed",
+            "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%7B%22primary_genes%22%3A%5B%22PCSK9%22%2C%22LDLR%22%2C%22APOB%22%2C%22HMGCR%22%5D%2C%22diseases%22%3A%5B%22familial+hypercholesterolemia%22%2C%22atherosclerosis%22%2C%22coronary+artery+disease%22%5D%2C%22candidate_interventions%22%3A%5B%22evolocumab%22%2C%22a&retmode=json&retmax=5"
+          }
+        ],
+        "confidence": 0.25,
+        "warnings": [
+          "No PubMed records returned."
+        ],
+        "runtime_ms": 205,
+        "tool_version": "0.1.0"
+      },
+      "status": "partial",
+      "latency_ms": 205,
+      "created_at": "2026-05-20T05:39:50.274956"
+    },
+    {
+      "tool_name": "pubchem_candidate_lookup_tool",
+      "tool_source": "live_public_biomedical",
+      "input": {
+        "names": [
+          "evolocumab",
+          "alirocumab",
+          "inclisiran",
+          "evinacumab"
+        ]
+      },
+      "output": {
+        "status": "partial",
+        "input": {
+          "names": [
+            "evolocumab",
+            "alirocumab",
+            "inclisiran",
+            "evinacumab"
+          ]
+        },
+        "output": {
+          "compounds": []
+        },
+        "sources": [
+          {
+            "name": "PubChem PUG REST",
+            "url": "https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest"
+          }
+        ],
+        "confidence": 0.25,
+        "warnings": [
+          "evolocumab: Live API request failed after retries: HTTP Error 404: PUGREST.NotFound",
+          "alirocumab: Live API request failed after retries: HTTP Error 404: PUGREST.NotFound",
+          "inclisiran: Live API request failed after retries: HTTP Error 404: PUGREST.NotFound",
+          "evinacumab: Live API request failed after retries: HTTP Error 404: PUGREST.NotFound"
+        ],
+        "runtime_ms": 11450,
+        "tool_version": "0.1.0"
+      },
+      "status": "partial",
+      "latency_ms": 11450,
+      "created_at": "2026-05-20T05:39:50.274967"
+    },
+    {
+      "tool_name": "OpenTargets_get_disease_id_description_by_name",
+      "tool_source": "tooluniverse",
+      "input": {
+        "diseaseName": "PCSK9 familial hypercholesterolemia using public biomedical evidence"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "diseaseName": "PCSK9 familial hypercholesterolemia using public biomedical evidence"
+        },
+        "output": {
+          "raw": {
+            "status": "success",
+            "data": {
+              "search": {}
+            }
+          }
+        },
+        "sources": [
+          {
+            "name": "ToolUniverse",
+            "tool_name": "OpenTargets_get_disease_id_description_by_name"
+          }
+        ],
+        "confidence": 0.0,
+        "warnings": [],
+        "runtime_ms": 483,
+        "tool_version": "tooluniverse"
+      },
+      "status": "success",
+      "latency_ms": 483,
+      "created_at": "2026-05-20T05:39:50.274977"
+    },
+    {
+      "tool_name": "OpenTargets_get_drug_chembId_by_generic_name",
+      "tool_source": "tooluniverse",
+      "input": {
+        "drugName": "evolocumab"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "drugName": "evolocumab"
+        },
+        "output": {
+          "raw": {
+            "status": "success",
+            "data": {
+              "search": {
+                "hits": [
+                  {
+                    "id": "CHEMBL2364655",
+                    "name": "EVOLOCUMAB",
+                    "description": "Antibody drug with a maximum clinical stage of Approval (across all indications), with 8 approved and 13 investigational indications."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "sources": [
+          {
+            "name": "ToolUniverse",
+            "tool_name": "OpenTargets_get_drug_chembId_by_generic_name"
+          }
+        ],
+        "confidence": 0.0,
+        "warnings": [],
+        "runtime_ms": 556,
+        "tool_version": "tooluniverse"
+      },
+      "status": "success",
+      "latency_ms": 556,
+      "created_at": "2026-05-20T05:39:50.274987"
+    },
+    {
+      "tool_name": "OpenTargets_get_drug_chembId_by_generic_name",
+      "tool_source": "tooluniverse",
+      "input": {
+        "drugName": "alirocumab"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "drugName": "alirocumab"
+        },
+        "output": {
+          "raw": {
+            "status": "success",
+            "data": {
+              "search": {
+                "hits": [
+                  {
+                    "id": "CHEMBL2109540",
+                    "name": "ALIROCUMAB",
+                    "description": "Antibody drug with a maximum clinical stage of Approval (across all indications), with 6 approved and 6 investigational indications."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "sources": [
+          {
+            "name": "ToolUniverse",
+            "tool_name": "OpenTargets_get_drug_chembId_by_generic_name"
+          }
+        ],
+        "confidence": 0.0,
+        "warnings": [],
+        "runtime_ms": 661,
+        "tool_version": "tooluniverse"
+      },
+      "status": "success",
+      "latency_ms": 661,
+      "created_at": "2026-05-20T05:39:50.274997"
+    },
+    {
+      "tool_name": "OpenTargets_get_drug_chembId_by_generic_name",
+      "tool_source": "tooluniverse",
+      "input": {
+        "drugName": "inclisiran"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "drugName": "inclisiran"
+        },
+        "output": {
+          "raw": {
+            "status": "success",
+            "data": {
+              "search": {
+                "hits": [
+                  {
+                    "id": "CHEMBL3990033",
+                    "name": "INCLISIRAN",
+                    "description": "Oligonucleotide drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 6 investigational indications."
+                  },
+                  {
+                    "id": "CHEMBL5095052",
+                    "name": "INCLISIRAN SODIUM",
+                    "description": "Oligonucleotide drug with a maximum clinical stage of Approval (across all indications), with an approval for 3 indications."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "sources": [
+          {
+            "name": "ToolUniverse",
+            "tool_name": "OpenTargets_get_drug_chembId_by_generic_name"
+          }
+        ],
+        "confidence": 0.0,
+        "warnings": [],
+        "runtime_ms": 368,
+        "tool_version": "tooluniverse"
+      },
+      "status": "success",
+      "latency_ms": 368,
+      "created_at": "2026-05-20T05:39:50.275007"
+    },
+    {
+      "tool_name": "OpenTargets_get_drug_chembId_by_generic_name",
+      "tool_source": "tooluniverse",
+      "input": {
+        "drugName": "evinacumab"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "drugName": "evinacumab"
+        },
+        "output": {
+          "raw": {
+            "status": "success",
+            "data": {
+              "search": {
+                "hits": [
+                  {
+                    "id": "CHEMBL3545191",
+                    "name": "EVINACUMAB",
+                    "description": "Antibody drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 2 investigational indications."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "sources": [
+          {
+            "name": "ToolUniverse",
+            "tool_name": "OpenTargets_get_drug_chembId_by_generic_name"
+          }
+        ],
+        "confidence": 0.0,
+        "warnings": [],
+        "runtime_ms": 623,
+        "tool_version": "tooluniverse"
+      },
+      "status": "success",
+      "latency_ms": 623,
+      "created_at": "2026-05-20T05:39:50.275017"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "NCBI Gene PCSK9: This gene encodes a member of the subtilisin-like proprotein convertase family, which includes proteases that process protein and peptide precursors trafficking through regulated or constitutive branches of the secretory pathway. The encoded protein undergoes an autocatalytic processing event with its prosegment in the ER and is constitutively secreted as an inactive protease into the extracellular matrix and trans-Golgi network. It is expressed in liver, intestine and kidney tissues and escorts specific receptors for lysosomal degradation. It plays a role in cholesterol and fatty acid metabolism. Mutations in this gene have been associated with autosomal dominant familial hypercholesterolemia. Alternative splicing results in multiple transcript variants. [provided by RefSeq, Feb 2014]",
+        "evidence_source": "NCBI Gene"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "NCBI Gene PCSK9: This gene encodes a member of the subtilisin-like proprotein convertase family, which includes proteases that process protein and peptide precursors trafficking through regulated or constitutive branches of the secretory pathway. The encoded protein undergoes an autocatalytic processing event with its prosegment in the ER and is constitutively secreted as an inactive protease into the extracellular matrix and trans-Golgi network. It is expressed in liver, intestine and kidney tissues and escorts specific receptors for lysosomal degradation. It plays a role in cholesterol and fatty acid metabolism. Mutations in this gene have been associated with autosomal dominant familial hypercholesterolemia. Alternative splicing results in multiple transcript variants. [provided by RefSeq, Feb 2014]",
+          "evidence_source": "NCBI Gene"
+        },
+        "output": {
+          "label": "strong_support",
+          "score": 0.76,
+          "evidence_type": "mechanistic",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.76,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275027"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "NCBI Gene LDLR: The low density lipoprotein receptor (LDLR) gene family consists of cell surface proteins involved in receptor-mediated endocytosis of specific ligands. The encoded protein is normally bound at the cell membrane, where it binds low density lipoprotein/cholesterol and is taken into the cell. Lysosomes release the cholesterol, which is made available for repression of microsomal enzyme 3-hydroxy-3-methylglutaryl coenzyme A (HMG CoA) reductase, the rate-limiting step in cholesterol synthesis. At the same time, a reciprocal stimulation of cholesterol ester synthesis takes place. Mutations in this gene cause the autosomal dominant disorder, familial hypercholesterolemia. Alternate splicing results in multiple transcript variants.[provided by RefSeq, May 2022]",
+        "evidence_source": "NCBI Gene"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "NCBI Gene LDLR: The low density lipoprotein receptor (LDLR) gene family consists of cell surface proteins involved in receptor-mediated endocytosis of specific ligands. The encoded protein is normally bound at the cell membrane, where it binds low density lipoprotein/cholesterol and is taken into the cell. Lysosomes release the cholesterol, which is made available for repression of microsomal enzyme 3-hydroxy-3-methylglutaryl coenzyme A (HMG CoA) reductase, the rate-limiting step in cholesterol synthesis. At the same time, a reciprocal stimulation of cholesterol ester synthesis takes place. Mutations in this gene cause the autosomal dominant disorder, familial hypercholesterolemia. Alternate splicing results in multiple transcript variants.[provided by RefSeq, May 2022]",
+          "evidence_source": "NCBI Gene"
+        },
+        "output": {
+          "label": "weak_support",
+          "score": 0.61,
+          "evidence_type": "mechanistic",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.61,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275037"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "PubChem returned no candidate compound records for the supplied intervention names.",
+        "evidence_source": "PubChem candidate lookup"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "PubChem returned no candidate compound records for the supplied intervention names.",
+          "evidence_source": "PubChem candidate lookup"
+        },
+        "output": {
+          "label": "mechanistic_relevance",
+          "score": 0.46,
+          "evidence_type": "chemical",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.46,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275047"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "OpenTargets_get_disease_id_description_by_name returned ToolUniverse/OpenTargets evidence: {'status': 'success', 'data': {'search': {}}}",
+        "evidence_source": "ToolUniverse: OpenTargets_get_disease_id_description_by_name"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "OpenTargets_get_disease_id_description_by_name returned ToolUniverse/OpenTargets evidence: {'status': 'success', 'data': {'search': {}}}",
+          "evidence_source": "ToolUniverse: OpenTargets_get_disease_id_description_by_name"
+        },
+        "output": {
+          "label": "irrelevant",
+          "score": 0.31,
+          "evidence_type": "unknown",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.31,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275058"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: EVOLOCUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 8 approved and 13 investigational indications.",
+        "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: EVOLOCUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 8 approved and 13 investigational indications.",
+          "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+        },
+        "output": {
+          "label": "irrelevant",
+          "score": 0.31,
+          "evidence_type": "unknown",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.31,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275068"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: ALIROCUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 6 approved and 6 investigational indications.",
+        "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: ALIROCUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 6 approved and 6 investigational indications.",
+          "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+        },
+        "output": {
+          "label": "irrelevant",
+          "score": 0.31,
+          "evidence_type": "unknown",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.31,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275077"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: INCLISIRAN: Oligonucleotide drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 6 investigational indications.; INCLISIRAN SODIUM: Oligonucleotide drug with a maximum clinical stage of Approval (across all indications), with an approval for 3 indications.",
+        "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: INCLISIRAN: Oligonucleotide drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 6 investigational indications.; INCLISIRAN SODIUM: Oligonucleotide drug with a maximum clinical stage of Approval (across all indications), with an approval for 3 indications.",
+          "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+        },
+        "output": {
+          "label": "irrelevant",
+          "score": 0.31,
+          "evidence_type": "unknown",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.31,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275087"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+        "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: EVINACUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 2 investigational indications.",
+        "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating PCSK9-linked mechanisms may be relevant to PCSK9 familial hypercholesterolemia using public biomedical evidence.",
+          "evidence_text": "OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: EVINACUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 2 investigational indications.",
+          "evidence_source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name"
+        },
+        "output": {
+          "label": "irrelevant",
+          "score": 0.31,
+          "evidence_type": "unknown",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.31,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T05:39:50.275097"
+    }
+  ]
+}

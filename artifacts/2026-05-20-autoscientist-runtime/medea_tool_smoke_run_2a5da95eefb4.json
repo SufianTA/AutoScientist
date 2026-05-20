@@ -1,0 +1,313 @@
+{
+  "created_at_unix": 1779257783,
+  "objective": "Medea smoke: use single-cell transcriptomics, omics evidence, OpenTargets, ToolUniverse, and public biomedical citations to prioritize IL6 targets for rheumatoid arthritis and propose validation experiments.",
+  "run_id": "run_2a5da95eefb4",
+  "status": "completed",
+  "final_confidence": 0.35,
+  "run_config": {
+    "execution_mode": "inline",
+    "agent_count": 1,
+    "max_runtime_minutes": 4,
+    "tool_budget_usd": 1.0,
+    "evidence_strictness": "strict",
+    "real_data_enabled": true,
+    "qworld_enabled": false,
+    "qworld_model": "mock-scientist",
+    "qworld_api_key_env_var": "",
+    "llm_provider": "mock",
+    "llm_model": "mock-scientist",
+    "llm_api_key_env_var": "",
+    "llm_max_tokens": 96,
+    "require_real_llm": false,
+    "medea_enabled": true,
+    "medea_python": "/opt/medea-py312/bin/python",
+    "medea_smoke_only": true,
+    "medea_debate_rounds": 0,
+    "medea_timeout_seconds": 1200,
+    "medea_subprocess_timeout_seconds": 90,
+    "txagent_enabled": false
+  },
+  "health": {
+    "tooluniverse": {
+      "available": true,
+      "status": "ready",
+      "error": null
+    },
+    "open_scientist": {
+      "qworld": {
+        "available": true,
+        "status": "importable",
+        "version": "0.1.1",
+        "error": null
+      },
+      "txagent": {
+        "available": false,
+        "status": "not_installed_or_import_failed",
+        "error": "No module named 'txagent'"
+      },
+      "medea": {
+        "available": true,
+        "status": "importable_external_python",
+        "version": "1.0.0",
+        "python": "/opt/medea-py312/bin/python",
+        "error": null,
+        "recommended_mode": "external_service_or_isolated_subprocess"
+      },
+      "tooluniverse": {
+        "available": true,
+        "status": "importable",
+        "version": "1.1.11",
+        "error": null
+      },
+      "clawinstitute_board": {
+        "available": true,
+        "status": "local_board_ready",
+        "mode": "local_research_board"
+      }
+    }
+  },
+  "integrations": {
+    "anthropic_llm": {
+      "configured": true,
+      "executed": false
+    },
+    "qworld": {
+      "healthy": true,
+      "executed": false,
+      "mode": null
+    },
+    "medea": {
+      "healthy": true,
+      "executed": true,
+      "status": "success"
+    },
+    "tooluniverse": {
+      "healthy": true,
+      "executed": false,
+      "call_count": 0
+    },
+    "public_biomedical": {
+      "executed": true,
+      "call_count": 2
+    },
+    "local_board": {
+      "healthy": true,
+      "executed": true
+    }
+  },
+  "value_assessment": {
+    "score": 83,
+    "max_score": 100,
+    "checks": {
+      "completed_run": true,
+      "nonempty_hypothesis": true,
+      "evidence_collected": true,
+      "scored_evidence": true,
+      "experiments_proposed": false,
+      "guardrails_present": true,
+      "auditable_trace": true,
+      "medea_executed": true,
+      "qworld_executed": false,
+      "live_data_executed": true,
+      "board_written": true
+    },
+    "interpretation": "promising: useful workflow, but some integrations or evidence depth need work"
+  },
+  "policy_model": null,
+  "trace_summary": {
+    "agent_steps": 19,
+    "tool_calls": 5
+  },
+  "hypothesis": {
+    "title": "IL6 pathway modulation as a candidate strategy for the disease context",
+    "text": "Modulating IL6-linked disease mechanism is a candidate, evidence-supported but not validated therapeutic hypothesis for the disease context.",
+    "confidence": 0.35,
+    "status": "candidate"
+  },
+  "evidence_count": 3,
+  "guardrails": [
+    "Candidate hypothesis only.",
+    "Computationally prioritized and evidence-supported, not validated.",
+    "Requires experimental validation before clinical interpretation."
+  ],
+  "experiments": [],
+  "tool_calls": [
+    {
+      "tool_name": "ncbi_gene_profile_tool",
+      "tool_source": "live_public_biomedical",
+      "input": {
+        "gene_symbol": "IL6",
+        "organism": "Homo sapiens"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "gene_symbol": "IL6",
+          "organism": "Homo sapiens"
+        },
+        "output": {
+          "gene_id": "3569",
+          "gene_symbol": "IL6",
+          "description": "interleukin 6",
+          "summary": "This gene encodes a cytokine that functions in inflammation and the maturation of B cells. In addition, the encoded protein has been shown to be an endogenous pyrogen capable of inducing fever in people with autoimmune diseases or infections. The protein is primarily produced at sites of acute and chronic inflammation, where it is secreted into the serum and induces a transcriptional inflammatory response through interleukin 6 receptor, alpha. The functioning of this gene is implicated in a wide variety of inflammation-associated disease states, including suspectibility to diabetes mellitus and systemic juvenile rheumatoid arthritis. Elevated levels of the encoded protein have been found in virus infections, including COVID-19 (disease caused by SARS-CoV-2). [provided by RefSeq, Aug 2020]",
+          "organism": "Homo sapiens",
+          "map_location": "7p15.3",
+          "other_designations": "interleukin-6|B-cell differentiation factor|B-cell stimulatory factor 2|CTL differentiation factor|hybridoma growth factor|interferon beta-2|interleukin BSF-2"
+        },
+        "sources": [
+          {
+            "name": "NCBI Gene",
+            "id": "3569",
+            "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&id=3569&retmode=json"
+          }
+        ],
+        "confidence": 0.86,
+        "warnings": [],
+        "runtime_ms": 454,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 454,
+      "created_at": "2026-05-20T06:16:22.860259"
+    },
+    {
+      "tool_name": "pubmed_literature_search_tool",
+      "tool_source": "live_public_biomedical",
+      "input": {
+        "query": "Medea smoke: use single-cell transcriptomics, omics evidence, OpenTargets, ToolUniverse, and public biomedical citations to prioritize IL6 targets for rheumatoid arthritis and prop",
+        "retmax": 5
+      },
+      "output": {
+        "status": "partial",
+        "input": {
+          "query": "Medea smoke: use single-cell transcriptomics, omics evidence, OpenTargets, ToolUniverse, and public biomedical citations to prioritize IL6 targets for rheumatoid arthritis and prop",
+          "retmax": 5
+        },
+        "output": {
+          "query": "Medea smoke: use single-cell transcriptomics, omics evidence, OpenTargets, ToolUniverse, and public biomedical citations to prioritize IL6 targets for rheumatoid arthritis and prop",
+          "articles": [],
+          "count": 0
+        },
+        "sources": [
+          {
+            "name": "PubMed",
+            "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=Medea+smoke%3A+use+single-cell+transcriptomics%2C+omics+evidence%2C+OpenTargets%2C+ToolUniverse%2C+and+public+biomedical+citations+to+prioritize+IL6+targets+for+rheumatoid+arthritis+and+prop&retmode=json&retmax=5"
+          }
+        ],
+        "confidence": 0.25,
+        "warnings": [
+          "No PubMed records returned."
+        ],
+        "runtime_ms": 795,
+        "tool_version": "0.1.0"
+      },
+      "status": "partial",
+      "latency_ms": 795,
+      "created_at": "2026-05-20T06:16:22.860287"
+    },
+    {
+      "tool_name": "medea_agent",
+      "tool_source": "open_scientist",
+      "input": {
+        "objective": "Medea smoke: use single-cell transcriptomics, omics evidence, OpenTargets, ToolUniverse, and public biomedical citations to prioritize IL6 targets for rheumatoid arthritis and propose validation experiments.",
+        "python": "/opt/medea-py312/bin/python"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "objective": "Medea smoke: use single-cell transcriptomics, omics evidence, OpenTargets, ToolUniverse, and public biomedical citations to prioritize IL6 targets for rheumatoid arthritis and propose validation experiments.",
+          "python": "/opt/medea-py312/bin/python"
+        },
+        "output": {
+          "mode": "smoke_only",
+          "medea_version": "1.0.0",
+          "medea_signature": "(user_instruction: str, experiment_instruction: Optional[str] = None, research_planning_module=None, analysis_module=None, literature_module=None, debate_rounds: int = 1, panelist_llms: list = None, include_backbone_llm: bool = True, vote_merge: bool = True, full_instruction: bool = False, timeout: int = 1200) -> Dict[str, Any]"
+        },
+        "warnings": [],
+        "runtime_ms": 7564,
+        "capability": "medea"
+      },
+      "status": "success",
+      "latency_ms": 7564,
+      "created_at": "2026-05-20T06:16:22.860308"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating IL6-linked mechanisms may be relevant to the disease context.",
+        "evidence_text": "NCBI Gene IL6: This gene encodes a cytokine that functions in inflammation and the maturation of B cells. In addition, the encoded protein has been shown to be an endogenous pyrogen capable of inducing fever in people with autoimmune diseases or infections. The protein is primarily produced at sites of acute and chronic inflammation, where it is secreted into the serum and induces a transcriptional inflammatory response through interleukin 6 receptor, alpha. The functioning of this gene is implicated in a wide variety of inflammation-associated disease states, including suspectibility to diabetes mellitus and systemic juvenile rheumatoid arthritis. Elevated levels of the encoded protein have been found in virus infections, including COVID-19 (disease caused by SARS-CoV-2). [provided by RefSeq, Aug 2020]",
+        "evidence_source": "NCBI Gene"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating IL6-linked mechanisms may be relevant to the disease context.",
+          "evidence_text": "NCBI Gene IL6: This gene encodes a cytokine that functions in inflammation and the maturation of B cells. In addition, the encoded protein has been shown to be an endogenous pyrogen capable of inducing fever in people with autoimmune diseases or infections. The protein is primarily produced at sites of acute and chronic inflammation, where it is secreted into the serum and induces a transcriptional inflammatory response through interleukin 6 receptor, alpha. The functioning of this gene is implicated in a wide variety of inflammation-associated disease states, including suspectibility to diabetes mellitus and systemic juvenile rheumatoid arthritis. Elevated levels of the encoded protein have been found in virus infections, including COVID-19 (disease caused by SARS-CoV-2). [provided by RefSeq, Aug 2020]",
+          "evidence_source": "NCBI Gene"
+        },
+        "output": {
+          "label": "weak_support",
+          "score": 0.58,
+          "evidence_type": "mechanistic",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.58,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T06:16:22.860327"
+    },
+    {
+      "tool_name": "evidence_quality_scorer_tool",
+      "tool_source": "custom",
+      "input": {
+        "hypothesis": "Modulating IL6-linked mechanisms may be relevant to the disease context.",
+        "evidence_text": "{'mode': 'smoke_only', 'medea_version': '1.0.0', 'medea_signature': '(user_instruction: str, experiment_instruction: Optional[str] = None, research_planning_module=None, analysis_module=None, literature_module=None, debate_rounds: int = 1, panelist_llms: list = None, include_backbone_llm: bool = True, vote_merge: bool = True, full_instruction: bool = False, timeout: int = 1200) -> Dict[str, Any]'}",
+        "evidence_source": "medea_agent"
+      },
+      "output": {
+        "status": "success",
+        "input": {
+          "hypothesis": "Modulating IL6-linked mechanisms may be relevant to the disease context.",
+          "evidence_text": "{'mode': 'smoke_only', 'medea_version': '1.0.0', 'medea_signature': '(user_instruction: str, experiment_instruction: Optional[str] = None, research_planning_module=None, analysis_module=None, literature_module=None, debate_rounds: int = 1, panelist_llms: list = None, include_backbone_llm: bool = True, vote_merge: bool = True, full_instruction: bool = False, timeout: int = 1200) -> Dict[str, Any]'}",
+          "evidence_source": "medea_agent"
+        },
+        "output": {
+          "label": "irrelevant",
+          "score": 0.31,
+          "evidence_type": "unknown",
+          "rationale": "Deterministic evidence scorer using safety terms, biomedical keyword overlap, and domain-specific mechanism cues. Strict runs can replace this with a real LLM or onboarded model scorer.",
+          "warnings": [
+            "Score is not a validation claim."
+          ]
+        },
+        "sources": [
+          {
+            "name": "Deterministic evidence scorer",
+            "id": "evidence-scorer-v0.2"
+          }
+        ],
+        "confidence": 0.31,
+        "warnings": [],
+        "runtime_ms": 0,
+        "tool_version": "0.1.0"
+      },
+      "status": "success",
+      "latency_ms": 0,
+      "created_at": "2026-05-20T06:16:22.860344"
+    }
+  ]
+}

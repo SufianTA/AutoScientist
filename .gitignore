@@ -18,3 +18,4 @@ outputs/*
 !outputs/.gitignore
 !outputs/acvr1_fop_cli_report.md
 new_outputs/
+pod_artifacts/

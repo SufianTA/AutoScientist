@@ -1,0 +1,2714 @@
+{
+  "schema": "autosci.fifty_task_harvest.v1",
+  "started_at_unix": 1779257902,
+  "updated_at_unix": 1779259867,
+  "objective_count": 50,
+  "completed_count": 50,
+  "failed_count": 0,
+  "llm_provider": "mock",
+  "llm_model": "mock-scientist",
+  "require_real_llm": false,
+  "medea_mode": "smoke",
+  "qworld_enabled": false,
+  "output_dir": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902",
+  "average_score": 83.0,
+  "min_score": 83,
+  "max_score": 83,
+  "integration_counts": {
+    "llm": 0,
+    "medea": 50,
+    "tooluniverse": 15,
+    "public_biomedical": 50,
+    "local_board": 50
+  },
+  "results": [
+    {
+      "index": 1,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize therapeutic target hypotheses for rheumatoid arthritis CD4 T cells using public evidence, mechanistic plausibility, safety concerns, and validation experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_bddec6246434.json",
+      "run_id": "run_bddec6246434",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.27,
+      "duration_seconds": 38.43
+    },
+    {
+      "index": 2,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate PCSK9 as a therapeutic axis for familial hypercholesterolemia and propose evidence-backed validation experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_3bf5b2ecfe8c.json",
+      "run_id": "run_3bf5b2ecfe8c",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 37.036
+    },
+    {
+      "index": 3,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess NLRP3 inflammasome targeting for refractory gout and autoinflammatory disease with citations and safety risks.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_00ec1b415398.json",
+      "run_id": "run_00ec1b415398",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 39.491
+    },
+    {
+      "index": 4,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a target-prioritization hypothesis for KRAS G12C non-small cell lung cancer resistance mechanisms.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_c90bfc531ae9.json",
+      "run_id": "run_c90bfc531ae9",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 4
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 6,
+      "final_confidence": 0.51,
+      "duration_seconds": 38.353
+    },
+    {
+      "index": 5,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate JAK2 V617F in myeloproliferative neoplasms and identify combination therapy hypotheses.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_c3fcf73af271.json",
+      "run_id": "run_c3fcf73af271",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 35.84
+    },
+    {
+      "index": 6,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess IL23 pathway modulation for Crohn disease and psoriasis with translatable biomarker experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_41361ef0ef1e.json",
+      "run_id": "run_41361ef0ef1e",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 7,
+      "final_confidence": 0.31,
+      "duration_seconds": 41.819
+    },
+    {
+      "index": 7,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize evidence for BTK inhibition in chronic lymphocytic leukemia and autoimmune off-target considerations.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_e1b1f9d17f77.json",
+      "run_id": "run_e1b1f9d17f77",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 7,
+      "final_confidence": 0.35,
+      "duration_seconds": 38.999
+    },
+    {
+      "index": 8,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate complement C5 blockade for paroxysmal nocturnal hemoglobinuria and infection-risk guardrails.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_a51c46042ebf.json",
+      "run_id": "run_a51c46042ebf",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 1
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 2,
+      "final_confidence": 0.31,
+      "duration_seconds": 37.19
+    },
+    {
+      "index": 9,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess TTR stabilizer and silencing strategies for transthyretin amyloidosis with validation experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_e599933ac53b.json",
+      "run_id": "run_e599933ac53b",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 37.29
+    },
+    {
+      "index": 10,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a therapeutic hypothesis for SOD1 ALS using genetic evidence, biomarkers, and failure modes.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_11dbf63cfeaf.json",
+      "run_id": "run_11dbf63cfeaf",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 4
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 6,
+      "final_confidence": 0.27,
+      "duration_seconds": 35.76
+    },
+    {
+      "index": 11,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize SMN2 splicing modulation strategies for spinal muscular atrophy and compare mechanistic evidence.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_cf31977f1dcc.json",
+      "run_id": "run_cf31977f1dcc",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 40.69
+    },
+    {
+      "index": 12,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate DMD exon-skipping strategies for Duchenne muscular dystrophy and propose measurable endpoints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_47cbad92be4b.json",
+      "run_id": "run_47cbad92be4b",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 7,
+      "final_confidence": 0.47,
+      "duration_seconds": 37.646
+    },
+    {
+      "index": 13,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess LRRK2 inhibition for Parkinson disease and propose biomarker-driven safety experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_b73739373175.json",
+      "run_id": "run_b73739373175",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 7,
+      "final_confidence": 0.67,
+      "duration_seconds": 40.065
+    },
+    {
+      "index": 14,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate TYK2 inhibition for lupus and psoriasis using pathway evidence and immune-risk constraints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_75c65448f011.json",
+      "run_id": "run_75c65448f011",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 34.025
+    },
+    {
+      "index": 15,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize EGFR exon 20 insertion therapeutic strategies in lung cancer with resistance experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_afcadfd6ed6e.json",
+      "run_id": "run_afcadfd6ed6e",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 35.232
+    },
+    {
+      "index": 16,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess HER2 low breast cancer antibody-drug conjugate hypotheses and validation endpoints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_281170a9c8e8.json",
+      "run_id": "run_281170a9c8e8",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 5,
+      "final_confidence": 0.25,
+      "duration_seconds": 38.724
+    },
+    {
+      "index": 17,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate BRCA1/2 synthetic lethality via PARP inhibition in ovarian cancer and resistance biomarkers.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_0b92940f47e9.json",
+      "run_id": "run_0b92940f47e9",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 37.193
+    },
+    {
+      "index": 18,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate an IDH1 mutant glioma therapeutic hypothesis with metabolic mechanism and trial-style endpoints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_e300f2770270.json",
+      "run_id": "run_e300f2770270",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.27,
+      "duration_seconds": 34.54
+    },
+    {
+      "index": 19,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess BCR-ABL therapeutic resistance in CML and prioritize next experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_54e1ab14e3a5.json",
+      "run_id": "run_54e1ab14e3a5",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 4
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 8,
+      "final_confidence": 0.07,
+      "duration_seconds": 38.873
+    },
+    {
+      "index": 20,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate CCR5 targeting for HIV latency and immune modulation with translational caveats.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_b492460ae528.json",
+      "run_id": "run_b492460ae528",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 4
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 8,
+      "final_confidence": 0.23,
+      "duration_seconds": 39.92
+    },
+    {
+      "index": 21,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess SERPINA1 augmentation or gene correction strategies for alpha-1 antitrypsin deficiency.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_325b7284f07a.json",
+      "run_id": "run_325b7284f07a",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.41,
+      "duration_seconds": 33.281
+    },
+    {
+      "index": 22,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize APOE-related hypotheses for Alzheimer disease using genetic evidence and safety risks.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_f15afacecaa1.json",
+      "run_id": "run_f15afacecaa1",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 5,
+      "final_confidence": 0.51,
+      "duration_seconds": 35.713
+    },
+    {
+      "index": 23,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate GLP1 receptor agonist mechanisms for NASH/MASH and propose validation biomarkers.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_124576e77207.json",
+      "run_id": "run_124576e77207",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 4
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 6,
+      "final_confidence": 0.11,
+      "duration_seconds": 35.924
+    },
+    {
+      "index": 24,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess TMPRSS6 targeting for beta-thalassemia or iron overload with safety guardrails.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_663229aee10a.json",
+      "run_id": "run_663229aee10a",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.27,
+      "duration_seconds": 32.797
+    },
+    {
+      "index": 25,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a target hypothesis for HIF2A inhibition in clear cell renal cell carcinoma.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_ae62edb4bcbb.json",
+      "run_id": "run_ae62edb4bcbb",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 5,
+      "final_confidence": 0.31,
+      "duration_seconds": 33.938
+    },
+    {
+      "index": 26,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate CD19 CAR-T durability mechanisms in lupus and B-cell autoimmune disease.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_9dae3f12e85f.json",
+      "run_id": "run_9dae3f12e85f",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 36.507
+    },
+    {
+      "index": 27,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize BCMA-directed therapy risks and mechanisms in multiple myeloma relapse.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_3be641a6cae9.json",
+      "run_id": "run_3be641a6cae9",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.27,
+      "duration_seconds": 32.869
+    },
+    {
+      "index": 28,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess IL6 pathway targeting in giant cell arteritis and rheumatoid arthritis with biomarker endpoints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_997575469001.json",
+      "run_id": "run_997575469001",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 38.1
+    },
+    {
+      "index": 29,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate TNF pathway targeting in inflammatory bowel disease and explain non-responder hypotheses.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_25721d8c850b.json",
+      "run_id": "run_25721d8c850b",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 34.092
+    },
+    {
+      "index": 30,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess CFTR modulator strategies for rare cystic fibrosis variants and functional validation assays.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_6537346c5521.json",
+      "run_id": "run_6537346c5521",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 34.588
+    },
+    {
+      "index": 31,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a hypothesis for ACVR1 targeting in fibrodysplasia ossificans progressiva.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_a99b8e910743.json",
+      "run_id": "run_a99b8e910743",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 1
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 5,
+      "final_confidence": 0.35,
+      "duration_seconds": 36.479
+    },
+    {
+      "index": 32,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate VEGFA/ANG2 targeting in diabetic macular edema and safety tradeoffs.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_00eb946873db.json",
+      "run_id": "run_00eb946873db",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 40.19
+    },
+    {
+      "index": 33,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize tau aggregation intervention hypotheses for frontotemporal dementia.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_294c78a32246.json",
+      "run_id": "run_294c78a32246",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 1
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 2,
+      "final_confidence": 0.31,
+      "duration_seconds": 38.46
+    },
+    {
+      "index": 34,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess factor XI inhibition as an anticoagulation strategy with thrombosis and bleeding evidence.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_a04ae89fa45c.json",
+      "run_id": "run_a04ae89fa45c",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 1
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 2,
+      "final_confidence": 0.31,
+      "duration_seconds": 37.389
+    },
+    {
+      "index": 35,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate PCSK9 and LPA combined risk modification for atherosclerotic cardiovascular disease.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_382df5c8432d.json",
+      "run_id": "run_382df5c8432d",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 36.441
+    },
+    {
+      "index": 36,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a therapeutic target hypothesis for endometriosis using inflammatory and hormonal evidence.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_e4213fdd3f15.json",
+      "run_id": "run_e4213fdd3f15",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 1
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 2,
+      "final_confidence": 0.31,
+      "duration_seconds": 33.656
+    },
+    {
+      "index": 37,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess PIK3CA inhibition for PIK3CA-related overgrowth spectrum and toxicity constraints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_834368b6a29a.json",
+      "run_id": "run_834368b6a29a",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 7,
+      "final_confidence": 0.55,
+      "duration_seconds": 38.066
+    },
+    {
+      "index": 38,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate FGFR2 fusion targeting in cholangiocarcinoma with resistance experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_92c216dbb993.json",
+      "run_id": "run_92c216dbb993",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 33.275
+    },
+    {
+      "index": 39,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize MET exon 14 skipping therapies in lung cancer with evidence and safety concerns.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_599296310d57.json",
+      "run_id": "run_599296310d57",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 33.656
+    },
+    {
+      "index": 40,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess RET fusion targeting in thyroid cancer and lung cancer with resistance mechanisms.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_95b8943b04e9.json",
+      "run_id": "run_95b8943b04e9",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 34.241
+    },
+    {
+      "index": 41,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate KIT and PDGFRA targeting in gastrointestinal stromal tumors and escape routes.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_cb03e1b0a57a.json",
+      "run_id": "run_cb03e1b0a57a",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 38.315
+    },
+    {
+      "index": 42,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a therapeutic hypothesis for sickle cell disease using BCL11A/HBG induction evidence.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_8fc24f7418ae.json",
+      "run_id": "run_8fc24f7418ae",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.31,
+      "duration_seconds": 35.93
+    },
+    {
+      "index": 43,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess IRAK4 targeting for hidradenitis suppurativa and innate immune safety.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_899042405dea.json",
+      "run_id": "run_899042405dea",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 34.83
+    },
+    {
+      "index": 44,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate TSLP blockade for severe asthma and biomarker-driven responder selection.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_f31fe7b46c67.json",
+      "run_id": "run_f31fe7b46c67",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.35,
+      "duration_seconds": 35.72
+    },
+    {
+      "index": 45,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to prioritize OX40/OX40L pathway targeting in atopic dermatitis and immune-risk experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_74208405249a.json",
+      "run_id": "run_74208405249a",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.23,
+      "duration_seconds": 37.27
+    },
+    {
+      "index": 46,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess CD40L targeting for Sjogren disease and thrombotic safety constraints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_a2454acc0a93.json",
+      "run_id": "run_a2454acc0a93",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": true,
+          "call_count": 3
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 7,
+      "final_confidence": 0.51,
+      "duration_seconds": 36.245
+    },
+    {
+      "index": 47,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate MASH fibrosis targets involving THR-beta, FGF21, and collagen remodeling evidence.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_1c42fcb092e5.json",
+      "run_id": "run_1c42fcb092e5",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 3
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 4,
+      "final_confidence": 0.23,
+      "duration_seconds": 36.783
+    },
+    {
+      "index": 48,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to generate a therapeutic hypothesis for ulcerative colitis using epithelial barrier repair mechanisms.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_160a8e98e28b.json",
+      "run_id": "run_160a8e98e28b",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 1
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 2,
+      "final_confidence": 0.31,
+      "duration_seconds": 32.916
+    },
+    {
+      "index": 49,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to assess ROR1 targeting in hematologic malignancy and on-target off-tumor safety experiments.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_4a4416a43a98.json",
+      "run_id": "run_4a4416a43a98",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 2
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 3,
+      "final_confidence": 0.33,
+      "duration_seconds": 33.12
+    },
+    {
+      "index": 50,
+      "objective": "Use single-cell transcriptomics, omics evidence, public biomedical citations, Medea smoke review, and ToolUniverse/OpenTargets context to evaluate senolytic intervention hypotheses for idiopathic pulmonary fibrosis with translational endpoints.",
+      "artifact": "/workspace/AutoScientist/outputs/benchmarks/fifty_task_harvest/1779257902/integration_benchmark_run_92ecf643c174.json",
+      "run_id": "run_92ecf643c174",
+      "status": "completed",
+      "score": 83,
+      "checks": {
+        "completed_run": true,
+        "nonempty_hypothesis": true,
+        "evidence_collected": true,
+        "scored_evidence": true,
+        "experiments_proposed": false,
+        "guardrails_present": true,
+        "auditable_trace": true,
+        "medea_executed": true,
+        "qworld_executed": false,
+        "live_data_executed": true,
+        "board_written": true
+      },
+      "integrations": {
+        "anthropic_llm": {
+          "configured": true,
+          "executed": false
+        },
+        "qworld": {
+          "healthy": true,
+          "executed": false,
+          "mode": null
+        },
+        "medea": {
+          "healthy": true,
+          "executed": true,
+          "status": "success"
+        },
+        "tooluniverse": {
+          "healthy": true,
+          "executed": false,
+          "call_count": 0
+        },
+        "public_biomedical": {
+          "executed": true,
+          "call_count": 1
+        },
+        "local_board": {
+          "healthy": true,
+          "executed": true
+        }
+      },
+      "evidence_count": 2,
+      "final_confidence": 0.31,
+      "duration_seconds": 33.865
+    }
+  ],
+  "postprocessing": [
+    {
+      "name": "train_transparent_policy",
+      "returncode": 0,
+      "duration_seconds": 4.103,
+      "stdout_tail": "{'id': 'policymodel_212dbb1b3ecb', 'version': '20260520064849', 'artifact_path': 'outputs/models/scientific_workflow_policy_20260520064849.json', 'metrics': {'num_examples': 2257, 'training_examples': 1867, 'holdout_examples': 390, 'top1_training_accuracy': 0.2367, 'top3_training_accuracy': 0.4735, 'mrr_training': 0.4672, 'top1_holdout_accuracy': 0.2359, 'top3_holdout_accuracy': 0.4718, 'mrr_holdout': 0.477}}\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "train_neural_policy",
+      "returncode": 0,
+      "duration_seconds": 124.564,
+      "stdout_tail": "{\n  \"id\": \"policymodel_0a50daddecd4\",\n  \"name\": \"neural_scientific_workflow_policy\",\n  \"version\": \"20260520065055\",\n  \"model_type\": \"neural_scientific_workflow_policy\",\n  \"artifact_path\": \"outputs/models/neural_scientific_workflow_policy_20260520065055/manifest.json\",\n  \"training_summary\": {\n    \"num_examples\": 2257,\n    \"training_examples\": 1867,\n    \"holdout_examples\": 390,\n    \"num_actions\": 25,\n    \"top_actions\": [\n      [\n        \"state_transition:TOOL_CALL_COMPLETED\",\n        534\n      ],\n      [\n        \"state_transition:TOOL_CALL_STARTED\",\n        292\n      ],\n      [\n        \"tool_call:evidence_quality_scorer_tool\",\n        242\n      ],\n      [\n        \"tool_call:pubmed_literature_search_tool\",\n        84\n      ],\n      [\n        \"tool_call:ncbi_gene_profile_tool\",\n        82\n      ],\n      [\n        \"state_transition:INITIALIZE_FRAMEWORK\",\n        69\n      ],\n      [\n        \"state_transition:CLASSIFY_OBJECTIVE\",\n        69\n      ],\n      [\n        \"state_transition:PLAN_RESEARCH\",\n        69\n      ],\n      [\n        \"state_transition:FIND_TOOLS\",\n        69\n      ],\n      [\n        \"state_transition:EXECUTE_EVIDENCE_COLLECTION\",\n        69\n      ]\n    ],\n    \"framework\": \"pytorch\",\n    \"architecture\": {\n      \"input\": \"bag_of_context_tokens\",\n      \"hidden_dim\": 160,\n      \"output\": \"workflow_action_softmax\",\n      \"vocab_size\": 411,\n      \"num_actions\": 25\n    }\n  },\n  \"metrics\": {\n    \"num_examples\": 2257,\n    \"training_examples\": 1867,\n    \"holdout_examples\": 390,\n    \"top1_training_accuracy\": 0.9202,\n    \"top3_training_accuracy\": 1.0,\n    \"mrr_training\": 0.9589,\n    \"top1_holdout_accuracy\": 0.9205,\n    \"top3_holdout_accuracy\": 1.0,\n    \"mrr_holdout\": 0.9603,\n    \"majority_top1_holdout_accuracy\": 0.2359,\n    \"majority_top3_holdout_accuracy\": 0.4718,\n    \"majority_mrr_holdout\": 0.3902\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "export_state_graph",
+      "returncode": 0,
+      "duration_seconds": 1.299,
+      "stdout_tail": "{\n  \"json\": \"outputs/state_graphs/scientific_state_graph_1779259857.json\",\n  \"markdown\": \"outputs/state_graphs/scientific_state_graph_1779259857.md\",\n  \"summary\": {\n    \"nodes\": 1106,\n    \"edges\": 2795,\n    \"hypotheses\": 69,\n    \"entities\": 615,\n    \"experiments\": 207,\n    \"tools\": 8\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "package_latest_policy",
+      "returncode": 0,
+      "duration_seconds": 6.284,
+      "stdout_tail": "licy\",\n    \"source_artifact_path\": \"outputs/models/neural_scientific_workflow_policy_20260520065055/manifest.json\",\n    \"packaged_artifact_path\": \"outputs/packages/neural_scientific_workflow_policy_20260520065055/neural_model/manifest.json\",\n    \"training_summary\": {\n      \"num_examples\": 2257,\n      \"training_examples\": 1867,\n      \"holdout_examples\": 390,\n      \"num_actions\": 25,\n      \"top_actions\": [\n        [\n          \"state_transition:TOOL_CALL_COMPLETED\",\n          534\n        ],\n        [\n          \"state_transition:TOOL_CALL_STARTED\",\n          292\n        ],\n        [\n          \"tool_call:evidence_quality_scorer_tool\",\n          242\n        ],\n        [\n          \"tool_call:pubmed_literature_search_tool\",\n          84\n        ],\n        [\n          \"tool_call:ncbi_gene_profile_tool\",\n          82\n        ],\n        [\n          \"state_transition:INITIALIZE_FRAMEWORK\",\n          69\n        ],\n        [\n          \"state_transition:CLASSIFY_OBJECTIVE\",\n          69\n        ],\n        [\n          \"state_transition:PLAN_RESEARCH\",\n          69\n        ],\n        [\n          \"state_transition:FIND_TOOLS\",\n          69\n        ],\n        [\n          \"state_transition:EXECUTE_EVIDENCE_COLLECTION\",\n          69\n        ]\n      ],\n      \"framework\": \"pytorch\",\n      \"architecture\": {\n        \"input\": \"bag_of_context_tokens\",\n        \"hidden_dim\": 160,\n        \"output\": \"workflow_action_softmax\",\n        \"vocab_size\": 411,\n        \"num_actions\": 25\n      }\n    },\n    \"metrics\": {\n      \"num_examples\": 2257,\n      \"training_examples\": 1867,\n      \"holdout_examples\": 390,\n      \"top1_training_accuracy\": 0.9202,\n      \"top3_training_accuracy\": 1.0,\n      \"mrr_training\": 0.9589,\n      \"top1_holdout_accuracy\": 0.9205,\n      \"top3_holdout_accuracy\": 1.0,\n      \"mrr_holdout\": 0.9603,\n      \"majority_top1_holdout_accuracy\": 0.2359,\n      \"majority_top3_holdout_accuracy\": 0.4718,\n      \"majority_mrr_holdout\": 0.3902\n    },\n    \"created_at\": \"2026-05-20T06:50:55.907802\"\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "archive_outputs",
+      "returncode": 0,
+      "duration_seconds": null,
+      "stdout_tail": "",
+      "stderr_tail": "",
+      "archive": "/workspace/AutoScientist/outputs/harvest/autoscientist_fifty_task_harvest_1779257902.tar.gz"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "created_at_unix": 1779257579,
+  "objective": "Gemini smoke: prioritize PCSK9 familial hypercholesterolemia evidence with validation experiments.",
+  "run_id": "run_3de4964d7909",
+  "status": "failed",
+  "final_confidence": null,
+  "run_config": {
+    "execution_mode": "inline",
+    "agent_count": 1,
+    "max_runtime_minutes": 4,
+    "tool_budget_usd": 1.0,
+    "evidence_strictness": "strict",
+    "real_data_enabled": true,
+    "qworld_enabled": false,
+    "qworld_model": "gemini-2.5-flash",
+    "qworld_api_key_env_var": "GEMINI_API_KEY",
+    "llm_provider": "gemini",
+    "llm_model": "gemini-2.5-flash",
+    "llm_api_key_env_var": "GEMINI_API_KEY",
+    "llm_max_tokens": 96,
+    "require_real_llm": true,
+    "medea_enabled": true,
+    "medea_python": "/opt/medea-py312/bin/python",
+    "medea_smoke_only": true,
+    "medea_debate_rounds": 0,
+    "medea_timeout_seconds": 1200,
+    "medea_subprocess_timeout_seconds": 90,
+    "txagent_enabled": false
+  },
+  "health": {
+    "tooluniverse": {
+      "available": true,
+      "status": "ready",
+      "error": null
+    },
+    "open_scientist": {
+      "qworld": {
+        "available": true,
+        "status": "importable",
+        "version": "0.1.1",
+        "error": null
+      },
+      "txagent": {
+        "available": false,
+        "status": "not_installed_or_import_failed",
+        "error": "No module named 'txagent'"
+      },
+      "medea": {
+        "available": true,
+        "status": "importable_external_python",
+        "version": "1.0.0",
+        "python": "/opt/medea-py312/bin/python",
+        "error": null,
+        "recommended_mode": "external_service_or_isolated_subprocess"
+      },
+      "tooluniverse": {
+        "available": true,
+        "status": "importable",
+        "version": "1.1.11",
+        "error": null
+      },
+      "clawinstitute_board": {
+        "available": true,
+        "status": "local_board_ready",
+        "mode": "local_research_board"
+      }
+    }
+  },
+  "integrations": {
+    "anthropic_llm": {
+      "configured": true,
+      "executed": true
+    },
+    "qworld": {
+      "healthy": true,
+      "executed": false,
+      "mode": null
+    },
+    "medea": {
+      "healthy": true,
+      "executed": false,
+      "status": null
+    },
+    "tooluniverse": {
+      "healthy": true,
+      "executed": false,
+      "call_count": 0
+    },
+    "public_biomedical": {
+      "executed": false,
+      "call_count": 0
+    },
+    "local_board": {
+      "healthy": true,
+      "executed": false
+    }
+  },
+  "value_assessment": {
+    "score": 10,
+    "max_score": 100,
+    "checks": {
+      "completed_run": false,
+      "nonempty_hypothesis": false,
+      "evidence_collected": false,
+      "scored_evidence": false,
+      "experiments_proposed": false,
+      "guardrails_present": true,
+      "auditable_trace": false,
+      "medea_executed": false,
+      "qworld_executed": false,
+      "live_data_executed": false,
+      "board_written": false
+    },
+    "interpretation": "weak: not enough integrations or evidence quality to justify the version yet"
+  },
+  "policy_model": null,
+  "trace_summary": {
+    "agent_steps": 20,
+    "tool_calls": 0
+  },
+  "hypothesis": {
+    "title": "No hypothesis generated",
+    "text": "",
+    "confidence": null,
+    "status": null
+  },
+  "evidence_count": 0,
+  "guardrails": [
+    "Candidate hypothesis only.",
+    "Computationally prioritized and evidence-supported, not validated.",
+    "Requires experimental validation before clinical interpretation."
+  ],
+  "experiments": [],
+  "tool_calls": []
+}
