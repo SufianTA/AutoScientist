@@ -14,6 +14,7 @@ AutoScientist is strongest when it is evaluated as persistent scientific infrast
 - `GET /memory/runs/{run_id}/state-graph`: graph for one run.
 - `GET /memory/runs/{run_id}/replay`: replayable trace bundle.
 - `POST /memory/policy/train`: train the Scientific Workflow Policy model.
+- `POST /memory/policy/train-neural`: train the PyTorch neural workflow policy.
 - `POST /memory/policy/predict`: rank next scientific actions for a state.
 
 ## Local Benchmark
@@ -62,6 +63,11 @@ python tools/run_integration_benchmark.py \
 ## Package For Review
 
 ```bash
+python tools/train_neural_workflow_policy.py \
+  --artifact-dir outputs/models \
+  --epochs 80 \
+  --hidden-dim 128
+
 python tools/package_policy_model.py \
   --output-dir outputs/packages \
   --replay-limit 10 \
@@ -70,7 +76,7 @@ python tools/package_policy_model.py \
 
 The package contains:
 
-- `model.json`: portable workflow-policy model.
+- `model.json`: portable transparent workflow-policy model, or `neural_model/manifest.json` plus `neural_model/model.pt` for the PyTorch model.
 - `MODEL_CARD.md`: intended use, limitations, train/holdout metrics.
 - `manifest.json`: memory summary, tool benchmarks, replay index.
 - `state_graph.json`: derived graph of scientific state and provenance.
@@ -87,3 +93,23 @@ The policy model is a transparent contextual action-ranking model. It uses:
 - tool reliability and usefulness.
 
 It should be judged by holdout top-k accuracy, MRR, replay quality, integration coverage, and whether it improves workflow decisions over time.
+
+## Neural Policy Layer
+
+The PyTorch neural policy is the shareable open-source model artifact. It uses:
+
+- PyTorch MLP architecture,
+- bag-of-context-token inputs from objective, state, run configuration, and tool context,
+- softmax output over observed workflow actions,
+- reward-weighted cross-entropy training,
+- run-level holdout evaluation,
+- majority-policy baseline comparison.
+
+Train it after collecting real traces, then package the latest model:
+
+```bash
+python tools/train_neural_workflow_policy.py --artifact-dir outputs/models --epochs 120
+python tools/package_policy_model.py --output-dir outputs/packages --replay-limit 10 --graph-limit 500
+```
+
+The neural model is still an orchestration model, not a biomedical foundation model; its value comes from learning how to operate AutoScientist across evidence tools, memory, replay, and experiment planning.

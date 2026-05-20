@@ -16,6 +16,11 @@ from app.db.models import (
     WorkflowPolicyModel,
 )
 from app.db.session import get_db
+from app.services.neural_workflow_policy import (
+    MODEL_TYPE as NEURAL_POLICY_MODEL_TYPE,
+    predict_neural_workflow_policy,
+    train_neural_workflow_policy_model,
+)
 from app.services.scientific_memory import (
     build_scientific_state_graph,
     memory_summary,
@@ -29,6 +34,17 @@ router = APIRouter(prefix="/memory", tags=["scientific-memory"])
 class PolicyTrainRequest(BaseModel):
     name: str = "scientific_workflow_policy"
     artifact_dir: str = "outputs/models"
+
+
+class NeuralPolicyTrainRequest(BaseModel):
+    name: str = "neural_scientific_workflow_policy"
+    artifact_dir: str = "outputs/models"
+    epochs: int = 80
+    hidden_dim: int = 128
+    learning_rate: float = 0.002
+    batch_size: int = 64
+    vocab_size: int = 2048
+    seed: int = 13
 
 
 class PolicyPredictRequest(BaseModel):
@@ -205,6 +221,24 @@ def train_policy(payload: PolicyTrainRequest, db: Session = Depends(get_db)) -> 
     return serialize_policy_model(model)
 
 
+@router.post("/policy/train-neural")
+def train_neural_policy(payload: NeuralPolicyTrainRequest, db: Session = Depends(get_db)) -> dict:
+    model = train_neural_workflow_policy_model(
+        db,
+        name=payload.name,
+        artifact_dir=payload.artifact_dir,
+        epochs=payload.epochs,
+        hidden_dim=payload.hidden_dim,
+        lr=payload.learning_rate,
+        batch_size=payload.batch_size,
+        vocab_size=payload.vocab_size,
+        seed=payload.seed,
+    )
+    db.commit()
+    db.refresh(model)
+    return serialize_policy_model(model)
+
+
 @router.get("/policy/models")
 def list_policy_models(db: Session = Depends(get_db)) -> dict:
     models = db.query(WorkflowPolicyModel).order_by(WorkflowPolicyModel.created_at.desc()).all()
@@ -220,9 +254,13 @@ def predict_policy(payload: PolicyPredictRequest, db: Session = Depends(get_db))
         model = db.query(WorkflowPolicyModel).order_by(WorkflowPolicyModel.created_at.desc()).first()
     if model is None:
         raise HTTPException(status_code=404, detail="No workflow policy model has been trained")
+    if model.model_type == NEURAL_POLICY_MODEL_TYPE:
+        predictions = predict_neural_workflow_policy(payload.context, model_path=model.artifact_path, top_k=payload.top_k)
+    else:
+        predictions = predict_next_actions(payload.context, model_path=model.artifact_path, top_k=payload.top_k)
     return {
         "model": serialize_policy_model(model),
-        "predictions": predict_next_actions(payload.context, model_path=model.artifact_path, top_k=payload.top_k),
+        "predictions": predictions,
     }
 
 

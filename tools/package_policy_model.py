@@ -21,8 +21,7 @@ def package_model(args: argparse.Namespace) -> dict[str, Any]:
         output_dir = Path(args.output_dir) / f"{model.name}_{model.version}"
         output_dir.mkdir(parents=True, exist_ok=True)
         model_path = Path(model.artifact_path)
-        packaged_model = output_dir / "model.json"
-        shutil.copyfile(model_path, packaged_model)
+        packaged_model = copy_model_artifact(model_path, output_dir)
 
         replays = db.query(RunReplay).order_by(RunReplay.created_at.desc()).limit(args.replay_limit).all()
         benchmarks = db.query(ToolBenchmark).order_by(ToolBenchmark.call_count.desc()).all()
@@ -94,6 +93,24 @@ def select_model(db: Any, model_id: str | None) -> WorkflowPolicyModel:
     return model
 
 
+def copy_model_artifact(model_path: Path, output_dir: Path) -> Path:
+    if not model_path.exists():
+        raise SystemExit(f"Model artifact not found: {model_path}")
+    try:
+        source_manifest = json.loads(model_path.read_text(encoding="utf-8"))
+    except Exception:
+        source_manifest = {}
+    if source_manifest.get("schema") == "autosci.neural_workflow_policy.v1":
+        neural_dir = output_dir / "neural_model"
+        if neural_dir.exists():
+            shutil.rmtree(neural_dir)
+        shutil.copytree(model_path.parent, neural_dir)
+        return neural_dir / model_path.name
+    packaged_model = output_dir / "model.json"
+    shutil.copyfile(model_path, packaged_model)
+    return packaged_model
+
+
 def serialize_model(model: WorkflowPolicyModel, packaged_model_path: Path) -> dict[str, Any]:
     return {
         "id": model.id,
@@ -126,6 +143,7 @@ def render_model_card(manifest: dict[str, Any]) -> str:
     model = manifest["model"]
     metrics = model["metrics"]
     summary = model["training_summary"]
+    is_neural = model["model_type"] == "neural_scientific_workflow_policy"
     lines = [
         "# AutoScientist Scientific Workflow Policy Model",
         "",
@@ -140,7 +158,8 @@ def render_model_card(manifest: dict[str, Any]) -> str:
         f"- Name: `{model['name']}`",
         f"- Version: `{model['version']}`",
         f"- Type: `{model['model_type']}`",
-        f"- Artifact: `model.json`",
+        f"- Artifact: `{Path(model['packaged_artifact_path']).name}`",
+        f"- Framework: `{summary.get('framework', 'transparent-python-baseline')}`",
         "",
         "## Training Data",
         "",
@@ -164,14 +183,17 @@ def render_model_card(manifest: dict[str, Any]) -> str:
         "",
         "## Limitations",
         "",
-        "- Current policy is a transparent count/feature baseline, not a neural transformer.",
+        "- This is a workflow-action model, not a biomedical fact model.",
         "- It learns from available traces, so quality improves as more benchmark runs are added.",
         "- It should recommend workflow actions, not scientific truth.",
         "",
         "## Recommended Next Step",
         "",
-        "Use this package as the first dataset/model artifact for a richer Scientific Memory Transformer.",
     ]
+    if is_neural:
+        lines.append("Scale the benchmark corpus and compare this neural policy against the transparent baseline.")
+    else:
+        lines.append("Train the neural policy for the PyTorch artifact, then compare it against this transparent baseline.")
     return "\n".join(lines)
 
 
@@ -183,6 +205,7 @@ def render_readme(manifest: dict[str, Any]) -> str:
             "Contents:",
             "",
             "- `model.json`: workflow-policy model artifact.",
+            "- `neural_model/`: PyTorch manifest, weights, and neural model card when packaging a neural policy.",
             "- `MODEL_CARD.md`: intended use, metrics, and limitations.",
             "- `manifest.json`: package metadata, memory summary, and tool benchmark summary.",
             "- `state_graph.json`: derived scientific state graph for hypotheses, entities, experiments, tools, and replay lineage.",

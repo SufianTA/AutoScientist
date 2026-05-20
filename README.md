@@ -152,6 +152,7 @@ AutoScientist can package a shareable scientific-state artifact with the trained
 
 ```bash
 python tools/run_benchmark_suite.py --disable-qworld --disable-medea --llm-provider mock
+python tools/train_neural_workflow_policy.py --artifact-dir outputs/models --epochs 80
 python tools/package_policy_model.py --output-dir outputs/packages --replay-limit 10 --graph-limit 500
 python tools/export_scientific_state_graph.py --output-dir outputs/state_graphs
 ```
