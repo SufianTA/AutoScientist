@@ -56,7 +56,7 @@ def persist_scientific_memory(db: Session, run: Run, state: Any | None = None) -
     replay = persist_replay_bundle(db, run, objective, steps, tool_calls, evidence, hypotheses, posts)
     tool_benchmarks = update_tool_benchmarks(db, run, tool_calls, evidence)
     agent_memories = update_agent_role_memory(db, run, steps)
-    policy_examples = persist_policy_examples(db, run, objective, steps, tool_calls)
+    policy_examples = persist_policy_examples(db, run, objective, steps, tool_calls, reward=_run_reward(run, state))
 
     return {
         "entities": len(entity_ids),
@@ -242,10 +242,12 @@ def persist_policy_examples(
     objective: Objective | None,
     steps: list[AgentStep],
     tool_calls: list[ToolCall],
+    *,
+    reward: float | None = None,
 ) -> int:
     if db.query(WorkflowPolicyExample).filter(WorkflowPolicyExample.run_id == run.id).first():
         return 0
-    reward = _run_reward(run)
+    reward = _run_reward(run) if reward is None else reward
     objective_text = objective.objective_text if objective else ""
     count = 0
     previous_state = "START"
@@ -626,7 +628,11 @@ def _running_average(current: float, current_count: int, value: float) -> float:
     return ((current * current_count) + value) / (current_count + 1)
 
 
-def _run_reward(run: Run) -> float:
-    confidence = float(run.final_confidence or 0.0)
-    status_bonus = 0.5 if run.status == "completed" else -0.5
+def _run_reward(run: Run, state: Any | None = None) -> float:
+    state_confidence = None
+    if state is not None:
+        state_confidence = getattr(state, "report", {}).get("confidence")
+    confidence = float(state_confidence if state_confidence is not None else (run.final_confidence or 0.0))
+    status = "completed" if state is not None and getattr(state, "report", None) else run.status
+    status_bonus = 0.5 if status == "completed" else -0.5
     return max(-1.0, min(1.0, status_bonus + confidence))
