@@ -12,6 +12,7 @@ The project is designed for scientific workflow prototyping, not clinical decisi
 - Calls local/custom tools, live public biomedical APIs, and ToolUniverse/OpenTargets where available.
 - Streams agent activity in the CLI, including planning, tool calls, LLM calls, debate, critique, and report synthesis.
 - Stores auditable traces, tool calls, evidence items, board posts, hypotheses, reports, and provenance.
+- Builds persistent scientific memory, replay bundles, state graphs, and a workflow-policy model from prior runs.
 - Lets users register custom model tools and include them in the scientific workflow.
 
 ## Repository Layout
@@ -144,6 +145,18 @@ The startup scripts verify API health, frontend static assets, API proxying, COR
 - `strict real`: real LLM calls, live public data, provenance, and fail-fast behavior if keys are missing.
 - `real-data`: enables NCBI Gene, PubMed, PubChem, and ToolUniverse/OpenTargets calls where valid inputs are available.
 - `background` / `queued`: lets longer browser runs execute outside the initial request.
+
+## Scientific Memory and Policy Model
+
+AutoScientist can package a shareable scientific-state artifact with the trained workflow policy, replay bundles, tool benchmarks, and a graph of hypotheses, entities, experiments, tools, and provenance:
+
+```bash
+python tools/run_benchmark_suite.py --disable-qworld --disable-medea --llm-provider mock
+python tools/package_policy_model.py --output-dir outputs/packages --replay-limit 10 --graph-limit 500
+python tools/export_scientific_state_graph.py --output-dir outputs/state_graphs
+```
+
+See [docs/SCIENTIFIC_MEMORY_POLICY.md](docs/SCIENTIFIC_MEMORY_POLICY.md) for live RunPod commands and the review package structure.
 
 ## Agent Workflow
 

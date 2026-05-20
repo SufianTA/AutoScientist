@@ -17,6 +17,7 @@ from app.db.models import (
 )
 from app.db.session import get_db
 from app.services.scientific_memory import (
+    build_scientific_state_graph,
     memory_summary,
     predict_next_actions,
     train_workflow_policy_model,
@@ -39,6 +40,19 @@ class PolicyPredictRequest(BaseModel):
 @router.get("/summary")
 def get_memory_summary(db: Session = Depends(get_db)) -> dict:
     return memory_summary(db)
+
+
+@router.get("/state-graph")
+def get_scientific_state_graph(limit: int = 500, db: Session = Depends(get_db)) -> dict:
+    return build_scientific_state_graph(db, limit=max(1, min(limit, 1000)))
+
+
+@router.get("/runs/{run_id}/state-graph")
+def get_run_scientific_state_graph(run_id: str, limit: int = 500, db: Session = Depends(get_db)) -> dict:
+    graph = build_scientific_state_graph(db, run_id=run_id, limit=max(1, min(limit, 1000)))
+    if graph["summary"]["hypotheses"] == 0 and graph["summary"]["experiments"] == 0:
+        raise HTTPException(status_code=404, detail="No scientific state graph data found for run")
+    return graph
 
 
 @router.get("/entities")

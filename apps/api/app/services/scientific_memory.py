@@ -300,43 +300,31 @@ def train_workflow_policy_model(
 ) -> WorkflowPolicyModel:
     _refresh_policy_example_rewards(db)
     examples = db.query(WorkflowPolicyExample).all()
-    action_counts: Counter[str] = Counter()
-    feature_action_counts: dict[str, Counter[str]] = defaultdict(Counter)
-    rewards: dict[str, list[float]] = defaultdict(list)
-    for example in examples:
-        action = f"{example.action_type}:{example.action_name}"
-        action_counts[action] += 1
-        rewards[action].append(float(example.reward or 0.0))
-        for token in _tokens_for_context(example.context_json, example.state_name):
-            feature_action_counts[token][action] += 1
-
-    model = {
-        "schema": "autosci.scientific_workflow_policy.v1",
-        "name": name,
-        "trained_at": datetime.utcnow().isoformat(),
-        "num_examples": len(examples),
-        "action_counts": dict(action_counts),
-        "feature_action_counts": {feature: dict(counts) for feature, counts in feature_action_counts.items()},
-        "action_rewards": {
-            action: sum(values) / len(values)
-            for action, values in rewards.items()
-            if values
-        },
-    }
+    train_examples, holdout_examples = _split_policy_examples_by_run(examples)
+    tool_reliability = _tool_reliability_summary(db.query(ToolBenchmark).all())
+    model = _fit_policy_model(
+        train_examples if train_examples else examples,
+        name=name,
+        total_examples=len(examples),
+        holdout_examples=len(holdout_examples),
+        tool_reliability=tool_reliability,
+    )
     artifact_dir = Path(artifact_dir)
     artifact_dir.mkdir(parents=True, exist_ok=True)
     version = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     artifact_path = artifact_dir / f"{name}_{version}.json"
     artifact_path.write_text(json.dumps(model, indent=2), encoding="utf-8")
-    metrics = _policy_training_metrics(examples, model)
+    metrics = _policy_training_metrics(train_examples or examples, holdout_examples, model)
     row = WorkflowPolicyModel(
         name=name,
         version=version,
         artifact_path=str(artifact_path),
         training_summary_json={
             "num_examples": len(examples),
-            "num_actions": len(action_counts),
-            "top_actions": action_counts.most_common(10),
+            "training_examples": model["training_examples"],
+            "holdout_examples": model["holdout_examples"],
+            "num_actions": len(model["action_counts"]),
+            "top_actions": Counter(model["action_counts"]).most_common(10),
         },
         metrics_json=metrics,
     )
@@ -362,19 +350,253 @@ def predict_next_actions(
     top_k: int = 5,
 ) -> list[dict[str, Any]]:
     model = json.loads(Path(model_path).read_text(encoding="utf-8"))
+    return _predict_from_model(model, context, top_k=top_k)
+
+
+def build_scientific_state_graph(db: Session, *, run_id: str | None = None, limit: int = 500) -> dict[str, Any]:
+    """Export memory as an auditable scientific state graph.
+
+    The graph is derived from normalized memory tables instead of being stored as
+    a second source of truth. It gives reviewers a compact way to inspect which
+    entities, hypotheses, causal links, proposed experiments, tools, and replay
+    bundles were produced by the system.
+    """
+
+    nodes: dict[str, dict[str, Any]] = {}
+    edges: list[dict[str, Any]] = []
+
+    def add_node(node_id: str, kind: str, label: str, **properties: Any) -> None:
+        if node_id not in nodes:
+            nodes[node_id] = {"id": node_id, "kind": kind, "label": label, "properties": properties}
+        else:
+            nodes[node_id]["properties"] = {**nodes[node_id].get("properties", {}), **properties}
+
+    def add_edge(source: str, target: str, relation: str, **properties: Any) -> None:
+        if source in nodes and target in nodes:
+            edges.append({"source": source, "target": target, "relation": relation, "properties": properties})
+
+    run_filter = [ScientificHypothesisMemory.run_id == run_id] if run_id else []
+    hypotheses = (
+        db.query(ScientificHypothesisMemory)
+        .filter(*run_filter)
+        .order_by(ScientificHypothesisMemory.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    run_ids = {item.run_id for item in hypotheses}
+    if run_id:
+        run_ids.add(run_id)
+
+    entities = db.query(ScientificEntity).order_by(ScientificEntity.mention_count.desc()).limit(limit).all()
+    for entity in entities:
+        add_node(
+            entity.id,
+            "entity",
+            entity.name,
+            entity_type=entity.entity_type,
+            mention_count=entity.mention_count,
+            first_seen_run_id=entity.first_seen_run_id,
+            last_seen_run_id=entity.last_seen_run_id,
+            metadata=entity.metadata_json,
+        )
+
+    for hypothesis in hypotheses:
+        add_node(
+            hypothesis.id,
+            "hypothesis",
+            hypothesis.title,
+            run_id=hypothesis.run_id,
+            confidence=hypothesis.confidence,
+            status=hypothesis.status,
+            evidence_summary=hypothesis.evidence_summary_json,
+            failure_modes=hypothesis.failure_modes_json,
+        )
+        for entity_id in hypothesis.entity_ids_json or []:
+            add_edge(hypothesis.id, str(entity_id), "mentions_entity", confidence=hypothesis.confidence)
+
+    causal_query = db.query(ScientificCausalLink)
+    if run_ids:
+        causal_query = causal_query.filter(ScientificCausalLink.run_id.in_(run_ids))
+    for link in causal_query.order_by(ScientificCausalLink.created_at.desc()).limit(limit).all():
+        add_node(
+            link.id,
+            "causal_link",
+            link.relation,
+            run_id=link.run_id,
+            confidence=link.confidence,
+            evidence_ids=link.evidence_ids_json,
+            metadata=link.metadata_json,
+        )
+        if link.source_entity_id:
+            add_edge(str(link.source_entity_id), link.id, "supports_relation_source", confidence=link.confidence)
+        if link.target_entity_id:
+            add_edge(link.id, str(link.target_entity_id), "supports_relation_target", confidence=link.confidence)
+
+    experiment_query = db.query(ExperimentMemory)
+    if run_ids:
+        experiment_query = experiment_query.filter(ExperimentMemory.run_id.in_(run_ids))
+    for experiment in experiment_query.order_by(ExperimentMemory.created_at.desc()).limit(limit).all():
+        add_node(
+            experiment.id,
+            "experiment",
+            experiment.name,
+            run_id=experiment.run_id,
+            experiment_type=experiment.experiment_type,
+            expected_information_gain=experiment.expected_information_gain,
+            feasibility=experiment.feasibility,
+            status=experiment.status,
+            protocol=experiment.protocol_json,
+            result=experiment.result_json,
+        )
+        if experiment.hypothesis_memory_id:
+            add_edge(str(experiment.hypothesis_memory_id), experiment.id, "proposes_experiment")
+
+    replay_query = db.query(RunReplay)
+    if run_ids:
+        replay_query = replay_query.filter(RunReplay.run_id.in_(run_ids))
+    for replay in replay_query.order_by(RunReplay.created_at.desc()).limit(limit).all():
+        node_id = f"run:{replay.run_id}"
+        add_node(node_id, "run", replay.run_id, replay_hash=replay.replay_hash, created_at=replay.created_at.isoformat())
+        add_node(replay.id, "replay", replay.replay_hash[:12], run_id=replay.run_id, replay_hash=replay.replay_hash)
+        add_edge(node_id, replay.id, "has_replay")
+        for hypothesis in hypotheses:
+            if hypothesis.run_id == replay.run_id:
+                add_edge(node_id, hypothesis.id, "produced_hypothesis")
+
+    tool_query = db.query(ToolBenchmark)
+    for benchmark in tool_query.order_by(ToolBenchmark.call_count.desc()).limit(limit).all():
+        node_id = f"tool:{benchmark.tool_source}:{benchmark.tool_name}"
+        add_node(
+            node_id,
+            "tool",
+            benchmark.tool_name,
+            source=benchmark.tool_source,
+            call_count=benchmark.call_count,
+            success_rate=benchmark.success_count / benchmark.call_count if benchmark.call_count else None,
+            avg_latency_ms=benchmark.avg_latency_ms,
+            avg_usefulness=benchmark.avg_usefulness,
+            last_run_id=benchmark.last_run_id,
+        )
+        if benchmark.last_run_id:
+            add_node(f"run:{benchmark.last_run_id}", "run", benchmark.last_run_id)
+            add_edge(f"run:{benchmark.last_run_id}", node_id, "used_tool")
+
+    _add_confidence_evolution_edges(nodes, edges, hypotheses)
+    if run_id:
+        connected = {edge["source"] for edge in edges} | {edge["target"] for edge in edges}
+        nodes = {
+            node_id: node
+            for node_id, node in nodes.items()
+            if node["kind"] != "entity" or node_id in connected
+        }
+        edges = [edge for edge in edges if edge["source"] in nodes and edge["target"] in nodes]
+    return {
+        "schema": "autosci.scientific_state_graph.v1",
+        "scope": {"run_id": run_id, "limit": limit},
+        "summary": {
+            "nodes": len(nodes),
+            "edges": len(edges),
+            "hypotheses": sum(1 for node in nodes.values() if node["kind"] == "hypothesis"),
+            "entities": sum(1 for node in nodes.values() if node["kind"] == "entity"),
+            "experiments": sum(1 for node in nodes.values() if node["kind"] == "experiment"),
+            "tools": sum(1 for node in nodes.values() if node["kind"] == "tool"),
+        },
+        "nodes": list(nodes.values()),
+        "edges": edges,
+    }
+
+
+def _fit_policy_model(
+    examples: list[WorkflowPolicyExample],
+    *,
+    name: str,
+    total_examples: int,
+    holdout_examples: int,
+    tool_reliability: dict[str, Any],
+) -> dict[str, Any]:
+    action_counts: Counter[str] = Counter()
+    state_action_counts: dict[str, Counter[str]] = defaultdict(Counter)
+    feature_action_counts: dict[str, Counter[str]] = defaultdict(Counter)
+    rewards: dict[str, list[float]] = defaultdict(list)
+    transition_counts: dict[str, Counter[str]] = defaultdict(Counter)
+    for example in examples:
+        action = f"{example.action_type}:{example.action_name}"
+        action_counts[action] += 1
+        state_action_counts[example.state_name][action] += 1
+        rewards[action].append(float(example.reward or 0.0))
+        previous_state = str(example.context_json.get("previous_state") or example.state_name)
+        transition_counts[previous_state][action] += 1
+        for token in _tokens_for_context(example.context_json, example.state_name):
+            feature_action_counts[token][action] += 1
+
+    return {
+        "schema": "autosci.scientific_workflow_policy.v2",
+        "name": name,
+        "trained_at": datetime.utcnow().isoformat(),
+        "num_examples": total_examples,
+        "training_examples": len(examples),
+        "holdout_examples": holdout_examples,
+        "action_counts": dict(action_counts),
+        "state_action_counts": {state: dict(counts) for state, counts in state_action_counts.items()},
+        "feature_action_counts": {feature: dict(counts) for feature, counts in feature_action_counts.items()},
+        "transition_counts": {state: dict(counts) for state, counts in transition_counts.items()},
+        "action_rewards": {
+            action: sum(values) / len(values)
+            for action, values in rewards.items()
+            if values
+        },
+        "tool_reliability": tool_reliability,
+        "scoring": {
+            "prior_weight": 1.0,
+            "state_weight": 1.4,
+            "feature_weight": 1.0,
+            "reward_weight": 2.0,
+            "tool_reliability_weight": 1.2,
+        },
+    }
+
+
+def _predict_from_model(model: dict[str, Any], context: dict[str, Any], *, top_k: int = 5) -> list[dict[str, Any]]:
     action_counts = Counter(model.get("action_counts", {}))
     feature_action_counts = {
         feature: Counter(counts)
         for feature, counts in model.get("feature_action_counts", {}).items()
     }
+    state_action_counts = {
+        state: Counter(counts)
+        for state, counts in model.get("state_action_counts", {}).items()
+    }
     action_rewards = model.get("action_rewards", {})
+    tool_reliability = model.get("tool_reliability", {})
+    weights = {
+        "prior_weight": 1.0,
+        "state_weight": 1.4,
+        "feature_weight": 1.0,
+        "reward_weight": 2.0,
+        "tool_reliability_weight": 1.2,
+        **(model.get("scoring") or {}),
+    }
     scores: Counter[str] = Counter()
     total_actions = sum(action_counts.values()) or 1
+    num_actions = max(len(action_counts), 1)
     for action, count in action_counts.items():
-        scores[action] += math.log((count + 1) / total_actions)
-    for token in _tokens_for_context(context, str(context.get("state_name", ""))):
+        scores[action] += weights["prior_weight"] * math.log((count + 1) / (total_actions + num_actions))
+        scores[action] += weights["reward_weight"] * float(action_rewards.get(action, 0.0))
+        if action.startswith("tool_call:"):
+            tool_name = action.split(":", 1)[1]
+            reliability = tool_reliability.get(tool_name, {})
+            success_rate = reliability.get("success_rate")
+            usefulness = reliability.get("avg_usefulness")
+            if success_rate is not None:
+                scores[action] += weights["tool_reliability_weight"] * float(success_rate)
+            if usefulness is not None:
+                scores[action] += 0.5 * weights["tool_reliability_weight"] * float(usefulness)
+    state_name = str(context.get("state_name", ""))
+    for action, count in state_action_counts.get(state_name, {}).items():
+        scores[action] += weights["state_weight"] * math.log(1 + count)
+    for token in _tokens_for_context(context, state_name):
         for action, count in feature_action_counts.get(token, {}).items():
-            scores[action] += math.log(1 + count)
+            scores[action] += weights["feature_weight"] * math.log(1 + count)
     ranked = []
     for action, score in scores.most_common(top_k):
         ranked.append(
@@ -570,36 +792,121 @@ def _upsert_entity(db: Session, run_id: str, entity_type: str, name: str, metada
     return entity
 
 
-def _policy_training_metrics(examples: list[WorkflowPolicyExample], model: dict[str, Any]) -> dict[str, Any]:
+def _split_policy_examples_by_run(
+    examples: list[WorkflowPolicyExample],
+) -> tuple[list[WorkflowPolicyExample], list[WorkflowPolicyExample]]:
     if not examples:
-        return {"num_examples": 0, "top1_training_accuracy": None}
-    correct = 0
-    artifact = {
-        "action_counts": model["action_counts"],
-        "feature_action_counts": model["feature_action_counts"],
-        "action_rewards": model.get("action_rewards", {}),
-    }
-    temp_path = Path("outputs/models/.tmp_policy_eval.json")
-    temp_path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path.write_text(json.dumps(artifact), encoding="utf-8")
-    try:
-        for example in examples:
-            predicted = predict_next_actions(
-                {**example.context_json, "state_name": example.state_name},
-                model_path=temp_path,
-                top_k=1,
-            )
-            if predicted and predicted[0]["action"] == f"{example.action_type}:{example.action_name}":
-                correct += 1
-    finally:
-        try:
-            temp_path.unlink()
-        except OSError:
-            pass
+        return [], []
+    by_run: dict[str, list[WorkflowPolicyExample]] = defaultdict(list)
+    for example in examples:
+        by_run[example.run_id].append(example)
+    if len(by_run) < 4:
+        return examples, []
+    ordered_runs = sorted(
+        by_run,
+        key=lambda run_id: (
+            min(example.created_at for example in by_run[run_id]),
+            run_id,
+        ),
+    )
+    holdout_run_count = max(1, round(len(ordered_runs) * 0.2))
+    holdout_runs = set(ordered_runs[-holdout_run_count:])
+    train = [example for example in examples if example.run_id not in holdout_runs]
+    holdout = [example for example in examples if example.run_id in holdout_runs]
+    return train, holdout
+
+
+def _tool_reliability_summary(benchmarks: list[ToolBenchmark]) -> dict[str, Any]:
+    summary = {}
+    for benchmark in benchmarks:
+        success_rate = benchmark.success_count / benchmark.call_count if benchmark.call_count else None
+        summary[benchmark.tool_name] = {
+            "tool_source": benchmark.tool_source,
+            "call_count": benchmark.call_count,
+            "success_rate": success_rate,
+            "avg_latency_ms": benchmark.avg_latency_ms,
+            "avg_usefulness": benchmark.avg_usefulness,
+        }
+    return summary
+
+
+def _policy_training_metrics(
+    train_examples: list[WorkflowPolicyExample],
+    holdout_examples: list[WorkflowPolicyExample],
+    model: dict[str, Any],
+) -> dict[str, Any]:
+    train_metrics = _policy_eval_metrics(train_examples, model)
+    holdout_metrics = _policy_eval_metrics(holdout_examples, model)
     return {
-        "num_examples": len(examples),
-        "top1_training_accuracy": round(correct / len(examples), 4),
+        "num_examples": int(model.get("num_examples") or len(train_examples) + len(holdout_examples)),
+        "training_examples": len(train_examples),
+        "holdout_examples": len(holdout_examples),
+        "top1_training_accuracy": train_metrics["top1_accuracy"],
+        "top3_training_accuracy": train_metrics["top3_accuracy"],
+        "mrr_training": train_metrics["mrr"],
+        "top1_holdout_accuracy": holdout_metrics["top1_accuracy"],
+        "top3_holdout_accuracy": holdout_metrics["top3_accuracy"],
+        "mrr_holdout": holdout_metrics["mrr"],
     }
+
+
+def _policy_eval_metrics(examples: list[WorkflowPolicyExample], model: dict[str, Any]) -> dict[str, Any]:
+    if not examples:
+        return {"top1_accuracy": None, "top3_accuracy": None, "mrr": None}
+    top1 = 0
+    top3 = 0
+    reciprocal_rank = 0.0
+    for example in examples:
+        expected = f"{example.action_type}:{example.action_name}"
+        predicted = _predict_from_model(
+            model,
+            {**example.context_json, "state_name": example.state_name},
+            top_k=10,
+        )
+        actions = [item["action"] for item in predicted]
+        if actions[:1] == [expected]:
+            top1 += 1
+        if expected in actions[:3]:
+            top3 += 1
+        if expected in actions:
+            reciprocal_rank += 1.0 / (actions.index(expected) + 1)
+    total = len(examples)
+    return {
+        "top1_accuracy": round(top1 / total, 4),
+        "top3_accuracy": round(top3 / total, 4),
+        "mrr": round(reciprocal_rank / total, 4),
+    }
+
+
+def _add_confidence_evolution_edges(
+    nodes: dict[str, dict[str, Any]],
+    edges: list[dict[str, Any]],
+    hypotheses: list[ScientificHypothesisMemory],
+) -> None:
+    by_signature: dict[str, list[ScientificHypothesisMemory]] = defaultdict(list)
+    for hypothesis in hypotheses:
+        signature = _normalize(" ".join([hypothesis.title, *map(str, hypothesis.entity_ids_json or [])]))[:240]
+        by_signature[signature].append(hypothesis)
+    for related in by_signature.values():
+        ordered = sorted(related, key=lambda item: item.created_at)
+        for previous, current in zip(ordered, ordered[1:]):
+            if previous.id in nodes and current.id in nodes:
+                edges.append(
+                    {
+                        "source": previous.id,
+                        "target": current.id,
+                        "relation": "confidence_evolved_to",
+                        "properties": {
+                            "previous_confidence": previous.confidence,
+                            "current_confidence": current.confidence,
+                            "delta": (
+                                round(float(current.confidence - previous.confidence), 4)
+                                if current.confidence is not None and previous.confidence is not None
+                                else None
+                            ),
+                        },
+                    }
+                )
 
 
 def _tokens_for_context(context: dict[str, Any], state_name: str) -> list[str]:

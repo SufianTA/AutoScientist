@@ -11,7 +11,7 @@ from typing import Any
 
 from app.db.models import RunReplay, ToolBenchmark, WorkflowPolicyModel
 from app.db.session import SessionLocal
-from app.services.scientific_memory import memory_summary
+from app.services.scientific_memory import build_scientific_state_graph, memory_summary
 
 
 def package_model(args: argparse.Namespace) -> dict[str, Any]:
@@ -26,11 +26,13 @@ def package_model(args: argparse.Namespace) -> dict[str, Any]:
 
         replays = db.query(RunReplay).order_by(RunReplay.created_at.desc()).limit(args.replay_limit).all()
         benchmarks = db.query(ToolBenchmark).order_by(ToolBenchmark.call_count.desc()).all()
+        state_graph = build_scientific_state_graph(db, limit=args.graph_limit)
         package_manifest = {
             "schema": "autosci.workflow_policy_package.v1",
             "created_at_unix": int(time.time()),
             "model": serialize_model(model, packaged_model),
             "memory_summary": memory_summary(db),
+            "state_graph_summary": state_graph["summary"],
             "tool_benchmarks": [serialize_tool_benchmark(item) for item in benchmarks],
             "replay_index": [
                 {
@@ -48,6 +50,7 @@ def package_model(args: argparse.Namespace) -> dict[str, Any]:
             },
         }
         (output_dir / "manifest.json").write_text(json.dumps(package_manifest, indent=2, default=str), encoding="utf-8")
+        (output_dir / "state_graph.json").write_text(json.dumps(state_graph, indent=2, default=str), encoding="utf-8")
         (output_dir / "MODEL_CARD.md").write_text(render_model_card(package_manifest), encoding="utf-8")
         (output_dir / "README.md").write_text(render_readme(package_manifest), encoding="utf-8")
         replay_dir = output_dir / "replays"
@@ -148,6 +151,16 @@ def render_model_card(manifest: dict[str, Any]) -> str:
         "## Metrics",
         "",
         f"- Top-1 training accuracy: `{metrics.get('top1_training_accuracy')}`",
+        f"- Top-3 training accuracy: `{metrics.get('top3_training_accuracy')}`",
+        f"- Top-1 holdout accuracy: `{metrics.get('top1_holdout_accuracy')}`",
+        f"- Top-3 holdout accuracy: `{metrics.get('top3_holdout_accuracy')}`",
+        f"- Holdout MRR: `{metrics.get('mrr_holdout')}`",
+        "",
+        "## Scientific State Graph",
+        "",
+        f"- Nodes: `{manifest.get('state_graph_summary', {}).get('nodes')}`",
+        f"- Edges: `{manifest.get('state_graph_summary', {}).get('edges')}`",
+        "- `state_graph.json` exports hypothesis, entity, experiment, tool, replay, and confidence-evolution links.",
         "",
         "## Limitations",
         "",
@@ -172,6 +185,7 @@ def render_readme(manifest: dict[str, Any]) -> str:
             "- `model.json`: workflow-policy model artifact.",
             "- `MODEL_CARD.md`: intended use, metrics, and limitations.",
             "- `manifest.json`: package metadata, memory summary, and tool benchmark summary.",
+            "- `state_graph.json`: derived scientific state graph for hypotheses, entities, experiments, tools, and replay lineage.",
             "- `replays/`: replay bundles for recent benchmark runs.",
             "",
             "Use with AutoScientist:",
@@ -193,6 +207,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--model-id", default="")
     parser.add_argument("--output-dir", default="outputs/packages")
     parser.add_argument("--replay-limit", type=int, default=10)
+    parser.add_argument("--graph-limit", type=int, default=500)
     return parser.parse_args(argv)
 
 

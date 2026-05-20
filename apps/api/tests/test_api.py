@@ -457,3 +457,12 @@ def test_scientific_memory_replay_and_policy_model() -> None:
     )
     assert prediction.status_code == 200
     assert prediction.json()["predictions"]
+    assert "top3_training_accuracy" in train.json()["metrics"]
+
+    graph = client.get(f"/memory/runs/{run_id}/state-graph")
+    assert graph.status_code == 200
+    graph_body = graph.json()
+    assert graph_body["schema"] == "autosci.scientific_state_graph.v1"
+    assert graph_body["summary"]["hypotheses"] >= 1
+    assert any(node["kind"] == "hypothesis" for node in graph_body["nodes"])
+    assert any(edge["relation"] in {"produced_hypothesis", "proposes_experiment"} for edge in graph_body["edges"])

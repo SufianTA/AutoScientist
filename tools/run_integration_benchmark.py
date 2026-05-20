@@ -27,22 +27,40 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
     provider = args.llm_provider
     api_key_env_var = args.llm_api_key_env_var
     model = args.llm_model
+    default_models = {
+        "mock": "mock-scientist",
+        "openai": "gpt-4.1",
+        "anthropic": "claude-sonnet-4-6",
+        "gemini": "gemini-2.5-flash",
+        "openai_compatible": "local-model",
+        "local_http": "local-http-model",
+    }
+    default_key_envs = {
+        "openai": "OPENAI_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+        "openai_compatible": "OPENAI_COMPATIBLE_API_KEY",
+    }
     if provider == "auto":
         if os.getenv("ANTHROPIC_API_KEY"):
             provider = "anthropic"
-            api_key_env_var = "ANTHROPIC_API_KEY"
-            model = model or "claude-sonnet-4-6"
+            api_key_env_var = api_key_env_var or "ANTHROPIC_API_KEY"
+            model = model or default_models[provider]
         elif os.getenv("OPENAI_API_KEY"):
             provider = "openai"
-            api_key_env_var = "OPENAI_API_KEY"
-            model = model or "gpt-4.1"
+            api_key_env_var = api_key_env_var or "OPENAI_API_KEY"
+            model = model or default_models[provider]
         elif os.getenv("GEMINI_API_KEY"):
             provider = "gemini"
-            api_key_env_var = "GEMINI_API_KEY"
-            model = model or "gemini-2.5-flash"
+            api_key_env_var = api_key_env_var or "GEMINI_API_KEY"
+            model = model or default_models[provider]
+        else:
+            provider = "mock"
+            model = model or default_models[provider]
     else:
-        provider = "mock"
-        model = model or "mock-scientist"
+        provider = provider or "mock"
+        model = model or default_models.get(provider, "")
+        api_key_env_var = api_key_env_var or default_key_envs.get(provider, "")
     medea_python = args.medea_python or os.getenv("MEDEA_PYTHON")
     return {
         "execution_mode": "inline",
