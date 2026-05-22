@@ -33,6 +33,7 @@ if [ "$INSTALL_MEDEA" = "1" ]; then
     git clone https://github.com/mims-harvard/Medea.git "$MEDEA_DIR"
   fi
   "$VENV/bin/python" -m pip install uv
+  "$VENV/bin/uv" python install 3.10 || true
   "$VENV/bin/uv" venv "$MEDEA_VENV" --python 3.10 || python3 -m venv "$MEDEA_VENV"
   "$MEDEA_VENV/bin/python" -m pip install --upgrade pip setuptools wheel
   "$MEDEA_VENV/bin/python" -m pip install -e "$MEDEA_DIR"

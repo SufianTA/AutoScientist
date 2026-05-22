@@ -32,7 +32,7 @@ def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
         check_torch(require_gpu=args.require_gpu),
         check_gpu(require_gpu=args.require_gpu),
         check_network("NCBI E-utilities", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9&retmode=json&retmax=0"),
-        check_network("Open Targets GraphQL", "https://api.platform.opentargets.org/api/v4/graphql"),
+        check_open_targets_graphql(),
     ]
     if not args.skip_tooluniverse:
         checks.append(check_tooluniverse(require=args.require_tooluniverse))
@@ -142,6 +142,24 @@ def check_network(name: str, url: str) -> dict[str, Any]:
             return check(f"network:{name}", status, f"HTTP {response.status}", details={"url": url})
     except Exception as exc:
         return check(f"network:{name}", "warn", str(exc)[:300], details={"url": url})
+
+
+def check_open_targets_graphql() -> dict[str, Any]:
+    url = "https://api.platform.opentargets.org/api/v4/graphql"
+    payload = json.dumps({"query": "{ __typename }"}).encode("utf-8")
+    try:
+        request = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json", "User-Agent": "AutoScientist-Preflight/0.1"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=12) as response:
+            body = response.read().decode("utf-8", errors="replace")
+            status = "pass" if 200 <= response.status < 300 and "__typename" in body else "warn"
+            return check("network:Open Targets GraphQL", status, f"HTTP {response.status}", details={"url": url})
+    except Exception as exc:
+        return check("network:Open Targets GraphQL", "warn", str(exc)[:300], details={"url": url})
 
 
 def check_tooluniverse(*, require: bool) -> dict[str, Any]:

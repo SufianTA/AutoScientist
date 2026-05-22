@@ -57,11 +57,8 @@ def collect_review_package(args: argparse.Namespace) -> dict[str, Any]:
     }
     (staging / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     (staging / "README.md").write_text(render_readme(manifest), encoding="utf-8")
-    zip_path = output_dir / f"{package_name}.zip"
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for path in staging.rglob("*"):
-            archive.write(path, path.relative_to(staging.parent))
     secret_hits = scan_for_secrets(staging)
+    zip_path = output_dir / f"{package_name}.zip"
     result = {
         "schema": "autosci.review_package_result.v1",
         "package_dir": str(staging),
@@ -74,6 +71,9 @@ def collect_review_package(args: argparse.Namespace) -> dict[str, Any]:
     (staging / "package_result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     if secret_hits and not args.allow_secret_matches:
         raise SystemExit(f"Secret-like strings remain in package staging: {secret_hits[:5]}")
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in staging.rglob("*"):
+            archive.write(path, path.relative_to(staging.parent))
     return result
 
 
