@@ -325,7 +325,9 @@ def run_task(
         "value_assessment": assessment,
         "replay": replay,
         "sciflow_policy": extract_sciflow_advice(result),
+        "sciflow_application": extract_sciflow_application(result),
         "trace_summary": result.get("trace_summary"),
+        "report": result.get("report", {}),
         "hypothesis": result.get("report", {}).get("hypothesis", {}),
         "evidence_count": len(result.get("report", {}).get("evidence", [])),
         "guardrails": result.get("report", {}).get("guardrails", []),
@@ -377,11 +379,15 @@ def benchmark_value_score(
     base = value_score(result, integrations)
     replay = replay_status(result.get("run_id"))
     sciflow = extract_sciflow_advice(result)
+    sciflow_application = extract_sciflow_application(result)
     public_context = task.get("public_context", {})
     checks = {
         **base["checks"],
         "memory_or_replay": bool(replay.get("available")) if ablation != "no_memory" else False,
         "controller_advice": sciflow.get("status") == "success" if ablation not in {"no_memory", "no_sciflow"} else False,
+        "controller_applied": bool(sciflow_application.get("applied"))
+        if ablation not in {"no_memory", "no_sciflow"}
+        else False,
         "public_context_prefetched": public_context.get("mode") in {"live", "offline"},
         "open_targets_context": public_context.get("open_targets_target", {}).get("status") in {"success", "partial"},
         "pubmed_context": public_context.get("pubmed_gene_disease", {}).get("status") == "success",
@@ -400,6 +406,7 @@ def benchmark_value_score(
         "base_score": base["score"],
         "max_score": 100,
         "checks": checks,
+        "controller_impact": controller_impact(result, sciflow_application),
         "interpretation": interpret_benchmark_score(score, ablation),
     }
 
@@ -435,6 +442,33 @@ def extract_sciflow_advice(result: dict[str, Any]) -> dict[str, Any]:
         if isinstance(advice, dict):
             return advice
     return {"enabled": False, "status": "not_recorded", "predictions": []}
+
+
+def extract_sciflow_application(result: dict[str, Any]) -> dict[str, Any]:
+    for step in result.get("provenance", {}).get("agent_steps", []):
+        if step.get("state_name") != "EXECUTE_EVIDENCE_COLLECTION":
+            continue
+        application = step.get("output", {}).get("sciflow_policy_application")
+        if isinstance(application, dict):
+            return application
+    return {"status": "not_recorded", "applied": False, "effects": []}
+
+
+def controller_impact(result: dict[str, Any], application: dict[str, Any]) -> dict[str, Any]:
+    tool_calls = result.get("provenance", {}).get("tool_calls", [])
+    evidence = result.get("report", {}).get("evidence", [])
+    return {
+        "applied": bool(application.get("applied")),
+        "status": application.get("status", "not_recorded"),
+        "effects": application.get("effects", []),
+        "policy_followup_pubmed_queries": application.get("policy_followup_pubmed_queries", []),
+        "tool_call_count": len(tool_calls),
+        "evidence_count": len(evidence),
+        "public_biomedical_call_count": sum(
+            1 for call in tool_calls if call.get("tool_source") == "live_public_biomedical"
+        ),
+        "tooluniverse_call_count": sum(1 for call in tool_calls if call.get("tool_source") == "tooluniverse"),
+    }
 
 
 def train_policy_if_requested(args: argparse.Namespace, output_dir: Path) -> dict[str, Any] | None:
@@ -665,7 +699,9 @@ def missing_required_integrations(result: dict[str, Any], required_integrations:
             if not integrations.get("local_board", {}).get("executed"):
                 missing.append(name)
         elif name == "sciflow_policy":
-            if result.get("sciflow_policy", {}).get("status") != "success":
+            if result.get("sciflow_policy", {}).get("status") != "success" or not result.get(
+                "sciflow_application", {}
+            ).get("applied"):
                 missing.append(name)
         elif name == "memory_replay":
             if not result.get("replay", {}).get("available"):
@@ -692,6 +728,7 @@ def missing_expected_integrations(result: dict[str, Any]) -> list[str]:
 def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
     scores = [item["value_assessment"]["score"] for item in results]
     completed = [item for item in results if item.get("status") == "completed"]
+    impacts = [item.get("value_assessment", {}).get("controller_impact", {}) for item in results]
     return {
         "runs": len(results),
         "completed": len(completed),
@@ -706,6 +743,31 @@ def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
         else 0.0,
         "memory_replay_runs": sum(1 for item in results if item.get("replay", {}).get("available")),
         "controller_advice_runs": sum(1 for item in results if item.get("sciflow_policy", {}).get("status") == "success"),
+        "controller_applied_runs": sum(1 for impact in impacts if impact.get("applied")),
+        "mean_tool_calls": round(
+            statistics.mean([int(impact.get("tool_call_count") or 0) for impact in impacts]),
+            2,
+        )
+        if impacts
+        else 0.0,
+        "mean_evidence_count": round(
+            statistics.mean([int(impact.get("evidence_count") or 0) for impact in impacts]),
+            2,
+        )
+        if impacts
+        else 0.0,
+        "mean_public_biomedical_calls": round(
+            statistics.mean([int(impact.get("public_biomedical_call_count") or 0) for impact in impacts]),
+            2,
+        )
+        if impacts
+        else 0.0,
+        "mean_tooluniverse_calls": round(
+            statistics.mean([int(impact.get("tooluniverse_call_count") or 0) for impact in impacts]),
+            2,
+        )
+        if impacts
+        else 0.0,
         "public_tool_runs": sum(
             1
             for item in results
@@ -726,8 +788,22 @@ def compare_against_full(summary_by_ablation: dict[str, dict[str, Any]]) -> dict
         deltas[name] = {
             "mean_score_delta_vs_full": round(full["mean_score"] - item["mean_score"], 2),
             "controller_runs_delta_vs_full": full["controller_advice_runs"] - item["controller_advice_runs"],
+            "controller_applied_runs_delta_vs_full": full["controller_applied_runs"] - item["controller_applied_runs"],
             "replay_runs_delta_vs_full": full["memory_replay_runs"] - item["memory_replay_runs"],
             "public_tool_runs_delta_vs_full": full["public_tool_runs"] - item["public_tool_runs"],
+            "mean_tool_calls_delta_vs_full": round(full["mean_tool_calls"] - item["mean_tool_calls"], 2),
+            "mean_evidence_count_delta_vs_full": round(
+                full["mean_evidence_count"] - item["mean_evidence_count"],
+                2,
+            ),
+            "mean_public_biomedical_calls_delta_vs_full": round(
+                full["mean_public_biomedical_calls"] - item["mean_public_biomedical_calls"],
+                2,
+            ),
+            "mean_tooluniverse_calls_delta_vs_full": round(
+                full["mean_tooluniverse_calls"] - item["mean_tooluniverse_calls"],
+                2,
+            ),
         }
     return deltas
 
@@ -779,13 +855,15 @@ def render_summary_markdown(summary: dict[str, Any]) -> str:
         "",
         "## Ablation Summary",
         "",
-        "| Ablation | Runs | Completed | Mean score | Replay runs | Controller runs | Public-tool runs |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Ablation | Runs | Completed | Mean score | Replay runs | Controller advice | Controller applied | Mean evidence | Mean tool calls | Public-tool runs |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, item in summary["summary_by_ablation"].items():
         lines.append(
             f"| {name} | {item['runs']} | {item['completed']} | {item['mean_score']} | "
-            f"{item['memory_replay_runs']} | {item['controller_advice_runs']} | {item['public_tool_runs']} |"
+            f"{item['memory_replay_runs']} | {item['controller_advice_runs']} | "
+            f"{item['controller_applied_runs']} | {item['mean_evidence_count']} | "
+            f"{item['mean_tool_calls']} | {item['public_tool_runs']} |"
         )
     lines.extend(["", "## Full vs Ablation Deltas", "", "```json"])
     lines.append(json.dumps(summary.get("full_vs_ablation_deltas", {}), indent=2))

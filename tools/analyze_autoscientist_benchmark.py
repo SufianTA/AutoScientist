@@ -81,6 +81,10 @@ def summarize_full_runtime(results: list[dict[str, Any]]) -> dict[str, Any]:
 
 def compare_ablations(by_ablation: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
     full = score_mean(by_ablation.get("full", []))
+    full_tool_calls = mean_tool_calls(by_ablation.get("full", []))
+    full_evidence = mean_evidence_count(by_ablation.get("full", []))
+    full_public_calls = mean_public_biomedical_calls(by_ablation.get("full", []))
+    full_tooluniverse_calls = mean_tooluniverse_calls(by_ablation.get("full", []))
     comparisons = {}
     for name, results in sorted(by_ablation.items()):
         if name == "full":
@@ -90,8 +94,22 @@ def compare_ablations(by_ablation: dict[str, list[dict[str, Any]]]) -> dict[str,
             "mean_score": score_mean(results),
             "score_delta_full_minus_ablation": round(full - score_mean(results), 2),
             "mean_tool_calls": mean_tool_calls(results),
+            "tool_call_delta_full_minus_ablation": round(full_tool_calls - mean_tool_calls(results), 2),
+            "mean_evidence_count": mean_evidence_count(results),
+            "evidence_delta_full_minus_ablation": round(full_evidence - mean_evidence_count(results), 2),
+            "mean_public_biomedical_calls": mean_public_biomedical_calls(results),
+            "public_biomedical_call_delta_full_minus_ablation": round(
+                full_public_calls - mean_public_biomedical_calls(results),
+                2,
+            ),
+            "mean_tooluniverse_calls": mean_tooluniverse_calls(results),
+            "tooluniverse_call_delta_full_minus_ablation": round(
+                full_tooluniverse_calls - mean_tooluniverse_calls(results),
+                2,
+            ),
             "replay_runs": sum(1 for item in results if item.get("replay", {}).get("available")),
             "controller_runs": sum(1 for item in results if item.get("sciflow_policy", {}).get("status") == "success"),
+            "controller_applied_runs": sum(1 for item in results if controller_impact(item).get("applied")),
         }
     return comparisons
 
@@ -103,6 +121,38 @@ def score_mean(results: list[dict[str, Any]]) -> float:
 
 def mean_tool_calls(results: list[dict[str, Any]]) -> float:
     return round(statistics.mean([len(item.get("tool_calls") or []) for item in results]), 2) if results else 0.0
+
+
+def controller_impact(item: dict[str, Any]) -> dict[str, Any]:
+    return item.get("value_assessment", {}).get("controller_impact", {}) or item.get("sciflow_application", {}) or {}
+
+
+def mean_evidence_count(results: list[dict[str, Any]]) -> float:
+    return round(statistics.mean([int(item.get("evidence_count") or 0) for item in results]), 2) if results else 0.0
+
+
+def mean_public_biomedical_calls(results: list[dict[str, Any]]) -> float:
+    return round(
+        statistics.mean(
+            [
+                sum(1 for call in item.get("tool_calls") or [] if call.get("tool_source") == "live_public_biomedical")
+                for item in results
+            ]
+        ),
+        2,
+    ) if results else 0.0
+
+
+def mean_tooluniverse_calls(results: list[dict[str, Any]]) -> float:
+    return round(
+        statistics.mean(
+            [
+                sum(1 for call in item.get("tool_calls") or [] if call.get("tool_source") == "tooluniverse")
+                for item in results
+            ]
+        ),
+        2,
+    ) if results else 0.0
 
 
 def integration_coverage(results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -193,6 +243,16 @@ def publishable_claims(
     for ablation, comparison in compare_ablations(by_ablation).items():
         if comparison["score_delta_full_minus_ablation"] > 0:
             claims.append(f"Full runtime outscored `{ablation}` by {comparison['score_delta_full_minus_ablation']} points on average.")
+        if ablation == "no_sciflow" and comparison.get("controller_applied_runs") == 0:
+            if comparison.get("evidence_delta_full_minus_ablation", 0) > 0 or comparison.get(
+                "tool_call_delta_full_minus_ablation",
+                0,
+            ) > 0:
+                claims.append(
+                    "SciFlow Policy changed execution behavior versus `no_sciflow`: "
+                    f"+{comparison.get('evidence_delta_full_minus_ablation')} mean evidence items and "
+                    f"+{comparison.get('tool_call_delta_full_minus_ablation')} mean tool calls."
+                )
     return claims
 
 
@@ -209,6 +269,12 @@ def limitations(
         items.append("No-memory ablation was not present, so persistent-memory value is not quantified in this run.")
     if "no_public_tools" not in by_ablation:
         items.append("No-public-tools ablation was not present, so grounding value is not quantified in this run.")
+    no_sciflow = compare_ablations(by_ablation).get("no_sciflow")
+    if no_sciflow and no_sciflow.get("evidence_delta_full_minus_ablation", 0) <= 0 and no_sciflow.get(
+        "tool_call_delta_full_minus_ablation",
+        0,
+    ) <= 0:
+        items.append("SciFlow Policy did not create an operational retrieval-depth delta in this run.")
     items.append("Benchmark scores are integration/provenance scores, not expert biological truth labels.")
     return items
 
@@ -239,11 +305,20 @@ def render_markdown(analysis: dict[str, Any]) -> str:
     lines.extend(["", "## Integration Coverage", "", "| Integration | Runs | Coverage |", "| --- | ---: | ---: |"])
     for name, item in analysis["integration_coverage"].items():
         lines.append(f"| {name} | {item['executed_runs']}/{item['total_runs']} | {item['coverage_rate']} |")
-    lines.extend(["", "## Ablation Comparison", "", "| Ablation | Runs | Mean score | Full delta | Replay runs | Controller runs |", "| --- | ---: | ---: | ---: | ---: | ---: |"])
+    lines.extend(
+        [
+            "",
+            "## Ablation Comparison",
+            "",
+            "| Ablation | Runs | Mean score | Score delta | Evidence delta | Tool-call delta | Replay runs | Controller advice | Controller applied |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
     for name, item in analysis["ablation_comparison"].items():
         lines.append(
             f"| {name} | {item['runs']} | {item['mean_score']} | {item['score_delta_full_minus_ablation']} | "
-            f"{item['replay_runs']} | {item['controller_runs']} |"
+            f"{item['evidence_delta_full_minus_ablation']} | {item['tool_call_delta_full_minus_ablation']} | "
+            f"{item['replay_runs']} | {item['controller_runs']} | {item['controller_applied_runs']} |"
         )
     policy = analysis["policy"]["neural_policy"]
     lines.extend(

@@ -916,6 +916,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         promoted_tools = self._promoted_policy_tools(policy_advice, state.selected_tools, config)
         if promoted_tools:
             state.selected_tools = list(dict.fromkeys([*state.selected_tools, *promoted_tools]))
+        execution_policy = self._build_sciflow_execution_policy(policy_advice, state, config)
+        state.context["sciflow_execution_policy"] = execution_policy
         self._record(
             trace,
             "finder_agent",
@@ -931,6 +933,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "selected_tools": state.selected_tools,
                 "sciflow_policy": policy_advice,
                 "policy_promoted_tools": promoted_tools,
+                "sciflow_execution_policy": execution_policy,
                 "capability_plan": state.context.get("capability_plan", {}),
                 "selection_policy": (
                     "live public APIs plus ToolUniverse/OpenTargets, SciFlow policy advice, and configured model tools"
@@ -1049,6 +1052,67 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             if tool_name in known_tools and tool_name not in selected:
                 promoted.append(tool_name)
         return promoted
+
+    def _build_sciflow_execution_policy(
+        self,
+        policy_advice: dict[str, Any],
+        state: ResearchRunState,
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
+        if policy_advice.get("status") != "success":
+            return {
+                "enabled": bool(policy_advice.get("enabled")),
+                "status": policy_advice.get("status", "disabled"),
+                "applied": False,
+                "selected_actions": [],
+                "effects": [],
+            }
+        predictions = policy_advice.get("predictions", [])
+        selected_actions = [
+            {
+                "action": str(prediction.get("action") or ""),
+                "score": float(prediction.get("score") or prediction.get("probability") or 0.0),
+            }
+            for prediction in predictions
+            if prediction.get("action")
+        ]
+        actions = {item["action"] for item in selected_actions}
+        routed = set(state.context.get("objective_classification", {}).get("required_capabilities", []))
+        tool_actions = [action for action in actions if action.startswith("tool_call:")]
+        wants_live_execution = any(
+            action in actions
+            for action in (
+                "state_transition:EXECUTE_EVIDENCE_COLLECTION",
+                "state_transition:TOOL_CALL_STARTED",
+                "state_transition:TOOL_CALL_COMPLETED",
+            )
+        )
+        wants_tooluniverse = (
+            "tooluniverse" in routed
+            or any("OpenTargets" in action or "tooluniverse" in action.lower() for action in tool_actions)
+        )
+        applied = bool(config.get("real_data_enabled") and (wants_live_execution or tool_actions or wants_tooluniverse))
+        effects: list[str] = []
+        if applied:
+            effects.append("prioritize_live_evidence_execution")
+            effects.append("add_policy_followup_pubmed_queries")
+            if wants_tooluniverse:
+                effects.append("deepen_opentargets_followups")
+        return {
+            "enabled": True,
+            "status": "applied" if applied else "advice_only",
+            "applied": applied,
+            "selected_actions": selected_actions[:5],
+            "effects": effects,
+            "extra_pubmed_queries": 2 if applied else 0,
+            "pubmed_retmax": 7 if applied else 5,
+            "max_tooluniverse_followups": 3 if applied and wants_tooluniverse else 2,
+            "rationale": (
+                "Policy predicted execution/tool actions, so the runtime expanded live evidence collection."
+                if applied
+                else "Policy produced advice but did not trigger a live execution change."
+            ),
+        }
 
     def _local_context_evidence(self, state: ResearchRunState) -> list[dict[str, Any]]:
         target = self._primary_target(state)
@@ -1185,15 +1249,26 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         config: dict[str, Any],
     ) -> ResearchRunState:
         context = state.context.get("biomedical_context", {})
+        execution_policy = state.context.get("sciflow_execution_policy", {})
+        policy_applied = bool(execution_policy.get("applied"))
         genes = context.get("primary_genes", [])[:2]
         diseases = context.get("diseases", [])[:3]
         candidates = context.get("candidate_interventions", [])[:8]
-        pubmed_queries = context.get("pubmed_queries", [])[:5]
+        pubmed_queries = list(context.get("pubmed_queries", []))[:5]
+        policy_followups: list[str] = []
+        if policy_applied:
+            for query in self._policy_followup_pubmed_queries(genes, diseases, context):
+                if query not in pubmed_queries:
+                    pubmed_queries.append(query)
+                    policy_followups.append(query)
+                if len(policy_followups) >= int(execution_policy.get("extra_pubmed_queries") or 0):
+                    break
+        pubmed_retmax = int(execution_policy.get("pubmed_retmax") or 5) if policy_applied else 5
         live_calls: list[tuple[str, str, dict[str, Any]]] = []
         for gene in genes:
             live_calls.append(("knowledge_agent", "ncbi_gene_profile_tool", {"gene_symbol": gene, "organism": "Homo sapiens"}))
         for query in pubmed_queries:
-            live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": query, "retmax": 5}))
+            live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": query, "retmax": pubmed_retmax}))
         if candidates:
             live_calls.append(("molecule_agent", "pubchem_candidate_lookup_tool", {"names": candidates}))
         for disease in diseases:
@@ -1270,7 +1345,11 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             evidence_item = self._evidence_from_tool_output(live_output)
             if evidence_item:
                 state.evidence.append(evidence_item)
-        follow_up_outputs = self._run_tooluniverse_followups(state, live_tool_outputs)
+        follow_up_outputs = self._run_tooluniverse_followups(
+            state,
+            live_tool_outputs,
+            limit=int(execution_policy.get("max_tooluniverse_followups") or 2) if policy_applied else 2,
+        )
         for follow_up in follow_up_outputs:
             state.tool_outputs.append(
                 {
@@ -1339,6 +1418,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     [item for item in live_tool_outputs if item["tool_source"] == "tooluniverse"]
                 )
                 + len(follow_up_outputs),
+                "sciflow_policy_application": {
+                    "status": execution_policy.get("status", "disabled"),
+                    "applied": policy_applied,
+                    "effects": execution_policy.get("effects", []),
+                    "policy_followup_pubmed_queries": policy_followups,
+                    "pubmed_retmax": pubmed_retmax,
+                    "max_tooluniverse_followups": int(execution_policy.get("max_tooluniverse_followups") or 2)
+                    if policy_applied
+                    else 2,
+                    "selected_actions": execution_policy.get("selected_actions", []),
+                },
                 "agent_tool_assignments": [
                     {
                         "agent_name": item["agent_name"],
@@ -1351,10 +1441,35 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         )
         return state
 
+    def _policy_followup_pubmed_queries(
+        self,
+        genes: list[str],
+        diseases: list[str],
+        context: dict[str, Any],
+    ) -> list[str]:
+        gene = genes[0] if genes else ""
+        disease = diseases[0] if diseases else ""
+        pathways = context.get("pathways", [])[:2]
+        queries = []
+        if gene and disease:
+            queries.extend(
+                [
+                    f"{gene} {disease} genetics association",
+                    f"{gene} {disease} clinical trial biomarker",
+                    f"{gene} {disease} therapeutic target validation",
+                ]
+            )
+        for pathway in pathways:
+            if disease:
+                queries.append(f"{pathway} {disease} pathway intervention")
+        return queries
+
     def _run_tooluniverse_followups(
         self,
         state: ResearchRunState,
         live_tool_outputs: list[dict[str, Any]],
+        *,
+        limit: int = 2,
     ) -> list[dict[str, Any]]:
         efo_ids: list[str] = []
         for item in live_tool_outputs:
@@ -1369,7 +1484,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if not efo_ids:
             return outputs
         adapter = ToolUniverseAdapter(scan_all=False)
-        for efo_id in list(dict.fromkeys(efo_ids))[:2]:
+        for efo_id in list(dict.fromkeys(efo_ids))[: max(1, int(limit))]:
             self._runtime_event(
                 "tooluniverse_agent",
                 "TOOL_CALL_STARTED",

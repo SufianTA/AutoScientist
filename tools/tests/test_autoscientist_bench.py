@@ -124,7 +124,21 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
         },
         "provenance": {
             "agent_steps": [
-                {"state_name": "FIND_TOOLS", "output": {"sciflow_policy": {"status": "success"}}},
+                {
+                    "state_name": "FIND_TOOLS",
+                    "output": {"sciflow_policy": {"status": "success"}},
+                },
+                {
+                    "state_name": "EXECUTE_EVIDENCE_COLLECTION",
+                    "output": {
+                        "sciflow_policy_application": {
+                            "status": "applied",
+                            "applied": True,
+                            "effects": ["add_policy_followup_pubmed_queries"],
+                            "policy_followup_pubmed_queries": ["IL6 rheumatoid arthritis target validation"],
+                        }
+                    },
+                },
             ],
             "tool_calls": [{"tool_name": "pubmed_literature_search_tool", "tool_source": "live_public_biomedical"}],
         },
@@ -146,6 +160,9 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
     assessment = benchmark_value_score(result, integrations, task, "full")
 
     assert assessment["checks"]["controller_advice"] is True
+    assert assessment["checks"]["controller_applied"] is True
+    assert assessment["controller_impact"]["applied"] is True
+    assert assessment["controller_impact"]["policy_followup_pubmed_queries"]
     assert assessment["checks"]["open_targets_context"] is True
     assert assessment["checks"]["public_context_prefetched"] is True
     assert assessment["checks"]["pubmed_context"] is True
@@ -167,6 +184,7 @@ def test_realness_gates_fail_missing_expected_public_tool() -> None:
         },
         "replay": {"available": True},
         "sciflow_policy": {"status": "success"},
+        "sciflow_application": {"status": "applied", "applied": True},
         "value_assessment": {"score": 95},
     }
     summary = {
