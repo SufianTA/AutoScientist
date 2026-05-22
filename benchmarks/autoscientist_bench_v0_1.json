@@ -1,0 +1,133 @@
+{
+  "schema": "autosci.benchmark_manifest.v0.1",
+  "name": "AutoScientist-Bench",
+  "version": "0.1",
+  "created_at": "2026-05-21",
+  "purpose": "Evaluate AutoScientist as a persistent scientific execution runtime with public biomedical grounding, replayable provenance, SciState Graph memory, and SciFlow Policy controller traces.",
+  "public_sources": [
+    {
+      "name": "Open Targets Platform GraphQL API",
+      "url": "https://api.platform.opentargets.org/api/v4/graphql",
+      "purpose": "Target, disease, drug, tractability, and association grounding."
+    },
+    {
+      "name": "NCBI E-utilities",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/",
+      "purpose": "PubMed and Gene metadata grounding."
+    },
+    {
+      "name": "Therapeutics Data Commons",
+      "url": "https://tdcommons.ai/",
+      "purpose": "Optional later-scale model/dataset benchmark source for therapeutic ML tasks."
+    }
+  ],
+  "rubric": {
+    "completed_run": 15,
+    "nonempty_hypothesis": 10,
+    "evidence_collected": 10,
+    "scored_evidence": 10,
+    "experiments_proposed": 10,
+    "guardrails_present": 10,
+    "auditable_trace": 10,
+    "public_grounding": 7,
+    "memory_or_replay": 7,
+    "controller_advice": 6,
+    "external_agent_adapter": 5
+  },
+  "task_templates": [
+    {
+      "id": "target_prioritization",
+      "objective_template": "Prioritize therapeutic hypotheses for {gene_symbol} in {disease_name}; use public biomedical evidence, identify weak or failed branches, score confidence, and propose validation experiments."
+    },
+    {
+      "id": "mechanism_safety_review",
+      "objective_template": "Assess whether {gene_symbol}-linked biology is a plausible and safe intervention direction for {disease_name}; separate direct evidence, indirect mechanism, safety concerns, and missing validation."
+    },
+    {
+      "id": "experiment_design",
+      "objective_template": "Design the next experiments to test a bounded {gene_symbol} hypothesis in {disease_name}; include expected information gain, failure modes, provenance, and public evidence requirements."
+    }
+  ],
+  "seed_cases": [
+    {
+      "id": "pcsk9_familial_hypercholesterolemia",
+      "domain": "cardiometabolic",
+      "gene_symbol": "PCSK9",
+      "target_ensembl_id": "ENSG00000169174",
+      "disease_name": "familial hypercholesterolemia",
+      "disease_efo_id": "",
+      "priority": "high",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    },
+    {
+      "id": "cftr_cystic_fibrosis",
+      "domain": "rare disease",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "disease_name": "cystic fibrosis",
+      "disease_efo_id": "MONDO_0009061",
+      "priority": "high",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    },
+    {
+      "id": "acvr1_fop",
+      "domain": "rare disease",
+      "gene_symbol": "ACVR1",
+      "target_ensembl_id": "ENSG00000115170",
+      "disease_name": "fibrodysplasia ossificans progressiva",
+      "disease_efo_id": "",
+      "priority": "high",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    },
+    {
+      "id": "il6_rheumatoid_arthritis",
+      "domain": "autoimmune",
+      "gene_symbol": "IL6",
+      "target_ensembl_id": "ENSG00000136244",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "priority": "high",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "medea", "sciflow_policy"]
+    },
+    {
+      "id": "tnf_inflammatory_bowel_disease",
+      "domain": "autoimmune",
+      "gene_symbol": "TNF",
+      "target_ensembl_id": "ENSG00000232810",
+      "disease_name": "inflammatory bowel disease",
+      "disease_efo_id": "",
+      "priority": "medium",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    },
+    {
+      "id": "braf_melanoma",
+      "domain": "oncology",
+      "gene_symbol": "BRAF",
+      "target_ensembl_id": "ENSG00000157764",
+      "disease_name": "melanoma",
+      "disease_efo_id": "EFO_0000756",
+      "priority": "medium",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    },
+    {
+      "id": "egfr_lung_adenocarcinoma",
+      "domain": "oncology",
+      "gene_symbol": "EGFR",
+      "target_ensembl_id": "ENSG00000146648",
+      "disease_name": "lung adenocarcinoma",
+      "disease_efo_id": "",
+      "priority": "medium",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    },
+    {
+      "id": "app_alzheimer_disease",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APP",
+      "target_ensembl_id": "ENSG00000142192",
+      "disease_name": "Alzheimer disease",
+      "disease_efo_id": "EFO_0000249",
+      "priority": "medium",
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
+    }
+  ]
+}

@@ -84,6 +84,11 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "medea_timeout_seconds": args.medea_timeout_seconds,
         "medea_subprocess_timeout_seconds": args.medea_subprocess_timeout_seconds,
         "txagent_enabled": False,
+        "persist_memory_enabled": getattr(args, "persist_memory_enabled", True),
+        "sciflow_policy_enabled": getattr(args, "sciflow_policy_enabled", False),
+        "sciflow_policy_model_id": getattr(args, "sciflow_policy_model_id", "") or "",
+        "sciflow_policy_model_path": getattr(args, "sciflow_policy_model_path", "") or "",
+        "sciflow_policy_min_score": getattr(args, "sciflow_policy_min_score", 0.15),
     }
 
 
@@ -286,7 +291,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--skip-policy-training", action="store_true")
     parser.add_argument("--policy-model-name", default="scientific_workflow_policy")
     parser.add_argument("--policy-artifact-dir", default="outputs/models")
-    return parser.parse_args(argv)
+    parser.add_argument("--disable-memory", action="store_true")
+    parser.add_argument("--enable-sciflow-policy", action="store_true")
+    parser.add_argument("--sciflow-policy-model-id", default="")
+    parser.add_argument("--sciflow-policy-model-path", default="")
+    parser.add_argument("--sciflow-policy-min-score", type=float, default=0.15)
+    parser.set_defaults(persist_memory_enabled=True, sciflow_policy_enabled=False)
+    args = parser.parse_args(argv)
+    args.persist_memory_enabled = not args.disable_memory
+    args.sciflow_policy_enabled = bool(args.enable_sciflow_policy)
+    return args
 
 
 def main(argv: list[str] | None = None) -> int:

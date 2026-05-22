@@ -159,6 +159,24 @@ python tools/export_scientific_state_graph.py --output-dir outputs/state_graphs
 
 See [docs/SCIENTIFIC_MEMORY_POLICY.md](docs/SCIENTIFIC_MEMORY_POLICY.md) for live RunPod commands and the review package structure.
 
+## AutoScientist-Bench
+
+Before renting a GPU, prepare and validate the public benchmark locally:
+
+```bash
+python tools/run_autoscientist_bench.py --limit 3 --ablations full no_memory no_public_tools --offline-public-context
+```
+
+Then run a live public-data dry run:
+
+```bash
+python tools/run_autoscientist_bench.py --limit 6 --ablations full no_memory no_public_tools
+```
+
+See [docs/AUTOSCIENTIST_BENCH.md](docs/AUTOSCIENTIST_BENCH.md) and [benchmarks/autoscientist_bench_v0_1.json](benchmarks/autoscientist_bench_v0_1.json).
+
+For the GPU handoff, see [docs/RUNPOD_GPU_HANDOFF.md](docs/RUNPOD_GPU_HANDOFF.md).
+
 ## Agent Workflow
 
 The default runtime is LangGraph. The workflow includes:
@@ -216,6 +234,8 @@ Then copy `bioautosci.settings.example.json` and `.env.example` from the reposit
 - [docs/INSTALL.md](docs/INSTALL.md)
 - [docs/LOCAL_FRAMEWORK.md](docs/LOCAL_FRAMEWORK.md)
 - [docs/TOOLUNIVERSE_SETUP.md](docs/TOOLUNIVERSE_SETUP.md)
+- [docs/AUTOSCIENTIST_BENCH.md](docs/AUTOSCIENTIST_BENCH.md)
+- [docs/RUNPOD_GPU_HANDOFF.md](docs/RUNPOD_GPU_HANDOFF.md)
 - [docs/CLOUD_DEPLOYMENT.md](docs/CLOUD_DEPLOYMENT.md)
 
 ## Scientific Guardrails

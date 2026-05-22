@@ -889,6 +889,10 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if "clawinstitute_board" in routed_capabilities:
             capability_tools.append("clawinstitute_board_publisher")
         state.selected_tools = list(dict.fromkeys([*state.selected_tools, *capability_tools]))
+        policy_advice = self._sciflow_policy_advice(state, config)
+        promoted_tools = self._promoted_policy_tools(policy_advice, state.selected_tools, config)
+        if promoted_tools:
+            state.selected_tools = list(dict.fromkeys([*state.selected_tools, *promoted_tools]))
         self._record(
             trace,
             "finder_agent",
@@ -902,15 +906,128 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             },
             {
                 "selected_tools": state.selected_tools,
+                "sciflow_policy": policy_advice,
+                "policy_promoted_tools": promoted_tools,
                 "capability_plan": state.context.get("capability_plan", {}),
                 "selection_policy": (
-                    "live public APIs plus ToolUniverse/OpenTargets and configured model tools"
+                    "live public APIs plus ToolUniverse/OpenTargets, SciFlow policy advice, and configured model tools"
                     if config.get("real_data_enabled")
-                    else "local deterministic planning and scoring tools plus configured model tools"
+                    else "local deterministic planning, SciFlow policy advice, scoring tools, and configured model tools"
                 ),
             },
         )
         return state
+
+    def _sciflow_policy_advice(self, state: ResearchRunState, config: dict[str, Any]) -> dict[str, Any]:
+        if not config.get("sciflow_policy_enabled"):
+            return {"enabled": False, "status": "disabled", "predictions": []}
+        context = {
+            "objective": state.objective,
+            "state_name": "TOOL_SELECTION",
+            "previous_state": AgentStateName.FIND_TOOLS.value,
+            "biomedical_context": state.context.get("biomedical_context", {}),
+            "objective_classification": state.context.get("objective_classification", {}),
+            "run_config": {
+                "real_data_enabled": config.get("real_data_enabled"),
+                "medea_enabled": config.get("medea_enabled"),
+                "llm_provider": config.get("llm_provider"),
+                "agent_count": config.get("agent_count"),
+            },
+        }
+        try:
+            model = self._load_sciflow_policy_model(config)
+            if model is None:
+                return {"enabled": True, "status": "no_model_available", "predictions": []}
+            predictions = self._predict_sciflow_actions(model, context)
+            advice = {
+                "enabled": True,
+                "status": "success",
+                "model_id": model.get("id"),
+                "model_type": model.get("model_type"),
+                "model_path": model.get("artifact_path"),
+                "predictions": predictions,
+            }
+            state.context["sciflow_policy"] = advice
+            return advice
+        except Exception as exc:
+            advice = {"enabled": True, "status": "failed", "error": str(exc)[:500], "predictions": []}
+            state.context["sciflow_policy"] = advice
+            return advice
+
+    def _load_sciflow_policy_model(self, config: dict[str, Any]) -> dict[str, Any] | None:
+        if config.get("sciflow_policy_model_path"):
+            return {
+                "id": config.get("sciflow_policy_model_id") or "external_sciflow_policy",
+                "model_type": config.get("sciflow_policy_model_type") or "",
+                "artifact_path": config["sciflow_policy_model_path"],
+            }
+        from app.db.models import WorkflowPolicyModel
+        from app.db.session import SessionLocal
+
+        db = SessionLocal()
+        try:
+            model_id = config.get("sciflow_policy_model_id")
+            model = db.get(WorkflowPolicyModel, model_id) if model_id else None
+            if model is None:
+                model = db.query(WorkflowPolicyModel).order_by(WorkflowPolicyModel.created_at.desc()).first()
+            if model is None:
+                return None
+            return {
+                "id": model.id,
+                "model_type": model.model_type,
+                "artifact_path": model.artifact_path,
+            }
+        finally:
+            db.close()
+
+    def _predict_sciflow_actions(
+        self,
+        model: dict[str, Any],
+        context: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        from app.services.neural_workflow_policy import MODEL_TYPE as NEURAL_POLICY_TYPE
+        from app.services.neural_workflow_policy import predict_neural_workflow_policy
+        from app.services.scientific_memory import predict_next_actions
+
+        if model.get("model_type") == NEURAL_POLICY_TYPE:
+            return predict_neural_workflow_policy(context, model_path=model["artifact_path"], top_k=5)
+        return predict_next_actions(context, model_path=model["artifact_path"], top_k=5)
+
+    def _promoted_policy_tools(
+        self,
+        policy_advice: dict[str, Any],
+        selected_tools: list[str],
+        config: dict[str, Any],
+    ) -> list[str]:
+        if policy_advice.get("status") != "success":
+            return []
+        min_score = float(config.get("sciflow_policy_min_score", 0.15) or 0.15)
+        known_tools = {
+            "ncbi_gene_profile_tool",
+            "pubmed_literature_search_tool",
+            "pubchem_candidate_lookup_tool",
+            "OpenTargets_get_disease_id_description_by_name",
+            "OpenTargets_get_drug_chembId_by_generic_name",
+            "OpenTargets_get_associated_targets_by_disease_efoId",
+            "evidence_quality_scorer_tool",
+            "hypothesis_card_generator_tool",
+            "experiment_recommendation_tool",
+            "medea_agent",
+            "txagent_agent",
+            "clawinstitute_board_publisher",
+            *[tool["name"] for tool in config.get("model_tool_configs", [])],
+        }
+        promoted = []
+        selected = set(selected_tools)
+        for prediction in policy_advice.get("predictions", []):
+            action = str(prediction.get("action", ""))
+            score = float(prediction.get("score") or prediction.get("probability") or 0.0)
+            if not action.startswith("tool_call:") or score < min_score:
+                continue
+            tool_name = action.split(":", 1)[1]
+            if tool_name in known_tools and tool_name not in selected:
+                promoted.append(tool_name)
+        return promoted
 
     def _local_context_evidence(self, state: ResearchRunState) -> list[dict[str, Any]]:
         target = self._primary_target(state)

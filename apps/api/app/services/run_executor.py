@@ -37,6 +37,11 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "qworld_base_url": "",
     "txagent_enabled": False,
     "medea_enabled": False,
+    "persist_memory_enabled": True,
+    "sciflow_policy_enabled": False,
+    "sciflow_policy_model_id": "",
+    "sciflow_policy_model_path": "",
+    "sciflow_policy_min_score": 0.15,
 }
 
 
@@ -74,6 +79,14 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
     )
     normalized["txagent_enabled"] = bool(normalized.get("txagent_enabled", False))
     normalized["medea_enabled"] = bool(normalized.get("medea_enabled", False))
+    normalized["persist_memory_enabled"] = bool(normalized.get("persist_memory_enabled", True))
+    normalized["sciflow_policy_enabled"] = bool(normalized.get("sciflow_policy_enabled", False))
+    normalized["sciflow_policy_model_id"] = str(normalized.get("sciflow_policy_model_id") or "")
+    normalized["sciflow_policy_model_path"] = str(normalized.get("sciflow_policy_model_path") or "")
+    normalized["sciflow_policy_min_score"] = max(
+        0.0,
+        min(float(normalized.get("sciflow_policy_min_score", 0.15)), 1.0),
+    )
     return normalized
 
 
@@ -158,7 +171,13 @@ def execute_run(
             objective.objective_text,
             run_config={**run.run_config_json, "_progress_callback": progress_callback},
         )
-        persist_orchestrator_result(db, run, state, trace)
+        persist_orchestrator_result(
+            db,
+            run,
+            state,
+            trace,
+            persist_memory=bool(run.run_config_json.get("persist_memory_enabled", True)),
+        )
         run.status = "completed"
         run.current_state = state.current_state.value
         run.completed_at = datetime.utcnow()
@@ -194,7 +213,14 @@ def execute_run(
     return run
 
 
-def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[dict[str, Any]]) -> None:
+def persist_orchestrator_result(
+    db: Session,
+    run: Run,
+    state: Any,
+    trace: list[dict[str, Any]],
+    *,
+    persist_memory: bool = True,
+) -> None:
     open_scientist = OpenScientistCapabilityRegistry()
     for trace_item in trace:
         db.add(
@@ -271,7 +297,8 @@ def persist_orchestrator_result(db: Session, run: Run, state: Any, trace: list[d
         )
     )
     db.flush()
-    persist_scientific_memory(db, run, state)
+    if persist_memory:
+        persist_scientific_memory(db, run, state)
 
 
 def resolve_model_tool_configs(db: Session, config: dict[str, Any]) -> dict[str, Any]:
