@@ -11,14 +11,31 @@ LLM_MODEL="${LLM_MODEL:-mock-scientist}"
 LLM_API_KEY_ENV_VAR="${LLM_API_KEY_ENV_VAR:-}"
 REQUIRE_REAL_LLM="${REQUIRE_REAL_LLM:-0}"
 MEDEA_PYTHON="${MEDEA_PYTHON:-}"
+DRY_RUN="${AUTOSCI_DRY_RUN:-0}"
 
-cd "$WORKDIR"
-source "$VENV/bin/activate"
+run() {
+  if [ "$DRY_RUN" = "1" ]; then
+    printf '+'
+    printf ' %q' "$@"
+    printf '\n'
+    return 0
+  fi
+  "$@"
+}
 
-python tools/machine_preflight.py \
-  --workspace "$WORKDIR" \
-  --output-dir outputs/preflight \
-  --require-gpu
+if [ "$DRY_RUN" = "1" ]; then
+  printf '+ cd %q\n' "$WORKDIR"
+  printf '+ source %q\n' "$VENV/bin/activate"
+else
+  cd "$WORKDIR"
+  source "$VENV/bin/activate"
+fi
+
+PREFLIGHT_FLAGS=(--workspace "$WORKDIR" --output-dir outputs/preflight --require-gpu)
+if [ -n "$MEDEA_PYTHON" ]; then
+  PREFLIGHT_FLAGS+=(--require-medea)
+fi
+run python tools/machine_preflight.py "${PREFLIGHT_FLAGS[@]}"
 
 REAL_LLM_FLAGS=()
 if [ "$REQUIRE_REAL_LLM" = "1" ]; then
@@ -32,7 +49,7 @@ else
   MEDEA_FLAGS+=(--disable-medea)
 fi
 
-python tools/run_autoscientist_bench.py \
+run python tools/run_autoscientist_bench.py \
   --limit "$LIMIT" \
   --replicates-per-case "$REPLICATES" \
   --ablations full no_memory no_medea no_public_tools no_sciflow \
@@ -45,6 +62,6 @@ python tools/run_autoscientist_bench.py \
   "${REAL_LLM_FLAGS[@]}" \
   "${MEDEA_FLAGS[@]}"
 
-python tools/collect_review_package.py
+run python tools/collect_review_package.py
 
 echo "GPU benchmark complete. Review packages are under outputs/review_packages."
