@@ -4,7 +4,7 @@ import json
 import os
 import time
 from typing import Any
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlencode
 from urllib.request import Request, urlopen
 
@@ -50,6 +50,9 @@ SUPPORTED_PROVIDERS = {
         "default_model": "local-http-model",
     },
 }
+
+
+TRANSIENT_HTTP_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504, 529}
 
 
 def list_providers() -> list[dict[str, Any]]:
@@ -202,19 +205,39 @@ def _optional_api_key(provider: str, api_key_env_var: str | None) -> str | None:
     return os.getenv(env_var) if env_var else None
 
 
-def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str], timeout: int = 90) -> dict[str, Any]:
-    request = Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", **headers},
-        method="POST",
-    )
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"LLM provider HTTP {exc.code}: {detail[:1000]}") from exc
+def _post_json(
+    url: str,
+    payload: dict[str, Any],
+    headers: dict[str, str],
+    timeout: int = 90,
+    *,
+    max_attempts: int = 4,
+    backoff_seconds: float = 2.0,
+) -> dict[str, Any]:
+    attempts = max(1, max_attempts)
+    for attempt in range(1, attempts + 1):
+        request = Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", **headers},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            message = f"LLM provider HTTP {exc.code}: {detail[:1000]}"
+            if exc.code in TRANSIENT_HTTP_STATUS_CODES and attempt < attempts:
+                time.sleep(backoff_seconds * attempt)
+                continue
+            raise RuntimeError(message) from exc
+        except URLError as exc:
+            if attempt < attempts:
+                time.sleep(backoff_seconds * attempt)
+                continue
+            raise RuntimeError(f"LLM provider network error: {exc}") from exc
+    raise RuntimeError("LLM provider request failed unexpectedly.")
 
 
 def _call_openai(
