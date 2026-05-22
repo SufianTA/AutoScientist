@@ -1,0 +1,1217 @@
+{
+  "schema": "autosci.benchmark_manifest.v0.2",
+  "name": "AutoScientist-Bench-Public",
+  "version": "0.2",
+  "created_at_unix": 1779419972,
+  "purpose": "Public-data benchmark manifest generated from Open Targets target-disease associations and NCBI PubMed/Gene counts to evaluate AutoScientist as a reproducible scientific execution system.",
+  "source_manifest": "benchmarks\\autoscientist_bench_v0_1.json",
+  "public_sources": [
+    {
+      "name": "Open Targets Platform GraphQL API",
+      "url": "https://api.platform.opentargets.org/api/v4/graphql",
+      "role": "Target-disease association and target metadata."
+    },
+    {
+      "name": "NCBI E-utilities",
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+      "role": "PubMed/Gene public literature and gene-count grounding."
+    }
+  ],
+  "selection_policy": {
+    "max_targets": 8,
+    "associations_per_target": 3,
+    "min_open_targets_score": 0.2,
+    "min_pubmed_count": 1,
+    "include_omics_template": true
+  },
+  "task_templates": [
+    {
+      "id": "target_prioritization",
+      "objective_template": "Prioritize therapeutic hypotheses for {gene_symbol} in {disease_name}; use public biomedical evidence, Open Targets association context, PubMed grounding, weak/failed branches, confidence scoring, and validation experiments.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ]
+    },
+    {
+      "id": "mechanism_safety_review",
+      "objective_template": "Assess whether {gene_symbol}-linked biology is a plausible and safe intervention direction for {disease_name}; separate direct evidence, indirect mechanism, safety concerns, and missing validation.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ]
+    },
+    {
+      "id": "experiment_design",
+      "objective_template": "Design the next experiments to test a bounded {gene_symbol} hypothesis in {disease_name}; include expected information gain, failure modes, provenance, and public evidence requirements.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ]
+    },
+    {
+      "id": "omics_context_validation",
+      "objective_template": "Use an omics-aware workflow to evaluate the cell-context validity of a {gene_symbol} hypothesis in {disease_name}; require transcriptomic or single-cell reasoning, Medea review, public evidence, failure modes, and concrete validation experiments.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "medea",
+        "sciflow_policy"
+      ]
+    }
+  ],
+  "seed_cases": [
+    {
+      "id": "pcsk9_familial_hypercholesterolemia",
+      "domain": "cardiometabolic",
+      "gene_symbol": "PCSK9",
+      "target_ensembl_id": "ENSG00000169174",
+      "target_name": "proprotein convertase subtilisin/kexin type 9",
+      "disease_name": "familial hypercholesterolemia",
+      "disease_efo_id": "EFO_0004911",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.860403,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 1622,
+        "ncbi_gene_count": 2
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000169174",
+            "approvedSymbol": "PCSK9",
+            "approvedName": "proprotein convertase subtilisin/kexin type 9"
+          },
+          "association": {
+            "score": 0.8604029080346239,
+            "disease": {
+              "id": "EFO_0004911",
+              "name": "familial hypercholesterolemia"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "PCSK9 familial hypercholesterolemia",
+          "db": "pubmed",
+          "count": 1622,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9+familial+hypercholesterolemia&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "PCSK9[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 2,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=PCSK9%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "pcsk9_hypercholesterolemia",
+      "domain": "cardiometabolic",
+      "gene_symbol": "PCSK9",
+      "target_ensembl_id": "ENSG00000169174",
+      "target_name": "proprotein convertase subtilisin/kexin type 9",
+      "disease_name": "Hypercholesterolemia",
+      "disease_efo_id": "HP_0003124",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.826654,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 2753,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000169174",
+            "approvedSymbol": "PCSK9",
+            "approvedName": "proprotein convertase subtilisin/kexin type 9"
+          },
+          "association": {
+            "score": 0.826654499695062,
+            "disease": {
+              "id": "HP_0003124",
+              "name": "Hypercholesterolemia"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "PCSK9 Hypercholesterolemia",
+          "db": "pubmed",
+          "count": 2753,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9+Hypercholesterolemia&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "PCSK9[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=PCSK9%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "pcsk9_hypercholesterolemia_autosomal_dominant_3",
+      "domain": "cardiometabolic",
+      "gene_symbol": "PCSK9",
+      "target_ensembl_id": "ENSG00000169174",
+      "target_name": "proprotein convertase subtilisin/kexin type 9",
+      "disease_name": "hypercholesterolemia, autosomal dominant, 3",
+      "disease_efo_id": "MONDO_0011369",
+      "priority": "exploratory",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.815822,
+        "open_targets_rank_for_target": 3,
+        "pubmed_gene_disease_count": 1,
+        "ncbi_gene_count": 2
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000169174",
+            "approvedSymbol": "PCSK9",
+            "approvedName": "proprotein convertase subtilisin/kexin type 9"
+          },
+          "association": {
+            "score": 0.8158224991177683,
+            "disease": {
+              "id": "MONDO_0011369",
+              "name": "hypercholesterolemia, autosomal dominant, 3"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "PCSK9 hypercholesterolemia, autosomal dominant, 3",
+          "db": "pubmed",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9+hypercholesterolemia%2C+autosomal+dominant%2C+3&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "PCSK9[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 2,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=PCSK9%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "cftr_cystic_fibrosis",
+      "domain": "rare disease",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "target_name": "CF transmembrane conductance regulator",
+      "disease_name": "cystic fibrosis",
+      "disease_efo_id": "MONDO_0009061",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.913354,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 14298,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000001626",
+            "approvedSymbol": "CFTR",
+            "approvedName": "CF transmembrane conductance regulator"
+          },
+          "association": {
+            "score": 0.9133535862571094,
+            "disease": {
+              "id": "MONDO_0009061",
+              "name": "cystic fibrosis"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "CFTR cystic fibrosis",
+          "db": "pubmed",
+          "count": 14298,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=CFTR+cystic+fibrosis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "CFTR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=CFTR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "cftr_congenital_bilateral_aplasia_of_vas_deferens_from_cftr_mutation",
+      "domain": "rare disease",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "target_name": "CF transmembrane conductance regulator",
+      "disease_name": "congenital bilateral aplasia of vas deferens from CFTR mutation",
+      "disease_efo_id": "MONDO_0010178",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.828121,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 72,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000001626",
+            "approvedSymbol": "CFTR",
+            "approvedName": "CF transmembrane conductance regulator"
+          },
+          "association": {
+            "score": 0.8281208044798811,
+            "disease": {
+              "id": "MONDO_0010178",
+              "name": "congenital bilateral aplasia of vas deferens from CFTR mutation"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "CFTR congenital bilateral aplasia of vas deferens from CFTR mutation",
+          "db": "pubmed",
+          "count": 72,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=CFTR+congenital+bilateral+aplasia+of+vas+deferens+from+CFTR+mutation&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "CFTR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=CFTR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "cftr_hereditary_chronic_pancreatitis",
+      "domain": "rare disease",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "target_name": "CF transmembrane conductance regulator",
+      "disease_name": "hereditary chronic pancreatitis",
+      "disease_efo_id": "MONDO_0008185",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.711576,
+        "open_targets_rank_for_target": 3,
+        "pubmed_gene_disease_count": 77,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000001626",
+            "approvedSymbol": "CFTR",
+            "approvedName": "CF transmembrane conductance regulator"
+          },
+          "association": {
+            "score": 0.7115759775674372,
+            "disease": {
+              "id": "MONDO_0008185",
+              "name": "hereditary chronic pancreatitis"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "CFTR hereditary chronic pancreatitis",
+          "db": "pubmed",
+          "count": 77,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=CFTR+hereditary+chronic+pancreatitis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "CFTR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=CFTR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "acvr1_fibrodysplasia_ossificans_progressiva",
+      "domain": "rare disease",
+      "gene_symbol": "ACVR1",
+      "target_ensembl_id": "ENSG00000115170",
+      "target_name": "activin A receptor type 1",
+      "disease_name": "fibrodysplasia ossificans progressiva",
+      "disease_efo_id": "MONDO_0007606",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.816447,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 389,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000115170",
+            "approvedSymbol": "ACVR1",
+            "approvedName": "activin A receptor type 1"
+          },
+          "association": {
+            "score": 0.8164474171712364,
+            "disease": {
+              "id": "MONDO_0007606",
+              "name": "fibrodysplasia ossificans progressiva"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "ACVR1 fibrodysplasia ossificans progressiva",
+          "db": "pubmed",
+          "count": 389,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ACVR1+fibrodysplasia+ossificans+progressiva&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "ACVR1[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ACVR1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "acvr1_myelofibrosis",
+      "domain": "rare disease",
+      "gene_symbol": "ACVR1",
+      "target_ensembl_id": "ENSG00000115170",
+      "target_name": "activin A receptor type 1",
+      "disease_name": "myelofibrosis",
+      "disease_efo_id": "MONDO_0044903",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.554446,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 33,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000115170",
+            "approvedSymbol": "ACVR1",
+            "approvedName": "activin A receptor type 1"
+          },
+          "association": {
+            "score": 0.5544459656911729,
+            "disease": {
+              "id": "MONDO_0044903",
+              "name": "myelofibrosis"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "ACVR1 myelofibrosis",
+          "db": "pubmed",
+          "count": 33,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ACVR1+myelofibrosis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "ACVR1[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ACVR1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "acvr1_neoplasm",
+      "domain": "rare disease",
+      "gene_symbol": "ACVR1",
+      "target_ensembl_id": "ENSG00000115170",
+      "target_name": "activin A receptor type 1",
+      "disease_name": "neoplasm",
+      "disease_efo_id": "EFO_0000616",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.519645,
+        "open_targets_rank_for_target": 3,
+        "pubmed_gene_disease_count": 152,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000115170",
+            "approvedSymbol": "ACVR1",
+            "approvedName": "activin A receptor type 1"
+          },
+          "association": {
+            "score": 0.5196449638346704,
+            "disease": {
+              "id": "EFO_0000616",
+              "name": "neoplasm"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "ACVR1 neoplasm",
+          "db": "pubmed",
+          "count": 152,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ACVR1+neoplasm&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "ACVR1[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ACVR1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "il6_asthma",
+      "domain": "autoimmune",
+      "gene_symbol": "IL6",
+      "target_ensembl_id": "ENSG00000136244",
+      "target_name": "interleukin 6",
+      "disease_name": "asthma",
+      "disease_efo_id": "MONDO_0004979",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.584373,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 2798,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000136244",
+            "approvedSymbol": "IL6",
+            "approvedName": "interleukin 6"
+          },
+          "association": {
+            "score": 0.5843725424738924,
+            "disease": {
+              "id": "MONDO_0004979",
+              "name": "asthma"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "IL6 asthma",
+          "db": "pubmed",
+          "count": 2798,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=IL6+asthma&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "IL6[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=IL6%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "il6_aortic_stenosis",
+      "domain": "autoimmune",
+      "gene_symbol": "IL6",
+      "target_ensembl_id": "ENSG00000136244",
+      "target_name": "interleukin 6",
+      "disease_name": "aortic stenosis",
+      "disease_efo_id": "EFO_0000266",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.529181,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 156,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000136244",
+            "approvedSymbol": "IL6",
+            "approvedName": "interleukin 6"
+          },
+          "association": {
+            "score": 0.5291814589129721,
+            "disease": {
+              "id": "EFO_0000266",
+              "name": "aortic stenosis"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "IL6 aortic stenosis",
+          "db": "pubmed",
+          "count": 156,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=IL6+aortic+stenosis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "IL6[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=IL6%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "tnf_psoriatic_arthritis",
+      "domain": "autoimmune",
+      "gene_symbol": "TNF",
+      "target_ensembl_id": "ENSG00000232810",
+      "target_name": "tumor necrosis factor",
+      "disease_name": "psoriatic arthritis",
+      "disease_efo_id": "EFO_0003778",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.70855,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 2160,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000232810",
+            "approvedSymbol": "TNF",
+            "approvedName": "tumor necrosis factor"
+          },
+          "association": {
+            "score": 0.708549577891046,
+            "disease": {
+              "id": "EFO_0003778",
+              "name": "psoriatic arthritis"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "TNF psoriatic arthritis",
+          "db": "pubmed",
+          "count": 2160,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=TNF+psoriatic+arthritis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "TNF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=TNF%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "tnf_rheumatoid_arthritis",
+      "domain": "autoimmune",
+      "gene_symbol": "TNF",
+      "target_ensembl_id": "ENSG00000232810",
+      "target_name": "tumor necrosis factor",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.642464,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 13621,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000232810",
+            "approvedSymbol": "TNF",
+            "approvedName": "tumor necrosis factor"
+          },
+          "association": {
+            "score": 0.6424639366506499,
+            "disease": {
+              "id": "EFO_0000685",
+              "name": "rheumatoid arthritis"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "TNF rheumatoid arthritis",
+          "db": "pubmed",
+          "count": 13621,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=TNF+rheumatoid+arthritis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "TNF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=TNF%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "braf_cardiofaciocutaneous_syndrome",
+      "domain": "oncology",
+      "gene_symbol": "BRAF",
+      "target_ensembl_id": "ENSG00000157764",
+      "target_name": "B-Raf proto-oncogene, serine/threonine kinase",
+      "disease_name": "cardiofaciocutaneous syndrome",
+      "disease_efo_id": "MONDO_0015280",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.876454,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 115,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000157764",
+            "approvedSymbol": "BRAF",
+            "approvedName": "B-Raf proto-oncogene, serine/threonine kinase"
+          },
+          "association": {
+            "score": 0.8764542776642054,
+            "disease": {
+              "id": "MONDO_0015280",
+              "name": "cardiofaciocutaneous syndrome"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "BRAF cardiofaciocutaneous syndrome",
+          "db": "pubmed",
+          "count": 115,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=BRAF+cardiofaciocutaneous+syndrome&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "BRAF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=BRAF%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "braf_melanoma",
+      "domain": "oncology",
+      "gene_symbol": "BRAF",
+      "target_ensembl_id": "ENSG00000157764",
+      "target_name": "B-Raf proto-oncogene, serine/threonine kinase",
+      "disease_name": "melanoma",
+      "disease_efo_id": "EFO_0000756",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.818553,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 9084,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000157764",
+            "approvedSymbol": "BRAF",
+            "approvedName": "B-Raf proto-oncogene, serine/threonine kinase"
+          },
+          "association": {
+            "score": 0.8185527839444029,
+            "disease": {
+              "id": "EFO_0000756",
+              "name": "melanoma"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "BRAF melanoma",
+          "db": "pubmed",
+          "count": 9084,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=BRAF+melanoma&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "BRAF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=BRAF%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "egfr_non_small_cell_lung_carcinoma",
+      "domain": "oncology",
+      "gene_symbol": "EGFR",
+      "target_ensembl_id": "ENSG00000146648",
+      "target_name": "epidermal growth factor receptor",
+      "disease_name": "non-small cell lung carcinoma",
+      "disease_efo_id": "EFO_0003060",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.852433,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 15313,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000146648",
+            "approvedSymbol": "EGFR",
+            "approvedName": "epidermal growth factor receptor"
+          },
+          "association": {
+            "score": 0.8524327529356227,
+            "disease": {
+              "id": "EFO_0003060",
+              "name": "non-small cell lung carcinoma"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "EGFR non-small cell lung carcinoma",
+          "db": "pubmed",
+          "count": 15313,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=EGFR+non-small+cell+lung+carcinoma&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "EGFR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=EGFR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "egfr_lung_cancer",
+      "domain": "oncology",
+      "gene_symbol": "EGFR",
+      "target_ensembl_id": "ENSG00000146648",
+      "target_name": "epidermal growth factor receptor",
+      "disease_name": "lung cancer",
+      "disease_efo_id": "MONDO_0008903",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.766258,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 30692,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000146648",
+            "approvedSymbol": "EGFR",
+            "approvedName": "epidermal growth factor receptor"
+          },
+          "association": {
+            "score": 0.7662576881594817,
+            "disease": {
+              "id": "MONDO_0008903",
+              "name": "lung cancer"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "EGFR lung cancer",
+          "db": "pubmed",
+          "count": 30692,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=EGFR+lung+cancer&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "EGFR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=EGFR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "egfr_lung_adenocarcinoma",
+      "domain": "oncology",
+      "gene_symbol": "EGFR",
+      "target_ensembl_id": "ENSG00000146648",
+      "target_name": "epidermal growth factor receptor",
+      "disease_name": "lung adenocarcinoma",
+      "disease_efo_id": "EFO_0000571",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.763945,
+        "open_targets_rank_for_target": 3,
+        "pubmed_gene_disease_count": 9027,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000146648",
+            "approvedSymbol": "EGFR",
+            "approvedName": "epidermal growth factor receptor"
+          },
+          "association": {
+            "score": 0.7639445728170198,
+            "disease": {
+              "id": "EFO_0000571",
+              "name": "lung adenocarcinoma"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "EGFR lung adenocarcinoma",
+          "db": "pubmed",
+          "count": 9027,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=EGFR+lung+adenocarcinoma&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "EGFR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=EGFR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "app_alzheimer_disease",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APP",
+      "target_ensembl_id": "ENSG00000142192",
+      "target_name": "amyloid beta precursor protein",
+      "disease_name": "Alzheimer disease",
+      "disease_efo_id": "MONDO_0004975",
+      "priority": "high",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.804254,
+        "open_targets_rank_for_target": 1,
+        "pubmed_gene_disease_count": 16316,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000142192",
+            "approvedSymbol": "APP",
+            "approvedName": "amyloid beta precursor protein"
+          },
+          "association": {
+            "score": 0.8042536996738855,
+            "disease": {
+              "id": "MONDO_0004975",
+              "name": "Alzheimer disease"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "APP Alzheimer disease",
+          "db": "pubmed",
+          "count": 16316,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=APP+Alzheimer+disease&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "APP[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=APP%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "app_alzheimer_disease_type_1",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APP",
+      "target_ensembl_id": "ENSG00000142192",
+      "target_name": "amyloid beta precursor protein",
+      "disease_name": "Alzheimer disease type 1",
+      "disease_efo_id": "MONDO_0007088",
+      "priority": "exploratory",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.785681,
+        "open_targets_rank_for_target": 2,
+        "pubmed_gene_disease_count": 3,
+        "ncbi_gene_count": 0
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000142192",
+            "approvedSymbol": "APP",
+            "approvedName": "amyloid beta precursor protein"
+          },
+          "association": {
+            "score": 0.7856807476002103,
+            "disease": {
+              "id": "MONDO_0007088",
+              "name": "Alzheimer disease type 1"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "APP Alzheimer disease type 1",
+          "db": "pubmed",
+          "count": 3,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=APP+Alzheimer+disease+type+1&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "APP[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=APP%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    },
+    {
+      "id": "app_cerebral_amyloid_angiopathy_app_related",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APP",
+      "target_ensembl_id": "ENSG00000142192",
+      "target_name": "amyloid beta precursor protein",
+      "disease_name": "cerebral amyloid angiopathy, APP-related",
+      "disease_efo_id": "MONDO_0011583",
+      "priority": "medium",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy"
+      ],
+      "public_labels": {
+        "open_targets_association_score": 0.751857,
+        "open_targets_rank_for_target": 3,
+        "pubmed_gene_disease_count": 17,
+        "ncbi_gene_count": 1
+      },
+      "public_context": {
+        "mode": "generated_live",
+        "open_targets_target": {
+          "status": "success",
+          "target": {
+            "id": "ENSG00000142192",
+            "approvedSymbol": "APP",
+            "approvedName": "amyloid beta precursor protein"
+          },
+          "association": {
+            "score": 0.7518566426969877,
+            "disease": {
+              "id": "MONDO_0011583",
+              "name": "cerebral amyloid angiopathy, APP-related"
+            }
+          },
+          "url": "https://api.platform.opentargets.org/api/v4/graphql"
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "APP cerebral amyloid angiopathy, APP-related",
+          "db": "pubmed",
+          "count": 17,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=APP+cerebral+amyloid+angiopathy%2C+APP-related&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "APP[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=APP%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      }
+    }
+  ],
+  "generation_failures": [],
+  "caveats": [
+    "Open Targets association scores rank evidence strength and should not be interpreted as clinical confidence.",
+    "PubMed counts are weak grounding signals; final scoring must inspect evidence quality and provenance.",
+    "This manifest evaluates reproducible tool use, memory, and workflow control, not de novo biological truth."
+  ]
+}

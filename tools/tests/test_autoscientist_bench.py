@@ -78,6 +78,30 @@ def test_manifest_can_target_medea_case_and_template() -> None:
     assert "medea" in tasks[0]["expected_capabilities"]
 
 
+def test_template_expected_capabilities_are_added_to_task() -> None:
+    manifest = {
+        "task_templates": [
+            {
+                "id": "omics_task",
+                "objective_template": "Analyze {gene_symbol} in {disease_name}.",
+                "expected_capabilities": ["medea"],
+            }
+        ],
+        "seed_cases": [
+            {
+                "id": "case_1",
+                "gene_symbol": "IL6",
+                "disease_name": "rheumatoid arthritis",
+                "expected_capabilities": ["tooluniverse"],
+            }
+        ],
+    }
+
+    tasks = expand_tasks(manifest, offline_public_context=True)
+
+    assert tasks[0]["expected_capabilities"] == ["medea", "tooluniverse"]
+
+
 def test_ablation_config_disables_memory_and_sciflow() -> None:
     config = benchmark_run_config(_args())
 

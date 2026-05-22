@@ -88,7 +88,10 @@ def expand_tasks(
                         "disease_name": case.get("disease_name"),
                         "target_ensembl_id": case.get("target_ensembl_id"),
                         "disease_efo_id": case.get("disease_efo_id"),
-                        "expected_capabilities": case.get("expected_capabilities", []),
+                        "expected_capabilities": sorted(
+                            set(case.get("expected_capabilities", []))
+                            | set(template.get("expected_capabilities", []))
+                        ),
                         "objective": objective,
                         "public_context": public_context,
                     }
@@ -941,7 +944,7 @@ def main(argv: list[str] | None = None) -> int:
             indent=2,
         )
     )
-    return 0 if summary["status"] == "completed" else 1
+    return 0 if summary["status"] in {"completed", "prepared"} else 1
 
 
 if __name__ == "__main__":

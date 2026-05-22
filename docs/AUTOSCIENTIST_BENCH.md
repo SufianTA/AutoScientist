@@ -62,6 +62,41 @@ python tools/run_autoscientist_bench.py \
 This does not require paid model keys if `--llm-provider mock` is left as default. It still exercises
 public biomedical grounding paths where available.
 
+## Build A Public-Data Manifest
+
+Generate a benchmark manifest from live Open Targets target-disease associations and NCBI/PubMed counts:
+
+```bash
+python tools/build_public_benchmark_dataset.py \
+  --output-manifest benchmarks/autoscientist_bench_v0_2_public.json \
+  --max-targets 8 \
+  --associations-per-target 3 \
+  --include-omics-template
+```
+
+This writes:
+
+- `benchmarks/autoscientist_bench_v0_2_public.json`
+- `benchmarks/autoscientist_bench_v0_2_public.jsonl`
+- `benchmarks/autoscientist_bench_v0_2_public.md`
+
+Use this manifest for serious runs:
+
+```bash
+python tools/run_autoscientist_bench.py \
+  --manifest benchmarks/autoscientist_bench_v0_2_public.json \
+  --limit 24 \
+  --ablations full no_memory no_public_tools no_sciflow \
+  --llm-provider anthropic \
+  --llm-model claude-sonnet-4-6 \
+  --llm-api-key-env-var ANTHROPIC_API_KEY \
+  --require-real-llm \
+  --enable-sciflow-policy \
+  --train-neural-policy \
+  --strict-real-run \
+  --require-expected-integrations
+```
+
 ## SciFlow Controller Check
 
 After one benchmark run has trained a policy artifact, verify that the runtime uses SciFlow as an
@@ -163,6 +198,16 @@ Key checks:
 - `scistate_graph.json` should contain hypotheses, entities, experiments, replay nodes, and tool nodes.
 - The package zip should include a model card, manifest, state graph, and replay examples.
 
+Then generate the analysis report:
+
+```bash
+python tools/analyze_autoscientist_benchmark.py \
+  --bench-dir outputs/autoscientist_bench/<timestamp>
+```
+
+Read `analysis/benchmark_analysis_*.md` for integration coverage, ablation deltas, policy metrics,
+supported claims, and limitations.
+
 ## What To Share
 
 For a serious review package, share:
@@ -170,6 +215,7 @@ For a serious review package, share:
 - `benchmark_summary.md`
 - `benchmark_summary.json`
 - `scistate_graph.json`
+- `analysis/benchmark_analysis_*.md`
 - the latest package zip from `packages/`
 - a short note explaining that SciFlow Policy is a controller layer, not a replacement for foundation models.
 
