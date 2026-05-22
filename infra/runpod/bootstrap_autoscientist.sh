@@ -34,7 +34,7 @@ append_env_once() {
 }
 
 run apt-get update
-run apt-get install -y git git-lfs curl build-essential python3-venv
+run apt-get install -y git git-lfs curl build-essential python3-venv libxrender1 libxext6 libsm6 libglib2.0-0 libgl1
 run git lfs install || true
 
 if [ -d "$WORKDIR/.git" ]; then
