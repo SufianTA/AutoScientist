@@ -62,7 +62,7 @@ if [ "$INSTALL_MEDEA" = "1" ]; then
   fi
   run "$VENV/bin/python" -m pip install uv
   run "$VENV/bin/uv" python install 3.10
-  if ! run "$VENV/bin/uv" venv "$MEDEA_VENV" --python 3.10; then
+  if ! run "$VENV/bin/uv" venv "$MEDEA_VENV" --python 3.10 --seed; then
     if command -v python3.10 >/dev/null 2>&1; then
       run python3.10 -m venv "$MEDEA_VENV"
     else
@@ -70,6 +70,7 @@ if [ "$INSTALL_MEDEA" = "1" ]; then
       exit 1
     fi
   fi
+  run "$MEDEA_VENV/bin/python" -m ensurepip --upgrade
   run "$MEDEA_VENV/bin/python" -m pip install --upgrade pip setuptools wheel
   run "$MEDEA_VENV/bin/python" -m pip install -e "$MEDEA_DIR"
   run "$MEDEA_VENV/bin/python" -m pip install openai==1.82.1
