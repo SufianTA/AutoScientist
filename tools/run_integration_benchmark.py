@@ -61,7 +61,6 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         provider = provider or "mock"
         model = model or default_models.get(provider, "")
         api_key_env_var = api_key_env_var or default_key_envs.get(provider, "")
-    medea_python = args.medea_python or os.getenv("MEDEA_PYTHON")
     return {
         "execution_mode": "inline",
         "agent_count": args.agent_count,
@@ -77,12 +76,6 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "llm_api_key_env_var": api_key_env_var or "",
         "llm_max_tokens": args.llm_max_tokens,
         "require_real_llm": args.require_real_llm,
-        "medea_enabled": bool(medea_python) and not args.disable_medea,
-        "medea_python": medea_python or "",
-        "medea_smoke_only": args.medea_smoke_only,
-        "medea_debate_rounds": args.medea_debate_rounds,
-        "medea_timeout_seconds": args.medea_timeout_seconds,
-        "medea_subprocess_timeout_seconds": args.medea_subprocess_timeout_seconds,
         "txagent_enabled": False,
         "persist_memory_enabled": getattr(args, "persist_memory_enabled", True),
         "sciflow_policy_enabled": getattr(args, "sciflow_policy_enabled", False),
@@ -117,14 +110,6 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
             "executed": qworld_step is not None and qworld_mode == "qworld",
             "mode": qworld_mode,
         },
-        "medea": {
-            "healthy": bool(health.get("open_scientist", {}).get("medea", {}).get("available")),
-            "executed": "medea_agent" in names,
-            "status": next(
-                (call.get("status") for call in tool_calls if call.get("tool_name") == "medea_agent"),
-                None,
-            ),
-        },
         "tooluniverse": {
             "healthy": bool(health.get("tooluniverse", {}).get("available")),
             "executed": "tooluniverse" in sources,
@@ -158,8 +143,6 @@ def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[st
         "experiments_proposed": len(experiments) >= 1,
         "guardrails_present": len(guardrails) >= 1,
         "auditable_trace": bool(trace.get("agent_steps") and trace.get("tool_calls")),
-        "medea_executed": bool(integrations.get("medea", {}).get("executed")),
-        "qworld_executed": bool(integrations.get("qworld", {}).get("executed")),
         "live_data_executed": bool(
             integrations.get("public_biomedical", {}).get("executed")
             or integrations.get("tooluniverse", {}).get("executed")
@@ -169,15 +152,13 @@ def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[st
     weights = {
         "completed_run": 15,
         "nonempty_hypothesis": 10,
-        "evidence_collected": 10,
+        "evidence_collected": 12,
         "scored_evidence": 10,
-        "experiments_proposed": 10,
+        "experiments_proposed": 12,
         "guardrails_present": 10,
-        "auditable_trace": 10,
-        "medea_executed": 8,
-        "qworld_executed": 7,
-        "live_data_executed": 7,
-        "board_written": 3,
+        "auditable_trace": 12,
+        "live_data_executed": 12,
+        "board_written": 7,
     }
     score = sum(weights[name] for name, passed in checks.items() if passed)
     return {
@@ -282,12 +263,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--max-runtime-minutes", type=int, default=30)
     parser.add_argument("--tool-budget-usd", type=float, default=10.0)
     parser.add_argument("--require-real-llm", action="store_true")
-    parser.add_argument("--medea-python", default="")
-    parser.add_argument("--disable-medea", action="store_true")
-    parser.add_argument("--medea-smoke-only", action="store_true")
-    parser.add_argument("--medea-debate-rounds", type=int, default=0)
-    parser.add_argument("--medea-timeout-seconds", type=int, default=1200)
-    parser.add_argument("--medea-subprocess-timeout-seconds", type=int, default=180)
     parser.add_argument("--skip-policy-training", action="store_true")
     parser.add_argument("--policy-model-name", default="scientific_workflow_policy")
     parser.add_argument("--policy-artifact-dir", default="outputs/models")

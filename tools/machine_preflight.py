@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 from app.env import load_environment
-from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 
 
@@ -36,8 +35,6 @@ def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if not args.skip_tooluniverse:
         checks.append(check_tooluniverse(require=args.require_tooluniverse))
-    if not args.skip_medea:
-        checks.append(check_medea(require=args.require_medea))
     result = {
         "schema": "autosci.machine_preflight.v1",
         "created_at_unix": int(started),
@@ -87,9 +84,9 @@ def check_disk(workspace: Path, *, min_free_gb: float) -> dict[str, Any]:
 
 
 def check_env_keys() -> dict[str, Any]:
-    keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "MEDEA_PYTHON"]
+    keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
     present = {name: bool(os.getenv(name)) for name in keys}
-    provider_count = sum(1 for name in ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY"] if present[name])
+    provider_count = sum(1 for name in keys if present[name])
     status = "pass" if provider_count else "warn"
     return check("env_keys", status, "provider key present" if provider_count else "no provider key found", details=present)
 
@@ -174,18 +171,6 @@ def check_tooluniverse(*, require: bool) -> dict[str, Any]:
     )
 
 
-def check_medea(*, require: bool) -> dict[str, Any]:
-    health = OpenScientistCapabilityRegistry().medea_health()
-    available = bool(health.get("available"))
-    return check(
-        "medea",
-        "pass" if available else "fail" if require else "warn",
-        health.get("status") or "unknown",
-        critical=require and not available,
-        details=health,
-    )
-
-
 def check(name: str, status: str, message: str, *, critical: bool = False, details: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
         "name": name,
@@ -237,9 +222,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-free-gb", type=float, default=2.0)
     parser.add_argument("--require-gpu", action="store_true")
     parser.add_argument("--require-tooluniverse", action="store_true")
-    parser.add_argument("--require-medea", action="store_true")
     parser.add_argument("--skip-tooluniverse", action="store_true")
-    parser.add_argument("--skip-medea", action="store_true")
     return parser.parse_args(argv)
 
 

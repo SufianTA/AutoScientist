@@ -36,7 +36,6 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "qworld_api_key_env_var": "",
     "qworld_base_url": "",
     "txagent_enabled": False,
-    "medea_enabled": False,
     "persist_memory_enabled": True,
     "sciflow_policy_enabled": False,
     "sciflow_policy_model_id": "",
@@ -78,7 +77,6 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         "qworld_api_key_env_var",
     )
     normalized["txagent_enabled"] = bool(normalized.get("txagent_enabled", False))
-    normalized["medea_enabled"] = bool(normalized.get("medea_enabled", False))
     normalized["persist_memory_enabled"] = bool(normalized.get("persist_memory_enabled", True))
     normalized["sciflow_policy_enabled"] = bool(normalized.get("sciflow_policy_enabled", False))
     normalized["sciflow_policy_model_id"] = str(normalized.get("sciflow_policy_model_id") or "")

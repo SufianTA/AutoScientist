@@ -9,7 +9,7 @@ packages the latest SciFlow Policy model for review.
 It is meant to prove integration and infrastructure value before spending on GPU time:
 
 - AutoScientist can run repeatable public biomedical tasks.
-- Full runtime output can be compared with `no_memory`, `no_sciflow`, `no_medea`, and `no_public_tools` ablations.
+- Full runtime output can be compared with `no_memory`, `no_sciflow`, and `no_public_tools` ablations.
 - Runs leave replay bundles, tool traces, state graph exports, and model packages.
 - SciFlow Policy is used as a workflow-controller advisory layer when enabled.
 
@@ -140,7 +140,7 @@ completed. For a real acceptance run, require hard gates:
 python tools/run_autoscientist_bench.py \
   --limit 100 \
   --replicates-per-case 3 \
-  --ablations full no_memory no_medea no_public_tools no_sciflow \
+  --ablations full no_memory no_public_tools no_sciflow \
   --llm-provider anthropic \
   --llm-model claude-sonnet-4-6 \
   --llm-api-key-env-var ANTHROPIC_API_KEY \
@@ -156,7 +156,7 @@ python tools/run_autoscientist_bench.py \
   --min-state-graph-nodes 1
 ```
 
-To force an omics/Medea task instead of relying on the first tasks in the manifest:
+To force a single omics-context task instead of relying on the first tasks in the manifest:
 
 ```bash
 python tools/run_autoscientist_bench.py \
@@ -168,7 +168,6 @@ python tools/run_autoscientist_bench.py \
   --llm-model claude-sonnet-4-6 \
   --llm-api-key-env-var ANTHROPIC_API_KEY \
   --require-real-llm \
-  --medea-python /opt/medea-py310/bin/python \
   --enable-sciflow-policy \
   --train-neural-policy \
   --strict-real-run \
@@ -194,7 +193,7 @@ Key checks:
 - `full` mean score should be higher than `no_memory` and `no_public_tools`.
 - `full` should have replay runs and public-tool runs.
 - `full` should show controller advice runs once a SciFlow model exists.
-- tasks whose manifest declares `medea`, `tooluniverse`, or `sciflow_policy` should show those integrations executed.
+- tasks whose manifest declares `public_biomedical`, `tooluniverse`, or `sciflow_policy` should show those integrations executed.
 - `scistate_graph.json` should contain hypotheses, entities, experiments, replay nodes, and tool nodes.
 - The package zip should include a model card, manifest, state graph, and replay examples.
 
@@ -233,5 +232,5 @@ The next research-grade step is `AutoScientist-Bench v0.2`:
 - Live frontier-model subset.
 - No-memory and no-controller ablations.
 - Expert or rubric scoring.
-- Full Medea module-level omics tasks, not only smoke execution.
+- Omics-context tasks grounded through public biomedical evidence and explicit validation experiments.
 - Held-out evaluation for SciFlow Policy.

@@ -7,7 +7,6 @@ from tools.run_autoscientist_bench import (
     evaluate_realness_gates,
     expand_tasks,
     load_manifest,
-    validate_runtime_request,
 )
 
 
@@ -25,13 +24,6 @@ def _args(**overrides: object) -> SimpleNamespace:
         "qworld_api_key_env_var": "",
         "disable_qworld": True,
         "require_real_llm": False,
-        "medea_python": "",
-        "disable_medea": True,
-        "medea_smoke_only": True,
-        "forbid_medea_smoke": False,
-        "medea_debate_rounds": 0,
-        "medea_timeout_seconds": 120,
-        "medea_subprocess_timeout_seconds": 30,
         "enable_sciflow_policy": True,
         "sciflow_policy_model_id": "",
         "sciflow_policy_model_path": "",
@@ -61,7 +53,7 @@ def test_manifest_expands_to_offline_public_tasks() -> None:
     assert tasks[0]["disease_name"]
 
 
-def test_manifest_can_target_medea_case_and_template() -> None:
+def test_manifest_can_target_specific_case_and_template() -> None:
     manifest = load_manifest()
 
     tasks = expand_tasks(
@@ -75,7 +67,7 @@ def test_manifest_can_target_medea_case_and_template() -> None:
     assert len(tasks) == 1
     assert tasks[0]["case_id"] == "il6_rheumatoid_arthritis"
     assert tasks[0]["template_id"] == "experiment_design"
-    assert "medea" in tasks[0]["expected_capabilities"]
+    assert tasks[0]["expected_capabilities"] == ["public_biomedical", "sciflow_policy", "tooluniverse"]
 
 
 def test_template_expected_capabilities_are_added_to_task() -> None:
@@ -84,7 +76,7 @@ def test_template_expected_capabilities_are_added_to_task() -> None:
             {
                 "id": "omics_task",
                 "objective_template": "Analyze {gene_symbol} in {disease_name}.",
-                "expected_capabilities": ["medea"],
+                "expected_capabilities": ["public_biomedical"],
             }
         ],
         "seed_cases": [
@@ -99,7 +91,7 @@ def test_template_expected_capabilities_are_added_to_task() -> None:
 
     tasks = expand_tasks(manifest, offline_public_context=True)
 
-    assert tasks[0]["expected_capabilities"] == ["medea", "tooluniverse"]
+    assert tasks[0]["expected_capabilities"] == ["public_biomedical", "tooluniverse"]
 
 
 def test_ablation_config_disables_memory_and_sciflow() -> None:
@@ -112,12 +104,11 @@ def test_ablation_config_disables_memory_and_sciflow() -> None:
 
 
 def test_ablation_config_disables_public_tools() -> None:
-    config = benchmark_run_config(_args(disable_medea=False, medea_python="/tmp/python"))
+    config = benchmark_run_config(_args())
 
     apply_ablation(config, "no_public_tools")
 
     assert config["real_data_enabled"] is False
-    assert config["medea_enabled"] is False
 
 
 def test_benchmark_value_score_adds_public_context_checks() -> None:
@@ -139,7 +130,6 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
         },
     }
     integrations = {
-        "medea": {"executed": False},
         "qworld": {"executed": False},
         "public_biomedical": {"executed": True},
         "tooluniverse": {"executed": False},
@@ -157,21 +147,22 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
 
     assert assessment["checks"]["controller_advice"] is True
     assert assessment["checks"]["open_targets_context"] is True
-    assert assessment["score"] > assessment["base_score"]
+    assert assessment["checks"]["public_context_prefetched"] is True
+    assert assessment["checks"]["pubmed_context"] is True
+    assert assessment["score"] == 100
 
 
-def test_realness_gates_fail_missing_expected_medea() -> None:
+def test_realness_gates_fail_missing_expected_public_tool() -> None:
     args = _args(require_expected_integrations=True)
     result = {
         "ablation": "full",
         "status": "completed",
         "run_id": "run_1",
-        "task": {"id": "task_1", "expected_capabilities": ["medea", "tooluniverse", "sciflow_policy"]},
+        "task": {"id": "task_1", "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]},
         "artifact_path": "task_1.json",
         "integrations": {
-            "medea": {"executed": False},
             "tooluniverse": {"executed": True},
-            "public_biomedical": {"executed": True},
+            "public_biomedical": {"executed": False},
             "local_board": {"executed": True},
         },
         "replay": {"available": True},
@@ -190,23 +181,4 @@ def test_realness_gates_fail_missing_expected_medea() -> None:
     gates = evaluate_realness_gates(summary, [result], args)
 
     assert gates["passed"] is False
-    assert gates["result_failures"][0]["missing"] == ["medea"]
-
-
-def test_strict_real_request_rejects_smoke_medea() -> None:
-    args = _args(
-        strict_real_run=True,
-        llm_provider="anthropic",
-        require_real_llm=True,
-        disable_medea=False,
-        medea_python="/opt/medea-py310/bin/python",
-        medea_smoke_only=True,
-        train_neural_policy=True,
-    )
-
-    try:
-        validate_runtime_request(args)
-    except SystemExit as exc:
-        assert "Medea smoke mode is not allowed" in str(exc)
-    else:  # pragma: no cover
-        raise AssertionError("strict real validation should reject smoke-mode Medea")
+    assert gates["result_failures"][0]["missing"] == ["public_biomedical"]

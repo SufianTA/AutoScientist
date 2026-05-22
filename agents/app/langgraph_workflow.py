@@ -882,8 +882,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         capability_tools = []
         if "qworld" in routed_capabilities:
             capability_tools.append("qworld_criteria_generator")
-        if "medea" in routed_capabilities:
-            capability_tools.append("medea_agent")
         if "txagent" in routed_capabilities:
             capability_tools.append("txagent_agent")
         if "clawinstitute_board" in routed_capabilities:
@@ -929,7 +927,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "objective_classification": state.context.get("objective_classification", {}),
             "run_config": {
                 "real_data_enabled": config.get("real_data_enabled"),
-                "medea_enabled": config.get("medea_enabled"),
                 "llm_provider": config.get("llm_provider"),
                 "agent_count": config.get("agent_count"),
             },
@@ -1012,7 +1009,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "evidence_quality_scorer_tool",
             "hypothesis_card_generator_tool",
             "experiment_recommendation_tool",
-            "medea_agent",
             "txagent_agent",
             "clawinstitute_board_publisher",
             *[tool["name"] for tool in config.get("model_tool_configs", [])],
@@ -1092,37 +1088,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                         "structured": result,
                     }
                 )
-        if config.get("medea_enabled") and "medea" in capabilities:
-            self._runtime_event(
-                "omics_agent",
-                "TOOL_CALL_STARTED",
-                {"tool_name": "medea_agent", "tool_source": "open_scientist"},
-                {"objective": state.objective},
-            )
-            result = self.open_scientist.execute_medea(state.objective, config)
-            self._runtime_event(
-                "omics_agent",
-                "TOOL_CALL_COMPLETED",
-                {
-                    "tool_name": "medea_agent",
-                    "tool_source": "open_scientist",
-                    "status": result.get("status"),
-                    "latency_ms": result.get("runtime_ms"),
-                },
-                {"objective": state.objective},
-            )
-            state.tool_outputs.append({"tool_name": "medea_agent", "tool_source": "open_scientist", "result": result})
-            if result["status"] in {"success", "partial"}:
-                output = result.get("output", {})
-                text = output.get("final") if isinstance(output, dict) else str(output)
-                state.evidence.append(
-                    {
-                        "source": "medea_agent",
-                        "text": str(text or output)[:4000],
-                        "structured": result,
-                    }
-                )
-
     def _execute_evidence_collection(
         self,
         state: ResearchRunState,

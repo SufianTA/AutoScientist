@@ -22,7 +22,6 @@ AutoScientist is strongest when it is evaluated as persistent scientific infrast
 ```bash
 python tools/run_benchmark_suite.py \
   --disable-qworld \
-  --disable-medea \
   --llm-provider mock \
   --output-dir outputs/benchmarks \
   --policy-artifact-dir outputs/models
@@ -34,11 +33,9 @@ This produces deterministic artifacts quickly and is useful for regression testi
 
 ```bash
 DATABASE_URL=sqlite:////workspace/AutoScientist/bio_auto_scientist.sqlite3 \
-MEDEA_PYTHON=/opt/medea-py312/bin/python \
 /opt/autosci-venv/bin/python tools/run_benchmark_suite.py \
   --require-real-llm \
   --disable-qworld \
-  --medea-smoke-only \
   --agent-count 2 \
   --max-runtime-minutes 5 \
   --tool-budget-usd 1 \

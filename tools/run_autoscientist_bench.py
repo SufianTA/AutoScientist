@@ -26,7 +26,7 @@ from tools.run_integration_benchmark import build_run_config, summarize_integrat
 DEFAULT_MANIFEST = Path("benchmarks/autoscientist_bench_v0_1.json")
 OPEN_TARGETS_GRAPHQL_URL = "https://api.platform.opentargets.org/api/v4/graphql"
 NCBI_EUTILS_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-SUPPORTED_ABLATIONS = {"full", "no_memory", "no_medea", "no_public_tools", "no_sciflow"}
+SUPPORTED_ABLATIONS = {"full", "no_memory", "no_public_tools", "no_sciflow"}
 
 
 def load_manifest(path: str | Path = DEFAULT_MANIFEST) -> dict[str, Any]:
@@ -265,7 +265,10 @@ def validate_runtime_request(args: argparse.Namespace) -> None:
     errors = []
     if args.strict_real_run:
         if args.llm_provider == "mock":
-            errors.append("--strict-real-run requires --llm-provider auto/openai/anthropic/gemini/local_http/openai_compatible, not mock.")
+            errors.append(
+                "--strict-real-run requires --llm-provider auto/openai/anthropic/gemini/"
+                "local_http/openai_compatible, not mock."
+            )
         if not args.require_real_llm:
             errors.append("--strict-real-run requires --require-real-llm.")
         if args.offline_public_context:
@@ -274,10 +277,6 @@ def validate_runtime_request(args: argparse.Namespace) -> None:
             errors.append("--strict-real-run requires --enable-sciflow-policy.")
         if not args.train_neural_policy:
             errors.append("--strict-real-run requires --train-neural-policy.")
-    if (args.strict_real_run or args.forbid_medea_smoke) and args.medea_python and not args.disable_medea and args.medea_smoke_only:
-        errors.append("Medea smoke mode is not allowed in a strict real run; remove --medea-smoke-only.")
-    if args.require_full_integrations and "medea" in args.require_full_integrations and not args.medea_python:
-        errors.append("--require-full-integrations medea requires --medea-python or MEDEA_PYTHON.")
     if errors:
         raise SystemExit("Real-run configuration failed:\n- " + "\n- ".join(errors))
 
@@ -348,12 +347,6 @@ def benchmark_run_config(args: argparse.Namespace) -> dict[str, Any]:
         qworld_api_key_env_var=args.qworld_api_key_env_var,
         disable_qworld=args.disable_qworld,
         require_real_llm=args.require_real_llm,
-        medea_python=args.medea_python,
-        disable_medea=args.disable_medea,
-        medea_smoke_only=args.medea_smoke_only,
-        medea_debate_rounds=args.medea_debate_rounds,
-        medea_timeout_seconds=args.medea_timeout_seconds,
-        medea_subprocess_timeout_seconds=args.medea_subprocess_timeout_seconds,
         persist_memory_enabled=True,
         sciflow_policy_enabled=args.enable_sciflow_policy,
         sciflow_policy_model_id=args.sciflow_policy_model_id,
@@ -369,11 +362,8 @@ def apply_ablation(config: dict[str, Any], ablation: str) -> None:
     if ablation == "no_memory":
         config["persist_memory_enabled"] = False
         config["sciflow_policy_enabled"] = False
-    elif ablation == "no_medea":
-        config["medea_enabled"] = False
     elif ablation == "no_public_tools":
         config["real_data_enabled"] = False
-        config["medea_enabled"] = False
     elif ablation == "no_sciflow":
         config["sciflow_policy_enabled"] = False
 
@@ -636,8 +626,6 @@ def evaluate_realness_gates(
     if state_nodes < min_nodes:
         failures.append(f"SciState Graph node count {state_nodes} is below required {min_nodes}.")
 
-    if args.strict_real_run and args.medea_python and not args.disable_medea and args.medea_smoke_only:
-        failures.append("Medea was configured in smoke mode during a strict real run.")
     package = summary.get("package") or {}
     if args.strict_real_run and package.get("status") == "skipped":
         failures.append(f"Policy package was skipped: {package.get('reason')}")
@@ -670,9 +658,6 @@ def missing_required_integrations(result: dict[str, Any], required_integrations:
         elif name == "tooluniverse":
             if not integrations.get("tooluniverse", {}).get("executed"):
                 missing.append(name)
-        elif name == "medea":
-            if not integrations.get("medea", {}).get("executed"):
-                missing.append(name)
         elif name == "qworld":
             if not integrations.get("qworld", {}).get("executed"):
                 missing.append(name)
@@ -697,8 +682,6 @@ def missing_expected_integrations(result: dict[str, Any]) -> list[str]:
         mapped.add("public_biomedical")
     if "tooluniverse" in expected:
         mapped.add("tooluniverse")
-    if "medea" in expected:
-        mapped.add("medea")
     if "qworld" in expected:
         mapped.add("qworld")
     if "sciflow_policy" in expected:
@@ -768,7 +751,7 @@ def top_results(results: list[dict[str, Any]], *, ablation: str) -> list[dict[st
 def recommended_gpu_command() -> str:
     return (
         "python tools/run_autoscientist_bench.py --limit 100 --replicates-per-case 3 "
-        "--ablations full no_memory no_medea no_public_tools no_sciflow "
+        "--ablations full no_memory no_public_tools no_sciflow "
         "--llm-provider anthropic --llm-model claude-sonnet-4-6 --llm-api-key-env-var ANTHROPIC_API_KEY "
         "--enable-sciflow-policy --train-neural-policy --neural-epochs 120 --require-real-llm --strict-real-run "
         "--require-expected-integrations --min-full-completion-rate 1.0 --min-full-mean-score 85 "
@@ -898,13 +881,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--max-runtime-minutes", type=int, default=5)
     parser.add_argument("--tool-budget-usd", type=float, default=1.0)
     parser.add_argument("--require-real-llm", action="store_true")
-    parser.add_argument("--medea-python", default="")
-    parser.add_argument("--disable-medea", action="store_true")
-    parser.add_argument("--medea-smoke-only", action="store_true")
-    parser.add_argument("--forbid-medea-smoke", action="store_true")
-    parser.add_argument("--medea-debate-rounds", type=int, default=0)
-    parser.add_argument("--medea-timeout-seconds", type=int, default=1200)
-    parser.add_argument("--medea-subprocess-timeout-seconds", type=int, default=180)
     parser.add_argument("--enable-sciflow-policy", action="store_true")
     parser.add_argument("--sciflow-policy-model-id", default="")
     parser.add_argument("--sciflow-policy-model-path", default="")

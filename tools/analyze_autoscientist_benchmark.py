@@ -106,7 +106,7 @@ def mean_tool_calls(results: list[dict[str, Any]]) -> float:
 
 
 def integration_coverage(results: list[dict[str, Any]]) -> dict[str, Any]:
-    names = ["public_biomedical", "tooluniverse", "medea", "qworld", "local_board"]
+    names = ["public_biomedical", "tooluniverse", "qworld", "local_board"]
     coverage = {}
     for name in names:
         coverage[name] = {
@@ -209,8 +209,6 @@ def limitations(
         items.append("No-memory ablation was not present, so persistent-memory value is not quantified in this run.")
     if "no_public_tools" not in by_ablation:
         items.append("No-public-tools ablation was not present, so grounding value is not quantified in this run.")
-    if not any(item.get("integrations", {}).get("medea", {}).get("executed") for item in full_results):
-        items.append("Medea did not execute in the full-runtime tasks analyzed here.")
     items.append("Benchmark scores are integration/provenance scores, not expert biological truth labels.")
     return items
 

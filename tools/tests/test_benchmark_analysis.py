@@ -40,7 +40,6 @@ def test_analyze_benchmark_dir_reports_gates_and_ablation_delta(tmp_path: Path) 
         "integrations": {
             "public_biomedical": {"executed": True},
             "tooluniverse": {"executed": True},
-            "medea": {"executed": False},
             "qworld": {"executed": False},
             "local_board": {"executed": True},
         },

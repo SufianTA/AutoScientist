@@ -52,7 +52,7 @@ def collect_review_package(args: argparse.Namespace) -> dict[str, Any]:
         "caveats": [
             "SciFlow Policy is a workflow-controller model, not a biomedical foundation model.",
             "Benchmark scores measure integration, provenance, and reproducibility unless expert-scored live tasks are added.",
-            "Medea is represented through the adapter path unless the package includes a full Medea module-level run artifact.",
+            "The active benchmark path uses public biomedical data, ToolUniverse/OpenTargets, SciState Graph, and SciFlow Policy.",
         ],
     }
     (staging / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")

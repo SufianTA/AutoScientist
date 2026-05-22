@@ -54,11 +54,10 @@
     },
     {
       "id": "omics_context_validation",
-      "objective_template": "Use an omics-aware workflow to evaluate the cell-context validity of a {gene_symbol} hypothesis in {disease_name}; require transcriptomic or single-cell reasoning, Medea review, public evidence, failure modes, and concrete validation experiments.",
+      "objective_template": "Use an omics-aware workflow to evaluate the cell-context validity of a {gene_symbol} hypothesis in {disease_name}; require transcriptomic or single-cell reasoning, public evidence, failure modes, and concrete validation experiments.",
       "expected_capabilities": [
         "public_biomedical",
         "tooluniverse",
-        "medea",
         "sciflow_policy"
       ]
     }

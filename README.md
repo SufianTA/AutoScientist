@@ -151,7 +151,7 @@ The startup scripts verify API health, frontend static assets, API proxying, COR
 AutoScientist can package a shareable scientific-state artifact with the trained workflow policy, replay bundles, tool benchmarks, and a graph of hypotheses, entities, experiments, tools, and provenance:
 
 ```bash
-python tools/run_benchmark_suite.py --disable-qworld --disable-medea --llm-provider mock
+python tools/run_benchmark_suite.py --disable-qworld --llm-provider mock
 python tools/train_neural_workflow_policy.py --artifact-dir outputs/models --epochs 80
 python tools/package_policy_model.py --output-dir outputs/packages --replay-limit 10 --graph-limit 500
 python tools/export_scientific_state_graph.py --output-dir outputs/state_graphs

@@ -87,7 +87,7 @@
       "disease_name": "rheumatoid arthritis",
       "disease_efo_id": "EFO_0000685",
       "priority": "high",
-      "expected_capabilities": ["public_biomedical", "tooluniverse", "medea", "sciflow_policy"]
+      "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"]
     },
     {
       "id": "tnf_inflammatory_bowel_disease",

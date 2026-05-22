@@ -10,8 +10,6 @@ LLM_PROVIDER="${LLM_PROVIDER:-auto}"
 LLM_MODEL="${LLM_MODEL:-}"
 LLM_API_KEY_ENV_VAR="${LLM_API_KEY_ENV_VAR:-}"
 REQUIRE_REAL_LLM="${REQUIRE_REAL_LLM:-1}"
-MEDEA_PYTHON="${MEDEA_PYTHON:-}"
-MEDEA_SMOKE_ONLY="${MEDEA_SMOKE_ONLY:-0}"
 STRICT_REAL="${STRICT_REAL:-1}"
 CASE_IDS="${CASE_IDS:-}"
 TEMPLATE_IDS="${TEMPLATE_IDS:-}"
@@ -40,24 +38,11 @@ else
 fi
 
 PREFLIGHT_FLAGS=(--workspace "$WORKDIR" --output-dir outputs/preflight --require-gpu)
-if [ -n "$MEDEA_PYTHON" ]; then
-  PREFLIGHT_FLAGS+=(--require-medea)
-fi
 run python tools/machine_preflight.py "${PREFLIGHT_FLAGS[@]}"
 
 REAL_LLM_FLAGS=()
 if [ "$REQUIRE_REAL_LLM" = "1" ]; then
   REAL_LLM_FLAGS+=(--require-real-llm)
-fi
-
-MEDEA_FLAGS=()
-if [ -n "$MEDEA_PYTHON" ]; then
-  MEDEA_FLAGS+=(--medea-python "$MEDEA_PYTHON")
-  if [ "$MEDEA_SMOKE_ONLY" = "1" ]; then
-    MEDEA_FLAGS+=(--medea-smoke-only)
-  fi
-else
-  MEDEA_FLAGS+=(--disable-medea)
 fi
 
 STRICT_FLAGS=(
@@ -68,7 +53,7 @@ STRICT_FLAGS=(
   --min-state-graph-nodes "$MIN_STATE_GRAPH_NODES"
 )
 if [ "$STRICT_REAL" = "1" ]; then
-  STRICT_FLAGS+=(--strict-real-run --forbid-medea-smoke)
+  STRICT_FLAGS+=(--strict-real-run)
 fi
 
 CASE_FLAGS=()
@@ -87,7 +72,7 @@ run python tools/run_autoscientist_bench.py \
   --limit "$LIMIT" \
   --replicates-per-case "$REPLICATES" \
   "${CASE_FLAGS[@]}" \
-  --ablations full no_memory no_medea no_public_tools no_sciflow \
+  --ablations full no_memory no_public_tools no_sciflow \
   --enable-sciflow-policy \
   --train-neural-policy \
   --neural-epochs "$EPOCHS" \
@@ -95,7 +80,6 @@ run python tools/run_autoscientist_bench.py \
   --llm-model "$LLM_MODEL" \
   --llm-api-key-env-var "$LLM_API_KEY_ENV_VAR" \
   "${REAL_LLM_FLAGS[@]}" \
-  "${MEDEA_FLAGS[@]}" \
   "${STRICT_FLAGS[@]}"
 
 run python tools/collect_review_package.py

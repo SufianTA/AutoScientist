@@ -16,12 +16,6 @@ def _args(**overrides: object) -> SimpleNamespace:
         "qworld_api_key_env_var": "",
         "disable_qworld": True,
         "require_real_llm": False,
-        "medea_python": "",
-        "disable_medea": True,
-        "medea_smoke_only": True,
-        "medea_debate_rounds": 0,
-        "medea_timeout_seconds": 120,
-        "medea_subprocess_timeout_seconds": 30,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -53,7 +47,7 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
             "hypothesis": {"title": "Target hypothesis", "text": "Mechanistic hypothesis."},
             "evidence": [
                 {"source": "NCBI Gene", "support_score": 0.5},
-                {"source": "medea_agent", "support_score": 0.3},
+                {"source": "Open Targets", "support_score": 0.3},
             ],
             "experiments": [{"name": "Perturbation assay"}],
             "guardrails": ["Requires validation."],
@@ -65,7 +59,7 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
                 {"state_name": "LLM_CALL_COMPLETED", "output": {}},
             ],
             "tool_calls": [
-                {"tool_name": "medea_agent", "tool_source": "open_scientist", "status": "success"},
+                {"tool_name": "opentargets_search", "tool_source": "tooluniverse", "status": "success"},
                 {"tool_name": "ncbi_gene_profile_tool", "tool_source": "live_public_biomedical", "status": "success"},
             ],
         },
@@ -74,7 +68,6 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
         "tooluniverse": {"available": True},
         "open_scientist": {
             "qworld": {"available": True},
-            "medea": {"available": True},
             "clawinstitute_board": {"available": True},
         },
     }
@@ -82,8 +75,8 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
     integrations = summarize_integrations(result, health)
     assessment = value_score(result, integrations)
 
-    assert integrations["medea"]["executed"] is True
     assert integrations["qworld"]["executed"] is True
+    assert integrations["tooluniverse"]["executed"] is True
     assert integrations["public_biomedical"]["executed"] is True
     assert assessment["score"] >= 85
     assert assessment["checks"]["auditable_trace"] is True

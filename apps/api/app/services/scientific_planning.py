@@ -118,10 +118,8 @@ def classify_objective(objective: str, biomedical_context: dict[str, Any] | None
 
 
 def route_capabilities(task_types: list[str], risk_level: str) -> list[str]:
-    capabilities = ["tooluniverse", "qworld", "clawinstitute_board"]
+    capabilities = ["public_biomedical", "tooluniverse", "qworld", "clawinstitute_board"]
     tasks = set(task_types)
-    if ScientificTaskType.OMICS_ANALYSIS.value in tasks:
-        capabilities.append("medea")
     if ScientificTaskType.THERAPEUTIC_REASONING.value in tasks or ScientificTaskType.DRUG_SAFETY.value in tasks:
         capabilities.append("txagent")
     if ScientificTaskType.REPORT_EVALUATION.value in tasks:
@@ -138,7 +136,15 @@ def build_capability_plan(classification: dict[str, Any]) -> dict[str, Any]:
         {"capability": "tooluniverse", "purpose": "Collect biomedical tool evidence with provenance."},
     ]
     if "omics_analysis" in tasks:
-        steps.append({"capability": "medea", "purpose": "Run omics planning, analysis, verification, and reconciliation when configured."})
+        steps.append(
+            {
+                "capability": "public_omics_context",
+                "purpose": (
+                    "Use public biomedical evidence, Open Targets context, and explicit validation experiments "
+                    "for cell-context and omics-aware reasoning."
+                ),
+            }
+        )
     if "therapeutic_reasoning" in tasks or "drug_safety" in tasks:
         steps.append({"capability": "txagent", "purpose": "Run therapeutic reasoning over drug, contraindication, interaction, and safety context when configured."})
     steps.extend(
@@ -178,7 +184,7 @@ def infer_evidence_type(item: dict[str, Any]) -> str:
         return EvidenceType.LITERATURE.value
     if "txagent" in source or any(term in text for term in ["contraindication", "adverse", "dosage"]):
         return EvidenceType.DRUG_LABEL_OR_SAFETY.value
-    if "medea" in source or any(term in text for term in ["omics", "single-cell", "transcriptomic"]):
+    if any(term in text for term in ["omics", "single-cell", "transcriptomic"]):
         return EvidenceType.OMICS_ANALYSIS.value
     if "opentargets" in source or "tooluniverse" in source:
         return EvidenceType.TOOL_RESULT.value

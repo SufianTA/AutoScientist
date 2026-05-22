@@ -46,10 +46,10 @@ PUBLIC_TASK_TEMPLATES = [
         "id": "omics_context_validation",
         "objective_template": (
             "Use an omics-aware workflow to evaluate the cell-context validity of a {gene_symbol} hypothesis in "
-            "{disease_name}; require transcriptomic or single-cell reasoning, Medea review, public evidence, "
+            "{disease_name}; require transcriptomic or single-cell reasoning, public evidence, "
             "failure modes, and concrete validation experiments."
         ),
-        "expected_capabilities": ["public_biomedical", "tooluniverse", "medea", "sciflow_policy"],
+        "expected_capabilities": ["public_biomedical", "tooluniverse", "sciflow_policy"],
     },
 ]
 

@@ -24,7 +24,7 @@ BENCHMARK_CASES = [
             "using single-cell transcriptomics reasoning, public biomedical evidence, safety "
             "concerns, and next experiment proposals."
         ),
-        "expected_capabilities": ["medea", "tooluniverse", "public_biomedical", "qworld"],
+        "expected_capabilities": ["tooluniverse", "public_biomedical", "qworld"],
     },
     {
         "id": "pcsk9_fh_drug_repurposing",
@@ -80,12 +80,6 @@ def suite_args(base: argparse.Namespace, case: dict[str, Any]) -> SimpleNamespac
         max_runtime_minutes=base.max_runtime_minutes,
         tool_budget_usd=base.tool_budget_usd,
         require_real_llm=base.require_real_llm,
-        medea_python=base.medea_python,
-        disable_medea=base.disable_medea,
-        medea_smoke_only=base.medea_smoke_only,
-        medea_debate_rounds=base.medea_debate_rounds,
-        medea_timeout_seconds=base.medea_timeout_seconds,
-        medea_subprocess_timeout_seconds=base.medea_subprocess_timeout_seconds,
         skip_policy_training=True,
         policy_model_name=base.policy_model_name,
         policy_artifact_dir=base.policy_artifact_dir,
@@ -212,7 +206,7 @@ def build_suite_summary(
 
 
 def aggregate_integrations(artifacts: list[dict[str, Any]]) -> dict[str, Any]:
-    keys = ["anthropic_llm", "qworld", "medea", "tooluniverse", "public_biomedical", "local_board"]
+    keys = ["anthropic_llm", "qworld", "tooluniverse", "public_biomedical", "local_board"]
     coverage = {}
     for key in keys:
         executed = 0
@@ -293,12 +287,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--max-runtime-minutes", type=int, default=5)
     parser.add_argument("--tool-budget-usd", type=float, default=1.0)
     parser.add_argument("--require-real-llm", action="store_true")
-    parser.add_argument("--medea-python", default="")
-    parser.add_argument("--disable-medea", action="store_true")
-    parser.add_argument("--medea-smoke-only", action="store_true")
-    parser.add_argument("--medea-debate-rounds", type=int, default=0)
-    parser.add_argument("--medea-timeout-seconds", type=int, default=1200)
-    parser.add_argument("--medea-subprocess-timeout-seconds", type=int, default=180)
     parser.add_argument("--policy-model-name", default="scientific_workflow_policy")
     parser.add_argument("--policy-artifact-dir", default="outputs/models")
     return parser.parse_args(argv)

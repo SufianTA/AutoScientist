@@ -14,7 +14,7 @@ Then move to a rented GPU only after the local run produces valid tasks, traces,
 exports, and package manifests:
 
 ```bash
-python tools/run_autoscientist_bench.py --limit 100 --replicates-per-case 3 --ablations full no_memory no_medea no_public_tools
+python tools/run_autoscientist_bench.py --limit 100 --replicates-per-case 3 --ablations full no_memory no_public_tools no_sciflow
 python tools/train_neural_workflow_policy.py --artifact-dir outputs/models --epochs 120
 python tools/package_policy_model.py --output-dir outputs/packages --replay-limit 50 --graph-limit 2000
 ```

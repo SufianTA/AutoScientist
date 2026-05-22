@@ -21,14 +21,15 @@ def test_objective_classifier_routes_therapeutic_safety_to_txagent() -> None:
     assert classification["risk_level"] == "high"
 
 
-def test_objective_classifier_routes_omics_to_medea() -> None:
+def test_objective_classifier_routes_omics_to_public_biomedical_context() -> None:
     classification = classify_objective(
         "Nominate a target from single-cell transcriptomics for rheumatoid arthritis synovial fibroblasts.",
         {"primary_genes": [], "diseases": ["rheumatoid arthritis"]},
     ).model_dump()
 
     assert "omics_analysis" in classification["task_types"]
-    assert "medea" in classification["required_capabilities"]
+    assert "public_biomedical" in classification["required_capabilities"]
+    assert "tooluniverse" in classification["required_capabilities"]
 
 
 def test_evidence_claim_abstention_and_report_evaluation_flow() -> None:
