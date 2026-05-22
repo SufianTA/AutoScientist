@@ -6,6 +6,7 @@ from app.services.scientific_planning import (
     fallback_evaluation_criteria,
     type_evidence_items,
 )
+from agents.app.langgraph_workflow import LangGraphScientificWorkflow
 
 
 def test_objective_classifier_routes_therapeutic_safety_to_txagent() -> None:
@@ -30,6 +31,18 @@ def test_objective_classifier_routes_omics_to_public_biomedical_context() -> Non
     assert "omics_analysis" in classification["task_types"]
     assert "public_biomedical" in classification["required_capabilities"]
     assert "tooluniverse" in classification["required_capabilities"]
+
+
+def test_workflow_heuristic_extracts_lowercase_public_benchmark_diseases() -> None:
+    workflow = LangGraphScientificWorkflow()
+
+    context = workflow._heuristic_context(
+        "Design the next experiments to test a bounded CFTR hypothesis in cystic fibrosis; "
+        "include expected information gain, failure modes, provenance, and public evidence requirements."
+    )
+
+    assert context["primary_genes"] == ["CFTR"]
+    assert context["diseases"] == ["cystic fibrosis"]
 
 
 def test_evidence_claim_abstention_and_report_evaluation_flow() -> None:

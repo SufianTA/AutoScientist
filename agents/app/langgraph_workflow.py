@@ -508,13 +508,18 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         ]
         diseases: list[str] = []
         for pattern in [
-            r"for ([A-Z][A-Za-z0-9 /-]+?)(?:\.|,|;| and | with | by |$)",
-            r"driven ([A-Z][A-Za-z0-9 /-]+?)(?:\.|,|;| and | with | by |$)",
-            r"in ([A-Z][A-Za-z0-9 /-]+?)(?:\.|,|;| and | with | by |$)",
+            r"\bfor\s+[A-Z0-9-]{2,12}\s+in\s+([^.;,]+)",
+            r"\bhypothesis\s+in\s+([^.;,]+)",
+            r"\bfor\s+([^.;,]+)",
+            r"\bin\s+([^.;,]+)",
+            r"\bdriven\s+([^.;,]+)",
         ]:
-            match = re.search(pattern, objective)
-            if match:
-                diseases.append(match.group(1).strip())
+            match = re.search(pattern, objective, flags=re.I)
+            if not match:
+                continue
+            disease = self._clean_disease_phrase(match.group(1))
+            if disease:
+                diseases.append(disease)
         candidate_terms = re.findall(
             r"\b[A-Za-z][A-Za-z0-9-]{3,}(?:mab|nib|tinib|limus|siran|statin|caftor)\b",
             objective,
@@ -541,6 +546,26 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "analysis_goal": objective,
             "extraction_method": "heuristic",
         }
+
+    def _clean_disease_phrase(self, value: str) -> str:
+        cleaned = re.split(
+            r"\b(?:using|use|include|including|require|with|by|from)\b",
+            value,
+            maxsplit=1,
+            flags=re.I,
+        )[0].strip(" .;:,")
+        gene_then_disease = re.match(r"^([A-Z0-9-]{2,12})\s+in\s+(.+)$", cleaned, flags=re.I)
+        if gene_then_disease:
+            cleaned = gene_then_disease.group(2).strip(" .;:,")
+        cell_context = re.search(r"\s+in\s+(.+)$", cleaned, flags=re.I)
+        if cell_context and re.search(r"\b(cell|cells|fibroblast|synovial|tissue|organoid)\b", cell_context.group(1), flags=re.I):
+            cleaned = cleaned[: cell_context.start()].strip(" .;:,")
+        cleaned = re.sub(r"^(the|a|an)\s+", "", cleaned, flags=re.I)
+        if not cleaned or len(cleaned.split()) > 8:
+            return ""
+        if re.fullmatch(r"[A-Z0-9-]{2,12}", cleaned):
+            return ""
+        return cleaned
 
     def _normalize_context(self, context: dict[str, Any], objective: str) -> dict[str, Any]:
         genes = self._string_list(context.get("primary_genes"))
