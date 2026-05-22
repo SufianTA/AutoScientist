@@ -6,11 +6,19 @@ VENV="${VENV:-/opt/autosci-venv}"
 LIMIT="${LIMIT:-100}"
 REPLICATES="${REPLICATES:-3}"
 EPOCHS="${EPOCHS:-120}"
-LLM_PROVIDER="${LLM_PROVIDER:-mock}"
-LLM_MODEL="${LLM_MODEL:-mock-scientist}"
+LLM_PROVIDER="${LLM_PROVIDER:-auto}"
+LLM_MODEL="${LLM_MODEL:-}"
 LLM_API_KEY_ENV_VAR="${LLM_API_KEY_ENV_VAR:-}"
-REQUIRE_REAL_LLM="${REQUIRE_REAL_LLM:-0}"
+REQUIRE_REAL_LLM="${REQUIRE_REAL_LLM:-1}"
 MEDEA_PYTHON="${MEDEA_PYTHON:-}"
+MEDEA_SMOKE_ONLY="${MEDEA_SMOKE_ONLY:-0}"
+STRICT_REAL="${STRICT_REAL:-1}"
+CASE_IDS="${CASE_IDS:-}"
+TEMPLATE_IDS="${TEMPLATE_IDS:-}"
+MIN_FULL_COMPLETION_RATE="${MIN_FULL_COMPLETION_RATE:-1.0}"
+MIN_FULL_MEAN_SCORE="${MIN_FULL_MEAN_SCORE:-85}"
+MIN_NEURAL_HOLDOUT_TOP1="${MIN_NEURAL_HOLDOUT_TOP1:-0.5}"
+MIN_STATE_GRAPH_NODES="${MIN_STATE_GRAPH_NODES:-1}"
 DRY_RUN="${AUTOSCI_DRY_RUN:-0}"
 
 run() {
@@ -44,14 +52,41 @@ fi
 
 MEDEA_FLAGS=()
 if [ -n "$MEDEA_PYTHON" ]; then
-  MEDEA_FLAGS+=(--medea-python "$MEDEA_PYTHON" --medea-smoke-only)
+  MEDEA_FLAGS+=(--medea-python "$MEDEA_PYTHON")
+  if [ "$MEDEA_SMOKE_ONLY" = "1" ]; then
+    MEDEA_FLAGS+=(--medea-smoke-only)
+  fi
 else
   MEDEA_FLAGS+=(--disable-medea)
+fi
+
+STRICT_FLAGS=(
+  --min-full-completion-rate "$MIN_FULL_COMPLETION_RATE"
+  --min-full-mean-score "$MIN_FULL_MEAN_SCORE"
+  --require-expected-integrations
+  --min-neural-holdout-top1 "$MIN_NEURAL_HOLDOUT_TOP1"
+  --min-state-graph-nodes "$MIN_STATE_GRAPH_NODES"
+)
+if [ "$STRICT_REAL" = "1" ]; then
+  STRICT_FLAGS+=(--strict-real-run --forbid-medea-smoke)
+fi
+
+CASE_FLAGS=()
+if [ -n "$CASE_IDS" ]; then
+  # shellcheck disable=SC2206
+  CASE_ID_ARRAY=($CASE_IDS)
+  CASE_FLAGS+=(--case-ids "${CASE_ID_ARRAY[@]}")
+fi
+if [ -n "$TEMPLATE_IDS" ]; then
+  # shellcheck disable=SC2206
+  TEMPLATE_ID_ARRAY=($TEMPLATE_IDS)
+  CASE_FLAGS+=(--template-ids "${TEMPLATE_ID_ARRAY[@]}")
 fi
 
 run python tools/run_autoscientist_bench.py \
   --limit "$LIMIT" \
   --replicates-per-case "$REPLICATES" \
+  "${CASE_FLAGS[@]}" \
   --ablations full no_memory no_medea no_public_tools no_sciflow \
   --enable-sciflow-policy \
   --train-neural-policy \
@@ -60,7 +95,8 @@ run python tools/run_autoscientist_bench.py \
   --llm-model "$LLM_MODEL" \
   --llm-api-key-env-var "$LLM_API_KEY_ENV_VAR" \
   "${REAL_LLM_FLAGS[@]}" \
-  "${MEDEA_FLAGS[@]}"
+  "${MEDEA_FLAGS[@]}" \
+  "${STRICT_FLAGS[@]}"
 
 run python tools/collect_review_package.py
 

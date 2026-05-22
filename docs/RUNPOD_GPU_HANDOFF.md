@@ -76,29 +76,43 @@ If using Medea:
 
 ## Full GPU Run
 
-Mock-provider scale run:
+The RunPod script is intentionally strict by default: it uses a real provider (`LLM_PROVIDER=auto`),
+requires `--require-real-llm`, fails if required integrations do not execute, and fails if the
+full runtime does not meet the configured completion, score, state-graph, and model gates.
+
+Strict live acceptance run:
 
 ```bash
 cd /workspace/AutoScientist
-bash infra/runpod/run_gpu_benchmark.sh
-```
-
-Live frontier-model subset:
-
-```bash
 LLM_PROVIDER=anthropic \
 LLM_MODEL=claude-sonnet-4-6 \
 LLM_API_KEY_ENV_VAR=ANTHROPIC_API_KEY \
-REQUIRE_REAL_LLM=1 \
 LIMIT=12 \
 REPLICATES=1 \
 bash infra/runpod/run_gpu_benchmark.sh
 ```
 
-Medea adapter smoke included:
+Target Medea explicitly with an omics case:
+
+```bash
+LLM_PROVIDER=anthropic \
+LLM_MODEL=claude-sonnet-4-6 \
+LLM_API_KEY_ENV_VAR=ANTHROPIC_API_KEY \
+MEDEA_PYTHON=/opt/medea-py310/bin/python \
+CASE_IDS="il6_rheumatoid_arthritis" \
+TEMPLATE_IDS="experiment_design" \
+LIMIT=1 \
+REPLICATES=1 \
+bash infra/runpod/run_gpu_benchmark.sh
+```
+
+If MedeaDB is not installed yet and you only want an adapter-level check, opt into smoke mode and
+turn off strict real gating for that run:
 
 ```bash
 MEDEA_PYTHON=/opt/medea-py310/bin/python \
+MEDEA_SMOKE_ONLY=1 \
+STRICT_REAL=0 \
 LIMIT=12 \
 REPLICATES=1 \
 bash infra/runpod/run_gpu_benchmark.sh
@@ -126,6 +140,7 @@ Stop the machine after:
 
 - preflight is not failing,
 - benchmark summary exists,
+- `benchmark_summary.md` says `Realness Gates` passed,
 - review package zip exists,
 - secret scan in `package_result.json` reports zero matches,
 - the zip has been copied or pushed somewhere durable.
@@ -134,10 +149,11 @@ Stop the machine after:
 
 The result is worth sharing if:
 
-- `full` completes most runs,
+- `full` completes all strict-gated runs,
 - `full` beats `no_memory` on replay/provenance value,
 - `full` beats `no_public_tools` on grounding value,
 - `full` records SciFlow controller advice after a policy exists,
+- every manifest-declared expected integration executes for the matching task,
 - the state graph has hypotheses, entities, experiments, tools, and replay nodes,
 - the package includes a model card and replay examples.
 

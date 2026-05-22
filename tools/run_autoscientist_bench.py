@@ -43,11 +43,23 @@ def expand_tasks(
     replicates_per_case: int = 1,
     offline_public_context: bool = False,
     public_timeout_seconds: int = 8,
+    case_ids: list[str] | None = None,
+    template_ids: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     templates = manifest.get("task_templates", [])
     seed_cases = manifest.get("seed_cases", [])
     if not templates or not seed_cases:
         raise ValueError("Manifest must contain task_templates and seed_cases.")
+    selected_case_ids = set(case_ids or [])
+    selected_template_ids = set(template_ids or [])
+    if selected_case_ids:
+        seed_cases = [case for case in seed_cases if case.get("id") in selected_case_ids]
+    if selected_template_ids:
+        templates = [template for template in templates if template.get("id") in selected_template_ids]
+    if not seed_cases:
+        raise ValueError(f"No seed cases matched requested case ids: {sorted(selected_case_ids)}")
+    if not templates:
+        raise ValueError(f"No task templates matched requested template ids: {sorted(selected_template_ids)}")
     tasks: list[dict[str, Any]] = []
     replicate_count = max(1, int(replicates_per_case))
     for case in seed_cases:
@@ -181,6 +193,7 @@ def json_post(url: str, payload: dict[str, Any], *, timeout_seconds: int) -> dic
 
 def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
     load_environment()
+    validate_runtime_request(args)
     started = time.time()
     output_dir = Path(args.output_dir) / time.strftime("%Y%m%d_%H%M%S", time.gmtime(started))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -191,6 +204,8 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
         replicates_per_case=args.replicates_per_case,
         offline_public_context=args.offline_public_context,
         public_timeout_seconds=args.public_timeout_seconds,
+        case_ids=args.case_ids,
+        template_ids=args.template_ids,
     )
     tasks_path = output_dir / "benchmark_tasks.json"
     tasks_path.write_text(json.dumps({"manifest": manifest, "tasks": tasks}, indent=2), encoding="utf-8")
@@ -231,6 +246,9 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
         output_dir=output_dir,
         elapsed_seconds=time.time() - started,
     )
+    summary["realness_gates"] = evaluate_realness_gates(summary, results, args)
+    if not summary["realness_gates"]["passed"]:
+        summary["status"] = "failed_gates"
     summary_path = output_dir / "benchmark_summary.json"
     summary_md_path = output_dir / "benchmark_summary.md"
     summary["summary_path"] = str(summary_path)
@@ -238,6 +256,27 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
     summary_path.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     summary_md_path.write_text(render_summary_markdown(summary), encoding="utf-8")
     return summary
+
+
+def validate_runtime_request(args: argparse.Namespace) -> None:
+    errors = []
+    if args.strict_real_run:
+        if args.llm_provider == "mock":
+            errors.append("--strict-real-run requires --llm-provider auto/openai/anthropic/gemini/local_http/openai_compatible, not mock.")
+        if not args.require_real_llm:
+            errors.append("--strict-real-run requires --require-real-llm.")
+        if args.offline_public_context:
+            errors.append("--strict-real-run requires live public context; remove --offline-public-context.")
+        if not args.enable_sciflow_policy:
+            errors.append("--strict-real-run requires --enable-sciflow-policy.")
+        if not args.train_neural_policy:
+            errors.append("--strict-real-run requires --train-neural-policy.")
+    if (args.strict_real_run or args.forbid_medea_smoke) and args.medea_python and not args.disable_medea and args.medea_smoke_only:
+        errors.append("Medea smoke mode is not allowed in a strict real run; remove --medea-smoke-only.")
+    if args.require_full_integrations and "medea" in args.require_full_integrations and not args.medea_python:
+        errors.append("--require-full-integrations medea requires --medea-python or MEDEA_PYTHON.")
+    if errors:
+        raise SystemExit("Real-run configuration failed:\n- " + "\n- ".join(errors))
 
 
 def validate_ablations(ablations: list[str]) -> list[str]:
@@ -534,6 +573,136 @@ def build_benchmark_summary(
     }
 
 
+def evaluate_realness_gates(
+    summary: dict[str, Any],
+    results: list[dict[str, Any]],
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    required_integrations = set(args.require_full_integrations or [])
+    if args.strict_real_run:
+        required_integrations.update({"public_biomedical", "tooluniverse", "local_board", "sciflow_policy", "memory_replay"})
+    full_results = [item for item in results if item.get("ablation") == "full"]
+    full_summary = summary.get("summary_by_ablation", {}).get("full", {})
+    runs = max(1, int(full_summary.get("runs") or len(full_results) or 1))
+    completion_rate = float(full_summary.get("completed", 0)) / runs
+    min_completion = args.min_full_completion_rate
+    min_score = args.min_full_mean_score
+    min_top1 = args.min_neural_holdout_top1
+    min_nodes = args.min_state_graph_nodes
+    if args.strict_real_run:
+        min_completion = max(min_completion, 1.0)
+        min_score = max(min_score, 85.0)
+        min_top1 = max(min_top1, 0.5)
+        min_nodes = max(min_nodes, 1)
+
+    failures: list[str] = []
+    result_failures: list[dict[str, Any]] = []
+    mean_score = float(full_summary.get("mean_score") or 0.0)
+    if completion_rate < min_completion:
+        failures.append(f"Full-run completion rate {completion_rate:.3f} is below required {min_completion:.3f}.")
+    if mean_score < min_score:
+        failures.append(f"Full-run mean score {mean_score:.2f} is below required {min_score:.2f}.")
+
+    for result in full_results:
+        missing = missing_required_integrations(result, required_integrations)
+        if args.require_expected_integrations:
+            missing.extend(missing_expected_integrations(result))
+        missing = sorted(set(missing))
+        if missing:
+            result_failures.append(
+                {
+                    "task_id": result.get("task", {}).get("id"),
+                    "run_id": result.get("run_id"),
+                    "missing": missing,
+                    "artifact_path": result.get("artifact_path"),
+                }
+            )
+    if result_failures:
+        failures.append(f"{len(result_failures)} full result(s) are missing required integrations.")
+
+    neural_policy = summary.get("neural_policy") or {}
+    metrics = neural_policy.get("metrics") or {}
+    top1 = metrics.get("top1_holdout_accuracy")
+    if min_top1 > 0:
+        if top1 is None:
+            failures.append("Neural SciFlow Policy metrics are missing.")
+        elif float(top1) < min_top1:
+            failures.append(f"Neural SciFlow Policy holdout top-1 {float(top1):.4f} is below required {min_top1:.4f}.")
+
+    state_nodes = int(summary.get("state_graph", {}).get("summary", {}).get("nodes") or 0)
+    if state_nodes < min_nodes:
+        failures.append(f"SciState Graph node count {state_nodes} is below required {min_nodes}.")
+
+    if args.strict_real_run and args.medea_python and not args.disable_medea and args.medea_smoke_only:
+        failures.append("Medea was configured in smoke mode during a strict real run.")
+    package = summary.get("package") or {}
+    if args.strict_real_run and package.get("status") == "skipped":
+        failures.append(f"Policy package was skipped: {package.get('reason')}")
+
+    return {
+        "passed": not failures,
+        "strict_real_run": bool(args.strict_real_run),
+        "required_full_integrations": sorted(required_integrations),
+        "require_expected_integrations": bool(args.require_expected_integrations),
+        "min_full_completion_rate": min_completion,
+        "observed_full_completion_rate": round(completion_rate, 4),
+        "min_full_mean_score": min_score,
+        "observed_full_mean_score": mean_score,
+        "min_neural_holdout_top1": min_top1,
+        "observed_neural_holdout_top1": top1,
+        "min_state_graph_nodes": min_nodes,
+        "observed_state_graph_nodes": state_nodes,
+        "failures": failures,
+        "result_failures": result_failures,
+    }
+
+
+def missing_required_integrations(result: dict[str, Any], required_integrations: set[str]) -> list[str]:
+    integrations = result.get("integrations", {})
+    missing = []
+    for name in sorted(required_integrations):
+        if name == "public_biomedical":
+            if not integrations.get("public_biomedical", {}).get("executed"):
+                missing.append(name)
+        elif name == "tooluniverse":
+            if not integrations.get("tooluniverse", {}).get("executed"):
+                missing.append(name)
+        elif name == "medea":
+            if not integrations.get("medea", {}).get("executed"):
+                missing.append(name)
+        elif name == "qworld":
+            if not integrations.get("qworld", {}).get("executed"):
+                missing.append(name)
+        elif name == "local_board":
+            if not integrations.get("local_board", {}).get("executed"):
+                missing.append(name)
+        elif name == "sciflow_policy":
+            if result.get("sciflow_policy", {}).get("status") != "success":
+                missing.append(name)
+        elif name == "memory_replay":
+            if not result.get("replay", {}).get("available"):
+                missing.append(name)
+        else:
+            missing.append(f"unknown:{name}")
+    return missing
+
+
+def missing_expected_integrations(result: dict[str, Any]) -> list[str]:
+    expected = set(result.get("task", {}).get("expected_capabilities") or [])
+    mapped = set()
+    if "public_biomedical" in expected:
+        mapped.add("public_biomedical")
+    if "tooluniverse" in expected:
+        mapped.add("tooluniverse")
+    if "medea" in expected:
+        mapped.add("medea")
+    if "qworld" in expected:
+        mapped.add("qworld")
+    if "sciflow_policy" in expected:
+        mapped.add("sciflow_policy")
+    return missing_required_integrations(result, mapped)
+
+
 def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
     scores = [item["value_assessment"]["score"] for item in results]
     completed = [item for item in results if item.get("status") == "completed"]
@@ -596,8 +765,11 @@ def top_results(results: list[dict[str, Any]], *, ablation: str) -> list[dict[st
 def recommended_gpu_command() -> str:
     return (
         "python tools/run_autoscientist_bench.py --limit 100 --replicates-per-case 3 "
-        "--ablations full no_memory no_medea no_public_tools no_sciflow --enable-sciflow-policy "
-        "--train-neural-policy --neural-epochs 120"
+        "--ablations full no_memory no_medea no_public_tools no_sciflow "
+        "--llm-provider anthropic --llm-model claude-sonnet-4-6 --llm-api-key-env-var ANTHROPIC_API_KEY "
+        "--enable-sciflow-policy --train-neural-policy --neural-epochs 120 --require-real-llm --strict-real-run "
+        "--require-expected-integrations --min-full-completion-rate 1.0 --min-full-mean-score 85 "
+        "--min-neural-holdout-top1 0.5 --min-state-graph-nodes 1"
     )
 
 
@@ -631,7 +803,40 @@ def render_summary_markdown(summary: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Full vs Ablation Deltas", "", "```json"])
     lines.append(json.dumps(summary.get("full_vs_ablation_deltas", {}), indent=2))
-    lines.extend(["```", "", "## Policy Package", ""])
+    lines.extend(["```", "", "## Realness Gates", ""])
+    gates = summary.get("realness_gates", {})
+    if gates:
+        lines.append(f"- Passed: `{gates.get('passed')}`")
+        lines.append(f"- Strict real run: `{gates.get('strict_real_run')}`")
+        lines.append(f"- Required full integrations: `{', '.join(gates.get('required_full_integrations', [])) or 'none'}`")
+        lines.append(
+            "- Full completion: "
+            f"`{gates.get('observed_full_completion_rate')}` / required `{gates.get('min_full_completion_rate')}`"
+        )
+        lines.append(
+            "- Full mean score: "
+            f"`{gates.get('observed_full_mean_score')}` / required `{gates.get('min_full_mean_score')}`"
+        )
+        if gates.get("min_neural_holdout_top1"):
+            lines.append(
+                "- Neural holdout top-1: "
+                f"`{gates.get('observed_neural_holdout_top1')}` / required `{gates.get('min_neural_holdout_top1')}`"
+            )
+        if gates.get("failures"):
+            lines.append("")
+            lines.append("Gate failures:")
+            lines.extend(f"- {failure}" for failure in gates["failures"])
+        if gates.get("result_failures"):
+            lines.append("")
+            lines.append("Result-level failures:")
+            for failure in gates["result_failures"][:20]:
+                lines.append(
+                    f"- `{failure.get('task_id')}` / `{failure.get('run_id')}` missing "
+                    f"`{', '.join(failure.get('missing', []))}`"
+                )
+    else:
+        lines.append("- No hard gates requested.")
+    lines.extend(["", "## Policy Package", ""])
     if summary.get("trained_policy"):
         policy = summary["trained_policy"]
         lines.append(f"- Transparent policy: `{policy['artifact_path']}`")
@@ -673,6 +878,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--output-dir", default="outputs/autoscientist_bench")
     parser.add_argument("--limit", type=int, default=6)
     parser.add_argument("--replicates-per-case", type=int, default=1)
+    parser.add_argument("--case-ids", nargs="*", default=[])
+    parser.add_argument("--template-ids", nargs="*", default=[])
     parser.add_argument("--ablations", nargs="*", default=["full", "no_memory", "no_public_tools"])
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--offline-public-context", action="store_true")
@@ -691,6 +898,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--medea-python", default="")
     parser.add_argument("--disable-medea", action="store_true")
     parser.add_argument("--medea-smoke-only", action="store_true")
+    parser.add_argument("--forbid-medea-smoke", action="store_true")
     parser.add_argument("--medea-debate-rounds", type=int, default=0)
     parser.add_argument("--medea-timeout-seconds", type=int, default=1200)
     parser.add_argument("--medea-subprocess-timeout-seconds", type=int, default=180)
@@ -708,6 +916,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--skip-package", action="store_true")
     parser.add_argument("--replay-limit", type=int, default=20)
     parser.add_argument("--graph-limit", type=int, default=1000)
+    parser.add_argument("--strict-real-run", action="store_true")
+    parser.add_argument("--min-full-completion-rate", type=float, default=0.0)
+    parser.add_argument("--min-full-mean-score", type=float, default=0.0)
+    parser.add_argument("--require-full-integrations", nargs="*", default=[])
+    parser.add_argument("--require-expected-integrations", action="store_true")
+    parser.add_argument("--min-neural-holdout-top1", type=float, default=0.0)
+    parser.add_argument("--min-state-graph-nodes", type=int, default=0)
     return parser.parse_args(argv)
 
 
@@ -726,7 +941,7 @@ def main(argv: list[str] | None = None) -> int:
             indent=2,
         )
     )
-    return 0
+    return 0 if summary["status"] == "completed" else 1
 
 
 if __name__ == "__main__":

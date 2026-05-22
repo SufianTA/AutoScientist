@@ -99,16 +99,45 @@ Use `--llm-provider gemini --llm-api-key-env-var GEMINI_API_KEY` if testing Gemi
 ## RunPod GPU Scale-Up
 
 Only rent the H100 after the CPU run produces valid artifacts and the summary shows all full runs
-completed. Then scale:
+completed. For a real acceptance run, require hard gates:
 
 ```bash
 python tools/run_autoscientist_bench.py \
   --limit 100 \
   --replicates-per-case 3 \
   --ablations full no_memory no_medea no_public_tools no_sciflow \
+  --llm-provider anthropic \
+  --llm-model claude-sonnet-4-6 \
+  --llm-api-key-env-var ANTHROPIC_API_KEY \
+  --require-real-llm \
   --enable-sciflow-policy \
   --train-neural-policy \
-  --neural-epochs 120
+  --neural-epochs 120 \
+  --strict-real-run \
+  --require-expected-integrations \
+  --min-full-completion-rate 1.0 \
+  --min-full-mean-score 85 \
+  --min-neural-holdout-top1 0.5 \
+  --min-state-graph-nodes 1
+```
+
+To force an omics/Medea task instead of relying on the first tasks in the manifest:
+
+```bash
+python tools/run_autoscientist_bench.py \
+  --case-ids il6_rheumatoid_arthritis \
+  --template-ids experiment_design \
+  --limit 1 \
+  --ablations full \
+  --llm-provider anthropic \
+  --llm-model claude-sonnet-4-6 \
+  --llm-api-key-env-var ANTHROPIC_API_KEY \
+  --require-real-llm \
+  --medea-python /opt/medea-py310/bin/python \
+  --enable-sciflow-policy \
+  --train-neural-policy \
+  --strict-real-run \
+  --require-expected-integrations
 ```
 
 Then package a shareable bundle:
@@ -126,9 +155,11 @@ Open `benchmark_summary.md` first.
 
 Key checks:
 
+- `Realness Gates` should say `Passed: true` for strict live runs.
 - `full` mean score should be higher than `no_memory` and `no_public_tools`.
 - `full` should have replay runs and public-tool runs.
 - `full` should show controller advice runs once a SciFlow model exists.
+- tasks whose manifest declares `medea`, `tooluniverse`, or `sciflow_policy` should show those integrations executed.
 - `scistate_graph.json` should contain hypotheses, entities, experiments, replay nodes, and tool nodes.
 - The package zip should include a model card, manifest, state graph, and replay examples.
 
