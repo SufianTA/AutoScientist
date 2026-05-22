@@ -85,9 +85,19 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def result_tool_calls(result: dict[str, Any]) -> list[dict[str, Any]]:
+    calls = result.get("provenance", {}).get("tool_calls") or result.get("tool_calls") or []
+    return calls if isinstance(calls, list) else []
+
+
+def result_agent_steps(result: dict[str, Any]) -> list[dict[str, Any]]:
+    steps = result.get("provenance", {}).get("agent_steps") or result.get("agent_steps") or []
+    return steps if isinstance(steps, list) else []
+
+
 def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> dict[str, Any]:
-    tool_calls = result.get("provenance", {}).get("tool_calls", [])
-    steps = result.get("provenance", {}).get("agent_steps", [])
+    tool_calls = result_tool_calls(result)
+    steps = result_agent_steps(result)
     names = {call.get("tool_name") for call in tool_calls}
     sources = {call.get("tool_source") for call in tool_calls}
     qworld_step = next(
@@ -128,13 +138,50 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
     }
 
 
+def report_experiments(report: dict[str, Any]) -> list[dict[str, Any]]:
+    direct = report.get("experiments") or report.get("next_experiments")
+    if isinstance(direct, list) and direct:
+        return direct
+    for post in report.get("board_posts", []):
+        if post.get("post_type") != "hypothesis":
+            continue
+        content = post.get("content", {})
+        experiments = content.get("next_experiments")
+        if isinstance(experiments, list):
+            return experiments
+    return []
+
+
+def clean_tool_inputs(result: dict[str, Any]) -> bool:
+    for call in result_tool_calls(result):
+        tool_name = str(call.get("tool_name") or "")
+        if "pubmed" not in tool_name.lower():
+            continue
+        payload = call.get("input") or call.get("args") or call.get("parameters") or {}
+        query = payload.get("query") if isinstance(payload, dict) else ""
+        if not query:
+            continue
+        if not isinstance(query, str):
+            return False
+        stripped = query.strip()
+        if not stripped:
+            return False
+        lowered = stripped.lower()
+        if stripped.startswith("{") or stripped.startswith("["):
+            return False
+        if any(key in lowered for key in ('"primary_genes"', '"diseases"', '"pubmed_queries"')):
+            return False
+    return True
+
+
 def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[str, Any]:
     report = result.get("report", {})
     evidence = report.get("evidence", [])
     hypothesis = report.get("hypothesis", {})
-    experiments = report.get("experiments", [])
+    experiments = report_experiments(report)
     guardrails = report.get("guardrails", [])
-    trace = result.get("provenance", {})
+    steps = result_agent_steps(result)
+    tool_calls = result_tool_calls(result)
     checks = {
         "completed_run": result.get("status") == "completed",
         "nonempty_hypothesis": bool(hypothesis.get("title") and hypothesis.get("text")),
@@ -142,23 +189,25 @@ def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[st
         "scored_evidence": any(item.get("support_score") is not None for item in evidence),
         "experiments_proposed": len(experiments) >= 1,
         "guardrails_present": len(guardrails) >= 1,
-        "auditable_trace": bool(trace.get("agent_steps") and trace.get("tool_calls")),
+        "auditable_trace": bool(steps and tool_calls),
         "live_data_executed": bool(
             integrations.get("public_biomedical", {}).get("executed")
             or integrations.get("tooluniverse", {}).get("executed")
         ),
+        "clean_tool_inputs": clean_tool_inputs(result),
         "board_written": bool(integrations.get("local_board", {}).get("executed")),
     }
     weights = {
-        "completed_run": 15,
-        "nonempty_hypothesis": 10,
+        "completed_run": 12,
+        "nonempty_hypothesis": 8,
         "evidence_collected": 12,
-        "scored_evidence": 10,
+        "scored_evidence": 8,
         "experiments_proposed": 12,
-        "guardrails_present": 10,
+        "guardrails_present": 8,
         "auditable_trace": 12,
         "live_data_executed": 12,
-        "board_written": 7,
+        "clean_tool_inputs": 10,
+        "board_written": 6,
     }
     score = sum(weights[name] for name, passed in checks.items() if passed)
     return {
@@ -227,7 +276,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
         "hypothesis": result.get("report", {}).get("hypothesis", {}),
         "evidence_count": len(result.get("report", {}).get("evidence", [])),
         "guardrails": result.get("report", {}).get("guardrails", []),
-        "experiments": result.get("report", {}).get("experiments", []),
+        "experiments": report_experiments(result.get("report", {})),
         "tool_calls": result.get("provenance", {}).get("tool_calls", []),
     }
 

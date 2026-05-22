@@ -71,6 +71,11 @@ def build_report(run_id: str, db: Session) -> dict:
         }
         for item in evidence
     ]
+    hypothesis_post_content = next(
+        (post.content_json for post in posts if post.post_type == "hypothesis"),
+        {},
+    )
+    next_experiments = hypothesis_post_content.get("next_experiments", [])
     if local_only:
         guardrails = [
             "Candidate hypothesis only.",
@@ -104,34 +109,14 @@ def build_report(run_id: str, db: Session) -> dict:
             }
             for post in posts
         ],
-        "objective_classification": next(
-            (
-                post.content_json.get("objective_classification", {})
-                for post in posts
-                if post.post_type == "hypothesis"
-            ),
-            {},
-        ),
-        "capability_plan": next(
-            (post.content_json.get("capability_plan", {}) for post in posts if post.post_type == "hypothesis"),
-            {},
-        ),
-        "evaluation_criteria": next(
-            (post.content_json.get("evaluation_criteria", []) for post in posts if post.post_type == "hypothesis"),
-            [],
-        ),
-        "report_evaluation": next(
-            (post.content_json.get("report_evaluation", {}) for post in posts if post.post_type == "hypothesis"),
-            {},
-        ),
-        "claim_graph": next(
-            (post.content_json.get("claim_graph", {}) for post in posts if post.post_type == "hypothesis"),
-            {},
-        ),
-        "abstention": next(
-            (post.content_json.get("abstention", {}) for post in posts if post.post_type == "hypothesis"),
-            {},
-        ),
+        "objective_classification": hypothesis_post_content.get("objective_classification", {}),
+        "capability_plan": hypothesis_post_content.get("capability_plan", {}),
+        "evaluation_criteria": hypothesis_post_content.get("evaluation_criteria", []),
+        "report_evaluation": hypothesis_post_content.get("report_evaluation", {}),
+        "claim_graph": hypothesis_post_content.get("claim_graph", {}),
+        "abstention": hypothesis_post_content.get("abstention", {}),
+        "next_experiments": next_experiments,
+        "experiments": next_experiments,
         "guardrails": guardrails,
     }
 

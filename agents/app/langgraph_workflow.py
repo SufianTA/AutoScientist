@@ -589,23 +589,18 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         )
         explicit_genes = self._explicit_gene_symbols(objective)
         genes = list(dict.fromkeys([*explicit_genes, *genes]))[:4]
+        pubmed_queries = self._clean_pubmed_queries(self._string_list(context.get("pubmed_queries"))[:4])
         normalized = {
             "primary_genes": genes,
             "diseases": diseases[:2],
             "candidate_interventions": self._string_list(context.get("candidate_interventions"))[:6],
             "pathways": self._string_list(context.get("pathways"))[:4],
-            "pubmed_queries": self._string_list(context.get("pubmed_queries"))[:4],
+            "pubmed_queries": pubmed_queries,
             "analysis_goal": str(context.get("analysis_goal") or objective),
             "extraction_method": context.get("extraction_method", "llm"),
         }
         if not normalized["pubmed_queries"]:
-            pieces = normalized["primary_genes"] + normalized["diseases"] + normalized["pathways"]
-            base_query = " ".join(pieces) or objective[:180]
-            normalized["pubmed_queries"] = [
-                f"{base_query} mechanism",
-                f"{base_query} therapeutic safety",
-                f"{base_query} candidate intervention",
-            ]
+            normalized["pubmed_queries"] = self._default_pubmed_queries(normalized, objective)
         else:
             normalized["pubmed_queries"] = [
                 re.sub(r"([A-Z0-9]+)\s+\1-driven\s+", r"\1 ", query, flags=re.I)
@@ -621,6 +616,51 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if isinstance(value, list):
             return [str(item).strip() for item in value if str(item).strip()]
         return []
+
+    def _clean_pubmed_queries(self, queries: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for query in queries:
+            normalized = re.sub(r"\s+", " ", str(query)).strip()
+            if not normalized:
+                continue
+            if self._looks_like_serialized_context(normalized):
+                continue
+            if len(normalized) < 3 or len(normalized) > 180:
+                continue
+            cleaned.append(normalized)
+        return list(dict.fromkeys(cleaned))[:4]
+
+    def _looks_like_serialized_context(self, value: str) -> bool:
+        stripped = value.strip()
+        if stripped.startswith("{") or stripped.startswith("["):
+            return True
+        lowered = stripped.lower()
+        context_keys = (
+            '"primary_genes"',
+            '"diseases"',
+            '"candidate_interventions"',
+            '"pathways"',
+            '"pubmed_queries"',
+            "'primary_genes'",
+            "'diseases'",
+        )
+        if any(key in lowered for key in context_keys):
+            return True
+        return stripped.count("{") + stripped.count("}") + stripped.count("[") + stripped.count("]") >= 2
+
+    def _default_pubmed_queries(self, context: dict[str, Any], objective: str) -> list[str]:
+        genes = context.get("primary_genes", [])
+        diseases = context.get("diseases", [])
+        pathways = context.get("pathways", [])
+        pieces = [*genes, *diseases] or [*genes, *pathways]
+        base_query = " ".join(str(piece) for piece in pieces if str(piece).strip()).strip()
+        if not base_query:
+            base_query = objective[:120]
+        return [
+            f"{base_query} mechanism",
+            f"{base_query} therapeutic safety",
+            f"{base_query} candidate intervention",
+        ]
 
     def _evidence_digest(
         self,

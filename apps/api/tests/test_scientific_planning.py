@@ -45,6 +45,23 @@ def test_workflow_heuristic_extracts_lowercase_public_benchmark_diseases() -> No
     assert context["diseases"] == ["cystic fibrosis"]
 
 
+def test_workflow_rejects_serialized_context_as_pubmed_query() -> None:
+    workflow = LangGraphScientificWorkflow()
+
+    context = workflow._normalize_context(
+        {
+            "primary_genes": ["TNF"],
+            "diseases": ["rheumatoid arthritis"],
+            "pubmed_queries": ['{"primary_genes": ["TNF"], "diseases": ["rheumatoid arthritis"]}'],
+        },
+        "Assess TNF in rheumatoid arthritis using public evidence.",
+    )
+
+    assert context["pubmed_queries"]
+    assert all(not query.strip().startswith("{") for query in context["pubmed_queries"])
+    assert context["pubmed_queries"][0].startswith("TNF rheumatoid arthritis")
+
+
 def test_evidence_claim_abstention_and_report_evaluation_flow() -> None:
     evidence = type_evidence_items(
         [

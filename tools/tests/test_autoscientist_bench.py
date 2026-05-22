@@ -166,7 +166,45 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
     assert assessment["checks"]["open_targets_context"] is True
     assert assessment["checks"]["public_context_prefetched"] is True
     assert assessment["checks"]["pubmed_context"] is True
+    assert assessment["checks"]["clean_tool_inputs"] is True
+    assert assessment["scientific_quality"]["score"] == 79
     assert assessment["score"] == 100
+
+
+def test_benchmark_penalizes_serialized_pubmed_query_inputs() -> None:
+    result = {
+        "status": "completed",
+        "run_id": None,
+        "report": {
+            "hypothesis": {"title": "Candidate target", "text": "Bounded hypothesis."},
+            "evidence": [{"source": "PubMed", "support_score": 0.5}, {"source": "NCBI", "support_score": 0.4}],
+            "experiments": [{"name": "Perturbation assay"}],
+            "guardrails": ["No clinical claim."],
+            "board_posts": [{"post_type": "hypothesis"}],
+        },
+        "provenance": {
+            "agent_steps": [],
+            "tool_calls": [
+                {
+                    "tool_name": "pubmed_literature_search_tool",
+                    "tool_source": "live_public_biomedical",
+                    "input": {"query": '{"primary_genes": ["IL6"], "diseases": ["rheumatoid arthritis"]}'},
+                }
+            ],
+        },
+    }
+    integrations = {
+        "qworld": {"executed": False},
+        "public_biomedical": {"executed": True},
+        "tooluniverse": {"executed": False},
+        "local_board": {"executed": True},
+    }
+    task = {"public_context": {"mode": "offline", "open_targets_target": {}, "pubmed_gene_disease": {}}}
+
+    assessment = benchmark_value_score(result, integrations, task, "full")
+
+    assert assessment["checks"]["clean_tool_inputs"] is False
+    assert assessment["scientific_quality"]["checks"]["clean_tool_inputs"] is False
 
 
 def test_realness_gates_fail_missing_expected_public_tool() -> None:

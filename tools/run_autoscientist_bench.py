@@ -20,7 +20,13 @@ from app.services.scientific_memory import build_scientific_state_graph, train_w
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 
 from tools.package_policy_model import package_model
-from tools.run_integration_benchmark import build_run_config, summarize_integrations, value_score
+from tools.run_integration_benchmark import (
+    build_run_config,
+    report_experiments,
+    result_tool_calls,
+    summarize_integrations,
+    value_score,
+)
 
 
 DEFAULT_MANIFEST = Path("benchmarks/autoscientist_bench_v0_1.json")
@@ -331,7 +337,7 @@ def run_task(
         "hypothesis": result.get("report", {}).get("hypothesis", {}),
         "evidence_count": len(result.get("report", {}).get("evidence", [])),
         "guardrails": result.get("report", {}).get("guardrails", []),
-        "experiments": result.get("report", {}).get("experiments", []),
+        "experiments": report_experiments(result.get("report", {})),
         "tool_calls": result.get("provenance", {}).get("tool_calls", []),
     }
 
@@ -401,14 +407,68 @@ def benchmark_value_score(
     }
     bonus = sum(weight for name, weight in bonus_weights.items() if checks[name])
     score = min(100, base["score"] + bonus)
+    impact = controller_impact(result, sciflow_application)
     return {
         "score": score,
         "base_score": base["score"],
         "max_score": 100,
         "checks": checks,
-        "controller_impact": controller_impact(result, sciflow_application),
+        "scientific_quality": scientific_quality_score(result, integrations, checks, impact),
+        "controller_impact": impact,
         "interpretation": interpret_benchmark_score(score, ablation),
     }
+
+
+def scientific_quality_score(
+    result: dict[str, Any],
+    integrations: dict[str, Any],
+    checks: dict[str, bool],
+    impact: dict[str, Any],
+) -> dict[str, Any]:
+    report = result.get("report", {})
+    evidence = report.get("evidence", [])
+    experiments = report_experiments(report)
+    quality_checks = {
+        "completed_run": result.get("status") == "completed",
+        "nonempty_hypothesis": bool(report.get("hypothesis", {}).get("title") and report.get("hypothesis", {}).get("text")),
+        "evidence_depth": len(evidence) >= 5,
+        "scored_evidence": any(item.get("support_score") is not None for item in evidence),
+        "experiments_proposed": len(experiments) >= 1,
+        "clean_tool_inputs": bool(checks.get("clean_tool_inputs")),
+        "auditable_trace": bool(checks.get("auditable_trace")),
+        "live_public_tools": bool(integrations.get("public_biomedical", {}).get("executed")),
+        "tooluniverse": bool(integrations.get("tooluniverse", {}).get("executed")),
+        "controller_applied": bool(impact.get("applied")),
+    }
+    weights = {
+        "completed_run": 8,
+        "nonempty_hypothesis": 8,
+        "evidence_depth": 14,
+        "scored_evidence": 8,
+        "experiments_proposed": 14,
+        "clean_tool_inputs": 16,
+        "auditable_trace": 10,
+        "live_public_tools": 10,
+        "tooluniverse": 7,
+        "controller_applied": 5,
+    }
+    score = sum(weights[name] for name, passed in quality_checks.items() if passed)
+    return {
+        "score": score,
+        "max_score": sum(weights.values()),
+        "checks": quality_checks,
+        "interpretation": interpret_scientific_quality(score),
+    }
+
+
+def interpret_scientific_quality(score: int) -> str:
+    if score >= 85:
+        return "strong: credible scientific artifact with live evidence, clean tool use, provenance, and experiments"
+    if score >= 70:
+        return "promising: useful artifact, but one or more scientific quality gates still need tightening"
+    if score >= 50:
+        return "partial: runtime value is visible, but scientific value is not yet strong enough to claim"
+    return "weak: result is mainly orchestration or logging, not a credible scientific output yet"
 
 
 def interpret_benchmark_score(score: int, ablation: str) -> str:
@@ -435,6 +495,8 @@ def replay_status(run_id: str | None) -> dict[str, Any]:
 
 
 def extract_sciflow_advice(result: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(result.get("sciflow_policy"), dict):
+        return result["sciflow_policy"]
     for step in result.get("provenance", {}).get("agent_steps", []):
         if step.get("state_name") != "FIND_TOOLS":
             continue
@@ -445,6 +507,8 @@ def extract_sciflow_advice(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def extract_sciflow_application(result: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(result.get("sciflow_application"), dict):
+        return result["sciflow_application"]
     for step in result.get("provenance", {}).get("agent_steps", []):
         if step.get("state_name") != "EXECUTE_EVIDENCE_COLLECTION":
             continue
@@ -455,7 +519,7 @@ def extract_sciflow_application(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def controller_impact(result: dict[str, Any], application: dict[str, Any]) -> dict[str, Any]:
-    tool_calls = result.get("provenance", {}).get("tool_calls", [])
+    tool_calls = result_tool_calls(result)
     evidence = result.get("report", {}).get("evidence", [])
     return {
         "applied": bool(application.get("applied")),
