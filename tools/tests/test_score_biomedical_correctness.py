@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
 
+from tools import score_biomedical_correctness as scorer
 from tools.score_biomedical_correctness import (
+    build_judge_prompt,
     build_score_packets,
     heuristic_score,
     load_benchmark_results,
     load_json,
+    score_packets,
     summarize_scores,
     write_outputs,
 )
@@ -86,3 +89,38 @@ def test_biotruth_heuristic_scoring_writes_summary(tmp_path: Path) -> None:
     assert summary["by_ablation"]["full"]["count"] == 1
     assert Path(output["scores_path"]).exists()
     assert Path(output["markdown_path"]).exists()
+
+
+def test_judge_prompt_uses_exact_json_schema() -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_1.json"))
+    prompt = build_judge_prompt(
+        {"task": {"id": "il6_rheumatoid_arthritis__target_validity_review"}, "answer": {}},
+        rubric,
+    )
+
+    assert '"..."' not in prompt
+    for dimension in rubric["dimensions"]:
+        assert f'"{dimension["id"]}": 0' in prompt
+
+
+def test_judge_mode_records_provider_failure(monkeypatch) -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_1.json"))
+
+    def fail_json(**_: object) -> dict[str, object]:
+        raise RuntimeError("bad judge json")
+
+    monkeypatch.setattr(scorer, "call_llm_json", fail_json)
+
+    class Args:
+        max_results = 0
+        mode = "judge"
+        llm_provider = "gemini"
+        llm_model = "gemini-2.5-flash"
+        llm_api_key_env_var = ""
+        llm_base_url = ""
+        llm_max_tokens = 1600
+
+    scored = score_packets(Args(), [{"task": {"id": "case_1"}}], rubric)
+
+    assert scored[0]["score"]["mode"] == "llm_judge_failed"
+    assert "judge_failed" in scored[0]["score"]["critical_failures"]

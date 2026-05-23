@@ -226,6 +226,7 @@ def judge_score(
     base_url: str | None,
     max_tokens: int,
 ) -> dict[str, Any]:
+    prompt = build_judge_prompt(packet, rubric)
     response = call_llm_json(
         provider=provider,
         model=model,
@@ -235,9 +236,10 @@ def judge_score(
         temperature=0.0,
         system_prompt=(
             "You are a strict biomedical benchmark judge. Score only the provided trace and public labels. "
-            "Do not reward confident unsupported claims. Return only valid JSON."
+            "Do not reward confident unsupported claims. Return only one valid JSON object, with no markdown, "
+            "comments, trailing commas, or extra prose."
         ),
-        prompt=build_judge_prompt(packet, rubric),
+        prompt=prompt,
     )
     payload = response.get("json", {})
     dimensions = normalize_dimension_scores(payload.get("dimension_scores", {}), rubric)
@@ -258,6 +260,8 @@ def judge_score(
 
 
 def build_judge_prompt(packet: dict[str, Any], rubric: dict[str, Any]) -> str:
+    dimension_template = {item["id"]: 0 for item in rubric.get("dimensions", [])}
+    allowed_failure_flags = [item["id"] for item in rubric.get("critical_failure_flags", [])]
     compact_rubric = {
         "dimensions": [
             {
@@ -273,15 +277,44 @@ def build_judge_prompt(packet: dict[str, Any], rubric: dict[str, Any]) -> str:
     }
     return (
         "Score this AutoScientist biomedical answer packet using the rubric.\n\n"
-        "Return JSON with exactly these fields:\n"
-        "{\n"
-        '  "dimension_scores": {"target_disease_validity": 0-5, "...": 0-5},\n'
-        '  "critical_failures": ["flag_id", "..."],\n'
-        '  "evidence_certainty": "high|moderate|low|very_low",\n'
-        '  "rationale": "short explanation tied to the trace"\n'
-        "}\n\n"
+        "Return exactly one JSON object with these fields and no other text.\n"
+        "Use every dimension key exactly once and score each as an integer from 0 to 5.\n"
+        "Use only the listed critical failure flag ids; use [] when none apply.\n\n"
+        f"Allowed critical_failure ids: {json.dumps(allowed_failure_flags, ensure_ascii=True)}\n\n"
+        "Required JSON shape:\n"
+        + json.dumps(
+            {
+                "dimension_scores": dimension_template,
+                "critical_failures": [],
+                "evidence_certainty": "high|moderate|low|very_low",
+                "rationale": "short explanation tied to the trace",
+            },
+            indent=2,
+            ensure_ascii=True,
+        )
+        + "\n\n"
         f"RUBRIC:\n{json.dumps(compact_rubric, indent=2, ensure_ascii=True)}\n\n"
         f"ANSWER_PACKET:\n{json.dumps(packet, indent=2, ensure_ascii=True, default=str)}"
+    )
+
+
+def judge_failure_score(packet: dict[str, Any], rubric: dict[str, Any], exc: Exception) -> dict[str, Any]:
+    dimensions = {dimension["id"]: 0 for dimension in rubric.get("dimensions", [])}
+    task = packet.get("task", {}) if isinstance(packet.get("task"), dict) else {}
+    return finalize_score(
+        dimensions=dimensions,
+        critical_failures=["judge_failed"],
+        rubric=rubric,
+        evidence_certainty="very_low",
+        mode="llm_judge_failed",
+        rationale=(
+            "The judge provider failed to return a parseable rubric score for "
+            f"{task.get('id') or 'unknown task'}: {type(exc).__name__}: {str(exc)[:500]}"
+        ),
+        raw_provider_response={
+            "error_type": type(exc).__name__,
+            "error": str(exc)[:1000],
+        },
     )
 
 
@@ -345,15 +378,18 @@ def score_packets(args: argparse.Namespace, packets: list[dict[str, Any]], rubri
         elif args.mode == "heuristic":
             score = heuristic_score(packet, rubric)
         elif args.mode == "judge":
-            score = judge_score(
-                packet,
-                rubric,
-                provider=args.llm_provider,
-                model=args.llm_model,
-                api_key_env_var=args.llm_api_key_env_var or None,
-                base_url=args.llm_base_url or None,
-                max_tokens=args.llm_max_tokens,
-            )
+            try:
+                score = judge_score(
+                    packet,
+                    rubric,
+                    provider=args.llm_provider,
+                    model=args.llm_model,
+                    api_key_env_var=args.llm_api_key_env_var or None,
+                    base_url=args.llm_base_url or None,
+                    max_tokens=args.llm_max_tokens,
+                )
+            except Exception as exc:
+                score = judge_failure_score(packet, rubric, exc)
         else:
             raise ValueError(f"Unknown scoring mode: {args.mode}")
         scored.append({"packet": packet, "score": score})
