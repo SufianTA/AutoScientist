@@ -414,11 +414,16 @@ def benchmark_value_score(
     }
     bonus = sum(weight for name, weight in bonus_weights.items() if checks[name])
     score = min(100, base["score"] + bonus)
+    ablation_score_cap = None
+    if ablation == "no_public_tools":
+        ablation_score_cap = 65
+        score = min(score, ablation_score_cap)
     impact = controller_impact(result, sciflow_application)
     return {
         "score": score,
         "base_score": base["score"],
         "max_score": 100,
+        "ablation_score_cap": ablation_score_cap,
         "checks": checks,
         "scientific_quality": scientific_quality_score(result, integrations, checks, impact),
         "controller_impact": impact,
@@ -770,10 +775,12 @@ def missing_required_integrations(result: dict[str, Any], required_integrations:
     missing = []
     for name in sorted(required_integrations):
         if name == "public_biomedical":
-            if not integrations.get("public_biomedical", {}).get("executed"):
+            info = integrations.get("public_biomedical", {})
+            if not info.get("executed") or ("success_count" in info and int(info.get("success_count") or 0) <= 0):
                 missing.append(name)
         elif name == "tooluniverse":
-            if not integrations.get("tooluniverse", {}).get("executed"):
+            info = integrations.get("tooluniverse", {})
+            if not info.get("executed") or ("success_count" in info and int(info.get("success_count") or 0) <= 0):
                 missing.append(name)
         elif name == "qworld":
             if not integrations.get("qworld", {}).get("executed"):

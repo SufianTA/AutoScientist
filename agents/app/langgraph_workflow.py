@@ -1337,13 +1337,27 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 {"tool_name": tool_name, "tool_source": starting_source},
                 payload,
             )
-            if tool_name in self.tools:
-                result = self.tools[tool_name].run(payload).model_dump()
-                source = "live_public_biomedical"
-            else:
-                tooluniverse_adapter = ToolUniverseAdapter(scan_all=False)
-                result = tooluniverse_adapter.execute(tool_name, payload)
-                source = "tooluniverse"
+            started = time.perf_counter()
+            source = starting_source
+            try:
+                if tool_name in self.tools:
+                    result = self.tools[tool_name].run(payload).model_dump()
+                    source = "live_public_biomedical"
+                else:
+                    tooluniverse_adapter = ToolUniverseAdapter(scan_all=False)
+                    result = tooluniverse_adapter.execute(tool_name, payload)
+                    source = "tooluniverse"
+            except Exception as exc:
+                result = {
+                    "status": "failure",
+                    "input": payload,
+                    "output": {"error": str(exc)[:1000]},
+                    "sources": [{"name": source, "tool_name": tool_name}],
+                    "confidence": 0.0,
+                    "warnings": [str(exc)[:1000]],
+                    "runtime_ms": int((time.perf_counter() - started) * 1000),
+                    "tool_version": source,
+                }
             self._runtime_event(
                 agent_name,
                 "TOOL_CALL_COMPLETED",
@@ -1587,13 +1601,26 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             return outputs
         adapter = ToolUniverseAdapter(scan_all=False)
         for efo_id in list(dict.fromkeys(efo_ids))[: max(1, int(limit))]:
+            started = time.perf_counter()
             self._runtime_event(
                 "tooluniverse_agent",
                 "TOOL_CALL_STARTED",
                 {"tool_name": "OpenTargets_get_associated_targets_by_disease_efoId", "tool_source": "tooluniverse"},
                 {"efoId": efo_id},
             )
-            result = adapter.execute("OpenTargets_get_associated_targets_by_disease_efoId", {"efoId": efo_id})
+            try:
+                result = adapter.execute("OpenTargets_get_associated_targets_by_disease_efoId", {"efoId": efo_id})
+            except Exception as exc:
+                result = {
+                    "status": "failure",
+                    "input": {"efoId": efo_id},
+                    "output": {"error": str(exc)[:1000]},
+                    "sources": [{"name": "tooluniverse", "tool_name": "OpenTargets_get_associated_targets_by_disease_efoId"}],
+                    "confidence": 0.0,
+                    "warnings": [str(exc)[:1000]],
+                    "runtime_ms": int((time.perf_counter() - started) * 1000),
+                    "tool_version": "tooluniverse",
+                }
             self._runtime_event(
                 "tooluniverse_agent",
                 "TOOL_CALL_COMPLETED",

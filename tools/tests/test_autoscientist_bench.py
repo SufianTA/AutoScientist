@@ -179,6 +179,42 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
     assert assessment["score"] == 100
 
 
+def test_no_public_tools_ablation_is_capped_below_strong_score() -> None:
+    result = {
+        "status": "completed",
+        "run_id": None,
+        "report": {
+            "hypothesis": {"title": "Candidate target", "text": "Bounded hypothesis."},
+            "evidence": [{"source": "local", "support_score": 0.5}, {"source": "local", "support_score": 0.4}],
+            "experiments": [{"name": "Perturbation assay"}],
+            "guardrails": ["No clinical claim."],
+            "board_posts": [{"post_type": "hypothesis"}],
+        },
+        "provenance": {
+            "agent_steps": [{"state_name": "FIND_TOOLS", "output": {"sciflow_policy": {"status": "success"}}}],
+            "tool_calls": [{"tool_name": "evidence_quality_scorer_tool", "tool_source": "custom"}],
+        },
+    }
+    integrations = {
+        "qworld": {"executed": False},
+        "public_biomedical": {"executed": False},
+        "tooluniverse": {"executed": False},
+        "local_board": {"executed": True},
+    }
+    task = {
+        "public_context": {
+            "mode": "live",
+            "open_targets_target": {"status": "success"},
+            "pubmed_gene_disease": {"status": "success"},
+        }
+    }
+
+    assessment = benchmark_value_score(result, integrations, task, "no_public_tools")
+
+    assert assessment["score"] == 65
+    assert assessment["ablation_score_cap"] == 65
+
+
 def test_benchmark_penalizes_serialized_pubmed_query_inputs() -> None:
     result = {
         "status": "completed",

@@ -102,6 +102,8 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
     steps = result_agent_steps(result)
     names = {call.get("tool_name") for call in tool_calls}
     sources = {call.get("tool_source") for call in tool_calls}
+    public_calls = [call for call in tool_calls if call.get("tool_source") == "live_public_biomedical"]
+    tooluniverse_calls = [call for call in tool_calls if call.get("tool_source") == "tooluniverse"]
     qworld_step = next(
         (
             step
@@ -125,11 +127,15 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
         "tooluniverse": {
             "healthy": bool(health.get("tooluniverse", {}).get("available")),
             "executed": "tooluniverse" in sources,
-            "call_count": sum(1 for call in tool_calls if call.get("tool_source") == "tooluniverse"),
+            "call_count": len(tooluniverse_calls),
+            "success_count": sum(1 for call in tooluniverse_calls if call.get("status") in {"success", "partial"}),
+            "failure_count": sum(1 for call in tooluniverse_calls if call.get("status") == "failure"),
         },
         "public_biomedical": {
             "executed": "live_public_biomedical" in sources,
-            "call_count": sum(1 for call in tool_calls if call.get("tool_source") == "live_public_biomedical"),
+            "call_count": len(public_calls),
+            "success_count": sum(1 for call in public_calls if call.get("status") in {"success", "partial"}),
+            "failure_count": sum(1 for call in public_calls if call.get("status") == "failure"),
         },
         "local_board": {
             "healthy": bool(
@@ -193,8 +199,8 @@ def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[st
         "guardrails_present": len(guardrails) >= 1,
         "auditable_trace": bool(steps and tool_calls),
         "live_data_executed": bool(
-            integrations.get("public_biomedical", {}).get("executed")
-            or integrations.get("tooluniverse", {}).get("executed")
+            integration_has_success(integrations, "public_biomedical")
+            or integration_has_success(integrations, "tooluniverse")
         ),
         "clean_tool_inputs": clean_tool_inputs(result),
         "board_written": bool(integrations.get("local_board", {}).get("executed")),
@@ -218,6 +224,15 @@ def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[st
         "checks": checks,
         "interpretation": interpret_score(score),
     }
+
+
+def integration_has_success(integrations: dict[str, Any], name: str) -> bool:
+    info = integrations.get(name, {}) if isinstance(integrations, dict) else {}
+    if not info.get("executed"):
+        return False
+    if "success_count" not in info:
+        return True
+    return int(info.get("success_count") or 0) > 0
 
 
 def interpret_score(score: int) -> str:
