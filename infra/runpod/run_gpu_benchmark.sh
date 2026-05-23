@@ -3,16 +3,24 @@ set -euo pipefail
 
 WORKDIR="${WORKDIR:-/workspace/AutoScientist}"
 VENV="${VENV:-/opt/autosci-venv}"
+MANIFEST="${MANIFEST:-benchmarks/autoscientist_bench_v0_2_public.json}"
 LIMIT="${LIMIT:-100}"
 REPLICATES="${REPLICATES:-3}"
 EPOCHS="${EPOCHS:-120}"
 LLM_PROVIDER="${LLM_PROVIDER:-auto}"
 LLM_MODEL="${LLM_MODEL:-}"
 LLM_API_KEY_ENV_VAR="${LLM_API_KEY_ENV_VAR:-}"
+LLM_MAX_TOKENS="${LLM_MAX_TOKENS:-512}"
+PUBLIC_TIMEOUT_SECONDS="${PUBLIC_TIMEOUT_SECONDS:-8}"
 REQUIRE_REAL_LLM="${REQUIRE_REAL_LLM:-1}"
 STRICT_REAL="${STRICT_REAL:-1}"
 CASE_IDS="${CASE_IDS:-}"
 TEMPLATE_IDS="${TEMPLATE_IDS:-}"
+DISABLE_QWORLD="${DISABLE_QWORLD:-1}"
+STRATEGY_REPAIR_MAX_QUERIES="${STRATEGY_REPAIR_MAX_QUERIES:-2}"
+SEED_POLICY="${SEED_POLICY:-1}"
+SEED_LIMIT="${SEED_LIMIT:-12}"
+SEED_REPLICATES="${SEED_REPLICATES:-1}"
 MIN_FULL_COMPLETION_RATE="${MIN_FULL_COMPLETION_RATE:-1.0}"
 MIN_FULL_MEAN_SCORE="${MIN_FULL_MEAN_SCORE:-85}"
 MIN_NEURAL_HOLDOUT_TOP1="${MIN_NEURAL_HOLDOUT_TOP1:-0.5}"
@@ -39,6 +47,11 @@ fi
 
 PREFLIGHT_FLAGS=(--workspace "$WORKDIR" --output-dir outputs/preflight --require-gpu)
 run python tools/machine_preflight.py "${PREFLIGHT_FLAGS[@]}"
+
+QWORLD_FLAGS=()
+if [ "$DISABLE_QWORLD" = "1" ]; then
+  QWORLD_FLAGS+=(--disable-qworld)
+fi
 
 REAL_LLM_FLAGS=()
 if [ "$REQUIRE_REAL_LLM" = "1" ]; then
@@ -68,7 +81,28 @@ if [ -n "$TEMPLATE_IDS" ]; then
   CASE_FLAGS+=(--template-ids "${TEMPLATE_ID_ARRAY[@]}")
 fi
 
+if [ "$SEED_POLICY" = "1" ]; then
+  run python tools/run_autoscientist_bench.py \
+    --manifest "$MANIFEST" \
+    --limit "$SEED_LIMIT" \
+    --replicates-per-case "$SEED_REPLICATES" \
+    "${CASE_FLAGS[@]}" \
+    --ablations full no_memory no_public_tools \
+    --enable-sciflow-policy \
+    --train-neural-policy \
+    --neural-epochs "$EPOCHS" \
+    --llm-provider "$LLM_PROVIDER" \
+    --llm-model "$LLM_MODEL" \
+    --llm-api-key-env-var "$LLM_API_KEY_ENV_VAR" \
+    --llm-max-tokens "$LLM_MAX_TOKENS" \
+    --public-timeout-seconds "$PUBLIC_TIMEOUT_SECONDS" \
+    --strategy-repair-max-queries "$STRATEGY_REPAIR_MAX_QUERIES" \
+    "${QWORLD_FLAGS[@]}" \
+    "${REAL_LLM_FLAGS[@]}"
+fi
+
 run python tools/run_autoscientist_bench.py \
+  --manifest "$MANIFEST" \
   --limit "$LIMIT" \
   --replicates-per-case "$REPLICATES" \
   "${CASE_FLAGS[@]}" \
@@ -79,6 +113,10 @@ run python tools/run_autoscientist_bench.py \
   --llm-provider "$LLM_PROVIDER" \
   --llm-model "$LLM_MODEL" \
   --llm-api-key-env-var "$LLM_API_KEY_ENV_VAR" \
+  --llm-max-tokens "$LLM_MAX_TOKENS" \
+  --public-timeout-seconds "$PUBLIC_TIMEOUT_SECONDS" \
+  --strategy-repair-max-queries "$STRATEGY_REPAIR_MAX_QUERIES" \
+  "${QWORLD_FLAGS[@]}" \
   "${REAL_LLM_FLAGS[@]}" \
   "${STRICT_FLAGS[@]}"
 
