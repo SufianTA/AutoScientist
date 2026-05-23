@@ -43,3 +43,49 @@ def test_live_biomedical_tools_require_explicit_inputs() -> None:
     assert tools["ncbi_gene_profile_tool"].run({}).status == "failure"
     assert tools["pubmed_literature_search_tool"].run({}).status == "failure"
     assert tools["pubchem_candidate_lookup_tool"].run({}).status == "failure"
+
+
+def test_hypothesis_card_does_not_downgrade_clinically_established_targets() -> None:
+    tool = build_custom_tools()["hypothesis_card_generator_tool"]
+
+    result = tool.run(
+        {
+            "target": "TNF",
+            "disease": "inflammatory bowel disease",
+            "evidence": [
+                {
+                    "source": "PubMed: TNF inflammatory bowel disease therapy",
+                    "text": "Anti-TNF clinical therapy and response stratification literature.",
+                    "structured": {
+                        "articles": [
+                            {
+                                "title": "Anti-TNF therapy in inflammatory bowel disease clinical response",
+                                "url": "https://pubmed.ncbi.nlm.nih.gov/example",
+                            }
+                        ]
+                    },
+                    "score": {"label": "strong_support"},
+                }
+            ],
+        }
+    )
+
+    assert "not validated therapeutic hypothesis" not in result.output["hypothesis"]
+    assert "clinical" in result.output["candidate_intervention_summary"].lower()
+
+
+def test_experiment_recommendation_is_target_disease_specific() -> None:
+    tool = build_custom_tools()["experiment_recommendation_tool"]
+
+    result = tool.run(
+        {
+            "hypothesis_card": {
+                "title": "TNF pathway modulation as a candidate strategy for inflammatory bowel disease",
+                "hypothesis": "TNF inflammatory cytokine signaling is implicated in IBD.",
+            }
+        }
+    )
+
+    names = " ".join(item["name"] for item in result.output["experiments"]).lower()
+    assert "anti-tnf" in names
+    assert "response/non-response" in names

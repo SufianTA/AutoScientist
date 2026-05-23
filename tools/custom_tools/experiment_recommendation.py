@@ -11,14 +11,34 @@ class ExperimentRecommendationTool(ScientificTool):
         title = str(hypothesis_card.get("title", "candidate hypothesis"))
         hypothesis = str(hypothesis_card.get("hypothesis", ""))
         target = title.split(" pathway modulation", 1)[0].strip() or "the target"
+        disease = title.rsplit(" for ", 1)[-1].strip() if " for " in title else "the disease context"
+        lowered = f"{title} {hypothesis} {disease}".lower()
         has_safety = bool(hypothesis_card.get("contradictions"))
-        if "acvr1" in title.lower() or "bmp" in hypothesis.lower() or "ossification" in hypothesis.lower():
+        if "tnf" in lowered and ("inflammatory bowel" in lowered or "ibd" in lowered):
+            wet_lab_readout = (
+                "Stratify IBD samples by anti-TNF response/non-response and test TNF-pathway inflammatory "
+                "readouts in patient-derived intestinal organoids or immune-cell co-cultures"
+            )
+            intervention_ranking = (
+                "Audit anti-TNF clinical precedence, resistance mechanisms, infection risk, and patient-selection "
+                "biomarkers before proposing new TNF-directed experiments"
+            )
+        elif "il6" in lowered and "rheumatoid" in lowered:
+            wet_lab_readout = (
+                "Disentangle IL6 versus IL6R pathway contribution in rheumatoid arthritis synovial models using "
+                "cell-type-specific perturbation and STAT3/inflammatory cytokine readouts"
+            )
+            intervention_ranking = (
+                "Compare IL6/IL6R clinical precedence, safety liabilities, and responder biology before ranking "
+                "new IL6-axis intervention hypotheses"
+            )
+        elif "acvr1" in lowered or "bmp" in lowered or "ossification" in lowered:
             wet_lab_readout = "Test disease-relevant BMP/activin pathway readouts in appropriate cellular or animal models"
             intervention_ranking = "Rank candidate interventions by target potency, pathway selectivity, exposure, and ADMET liabilities"
-        elif "pcsk9" in title.lower() or "ldlr" in hypothesis.lower() or "cholesterol" in hypothesis.lower():
+        elif "pcsk9" in lowered or "ldlr" in lowered or "cholesterol" in lowered:
             wet_lab_readout = "Test LDL receptor abundance, LDL uptake, and cholesterol-clearance readouts in hepatocyte models"
             intervention_ranking = "Rank candidate interventions by PCSK9/LDLR mechanism, durability, exposure, and safety liabilities"
-        elif "cftr" in title.lower() or "cystic fibrosis" in hypothesis.lower():
+        elif "cftr" in lowered or "cystic fibrosis" in lowered:
             wet_lab_readout = "Test epithelial ion transport, protein processing, and rescue readouts in disease-relevant airway models"
             intervention_ranking = "Rank candidate interventions by target engagement, rescue magnitude, exposure, and safety liabilities"
         else:
@@ -30,11 +50,19 @@ class ExperimentRecommendationTool(ScientificTool):
             output={
                 "experiments": [
                     {
-                        "name": f"Validate {target} disease-target evidence with live target-disease, literature, and safety tools",
+                        "name": (
+                            f"Resolve the highest-uncertainty {target} / {disease} evidence gap with targeted "
+                            "Open Targets, literature, clinical-precedence, and safety review"
+                        ),
                         "type": "computational",
                         "cost": "low",
                         "feasibility": "high",
                         "expected_information_gain": "high",
+                        "decision_gate": "Proceed only if the result changes target validity, clinical-precedence interpretation, safety risk, or patient-stratification strategy.",
+                        "failure_modes": [
+                            "Evidence is indirect or about a related receptor/pathway rather than the target itself.",
+                            "Clinical-precedence evidence is retrieved but not separated from new-discovery questions.",
+                        ],
                     },
                     {
                         "name": intervention_ranking,
@@ -42,6 +70,7 @@ class ExperimentRecommendationTool(ScientificTool):
                         "cost": "low-medium",
                         "feasibility": "medium",
                         "expected_information_gain": "high",
+                        "decision_gate": "Advance only if the ranking distinguishes established intervention precedent from unresolved translational gaps.",
                     },
                     {
                         "name": (
@@ -53,6 +82,11 @@ class ExperimentRecommendationTool(ScientificTool):
                         "cost": "medium",
                         "feasibility": "medium",
                         "expected_information_gain": "high",
+                        "success_criteria": [
+                            "Uses disease-relevant samples or models.",
+                            "Includes positive/negative controls and a failure criterion.",
+                            "Directly tests the gap identified by evidence synthesis rather than only confirming pathway activity.",
+                        ],
                     },
                 ]
             },

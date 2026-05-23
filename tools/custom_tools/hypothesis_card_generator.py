@@ -40,6 +40,10 @@ def mechanism_phrase(target: str, evidence: list[dict]) -> str:
         return f"{target}-linked LDL receptor and cholesterol-clearance biology"
     if "cftr" in target.lower() or "cystic fibrosis" in combined:
         return f"{target}-linked epithelial ion-transport biology"
+    if "tnf" in target.lower() or "anti-tnf" in combined or "inflammatory bowel" in combined:
+        return f"{target}-linked inflammatory cytokine signaling and immune-cell activation"
+    if "il6" in target.lower() or "il-6" in combined or "rheumatoid arthritis" in combined:
+        return f"{target}-linked IL-6 inflammatory signaling, including receptor-mediated pathway context"
     return f"{target}-linked disease mechanism"
 
 
@@ -104,7 +108,22 @@ class HypothesisCardGeneratorTool(ScientificTool):
                 continue
             for article in item.get("structured", {}).get("articles", []):
                 title = article.get("title", "")
-                if any(term in title.lower() for term in ["treatment", "therapeutic", "inhibitor", "drug", "modality"]):
+                if any(
+                    term in title.lower()
+                    for term in [
+                        "treatment",
+                        "therapeutic",
+                        "therapy",
+                        "clinical",
+                        "trial",
+                        "inhibitor",
+                        "antibody",
+                        "anti-tnf",
+                        "anti-il",
+                        "drug",
+                        "modality",
+                    ]
+                ):
                     literature_candidate_titles.append(title)
         contradictions = []
         if safety_items:
@@ -121,8 +140,9 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     "that requires live external evidence before scientific interpretation."
                     if local_only
                     else (
-                        f"Modulating {mechanism} is a candidate, evidence-supported but "
-                        f"not validated therapeutic hypothesis for {disease}."
+                        f"Modulating {mechanism} is an evidence-supported research hypothesis for {disease}. "
+                        "Any claim about clinical validity, existing clinical precedence, or safety must be "
+                        "made from retrieved target-specific evidence rather than from this generic card alone."
                     )
                 ),
                 "evidence": evidence,
@@ -148,8 +168,9 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     "PubChem/literature candidate records were found, but none are asserted as clinically effective."
                     if candidate_items
                     else (
-                        "Live literature retrieved candidate intervention or treatment records, but they are not "
-                        f"asserted as clinically effective: {'; '.join(literature_candidate_titles[:4])}."
+                        "Live literature retrieved treatment, clinical, or intervention-precedence signals; "
+                        "the downstream synthesis should distinguish established clinical use from unresolved "
+                        f"mechanism, resistance, safety, or stratification questions: {'; '.join(literature_candidate_titles[:4])}."
                         if literature_candidate_titles
                         else "No candidate intervention records were retrieved in this run."
                     )
