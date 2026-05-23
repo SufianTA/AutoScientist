@@ -68,18 +68,23 @@ def _evidence_profile(evidence: list[dict[str, Any]]) -> dict[str, Any]:
     external_labels = Counter()
     for item in evidence:
         sources[str(item.get("source") or "unknown")] += 1
-        evidence_type = str(item.get("evidence_type") or item.get("structured", {}).get("evidence_type") or "unknown")
-        evidence_types[evidence_type] += 1
-        if evidence_type not in {"local_context", "absence_of_evidence"}:
-            external_evidence.append(item)
         score = item.get("score", {})
+        label = "unlabeled"
         if isinstance(score, dict):
             label = str(score.get("label") or "unlabeled")
             labels[label] += 1
-            if evidence_type not in {"local_context", "absence_of_evidence"}:
-                external_labels[label] += 1
             if score.get("score") is not None:
                 scored += 1
+        evidence_type = str(
+            (score.get("evidence_type") if isinstance(score, dict) else None)
+            or item.get("evidence_type")
+            or item.get("structured", {}).get("evidence_type")
+            or "unknown"
+        )
+        evidence_types[evidence_type] += 1
+        if evidence_type not in {"local_context", "absence_of_evidence"} and label != "irrelevant":
+            external_evidence.append(item)
+            external_labels[label] += 1
         structured = item.get("structured", {})
         if isinstance(structured, dict) and "articles" in structured:
             pubmed_article_count += len(structured.get("articles") or [])

@@ -10,7 +10,12 @@ class ExperimentRecommendationTool(ScientificTool):
         hypothesis_card = payload.get("hypothesis_card", {})
         title = str(hypothesis_card.get("title", "candidate hypothesis"))
         hypothesis = str(hypothesis_card.get("hypothesis", ""))
-        target = title.split(" pathway modulation", 1)[0].strip() or "the target"
+        if " pathway modulation" in title:
+            target = title.split(" pathway modulation", 1)[0].strip() or "the target"
+        elif " clinical-precedence" in title:
+            target = title.split(" clinical-precedence", 1)[0].strip() or "the target"
+        else:
+            target = title.split(" ", 1)[0].strip() or "the target"
         disease = title.rsplit(" for ", 1)[-1].strip() if " for " in title else "the disease context"
         lowered = f"{title} {hypothesis} {disease}".lower()
         has_safety = bool(hypothesis_card.get("contradictions"))

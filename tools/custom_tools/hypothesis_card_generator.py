@@ -98,9 +98,51 @@ def extract_citations(evidence: list[dict], target: str) -> list[dict]:
     return citations[:12]
 
 
+def target_aliases(target: str) -> set[str]:
+    value = target.lower()
+    aliases = {value}
+    if value == "tnf":
+        aliases.update(
+            {
+                "tnf-alpha",
+                "tnf alpha",
+                "anti-tnf",
+                "anti-tnfalpha",
+                "anti-tnf-alpha",
+                "tumor necrosis factor",
+                "tumour necrosis factor",
+                "infliximab",
+                "adalimumab",
+                "certolizumab",
+                "golimumab",
+            }
+        )
+    if value in {"il6", "il6r"}:
+        aliases.update({"il-6", "interleukin-6", "il-6 receptor", "tocilizumab", "sarilumab"})
+    return {alias for alias in aliases if alias}
+
+
+def disease_aliases(disease: str) -> set[str]:
+    value = disease.lower()
+    aliases = {value}
+    if "inflammatory bowel" in value or value == "ibd":
+        aliases.update({"inflammatory bowel disease", "inflammatorybowel", "ibd", "crohn", "ulcerative colitis"})
+    if "rheumatoid" in value:
+        aliases.update({"rheumatoid arthritis", "synovitis"})
+    return {alias for alias in aliases if alias}
+
+
+def title_matches_context(title: str, target: str, disease: str) -> bool:
+    lowered = title.lower()
+    return any(alias in lowered for alias in target_aliases(target)) and any(
+        alias in lowered for alias in disease_aliases(disease)
+    )
+
+
 def clinical_precedence_summary(target: str, disease: str, evidence: list[dict]) -> str:
     public_lines = []
     literature_titles = []
+    has_target_level_precedence = False
     for item in evidence:
         structured = item.get("structured", {}) if isinstance(item.get("structured"), dict) else {}
         labels = structured.get("public_labels", {}) if isinstance(structured.get("public_labels"), dict) else {}
@@ -111,14 +153,20 @@ def clinical_precedence_summary(target: str, disease: str, evidence: list[dict])
                 f"(score {labels.get('open_targets_association_score')}, rank {labels.get('open_targets_association_rank')})."
             )
         if evidence_type == "clinical_precedence":
+            has_target_level_precedence = True
             public_lines.append(f"Open Targets target metadata indicates target-level clinical or tractability precedence for {target}.")
         if evidence_type == "clinical_precedence_literature":
             for article in structured.get("articles", [])[:3]:
                 title = article.get("title")
-                if title:
+                if title and title_matches_context(title, target, disease):
                     literature_titles.append(title)
     if public_lines or literature_titles:
         pieces = [*public_lines[:2]]
+        if has_target_level_precedence and target.lower() == "tnf" and "inflammatory bowel" in disease.lower():
+            pieces.append(
+                "For TNF in inflammatory bowel disease, this should be framed as established anti-TNF clinical "
+                "precedence with unresolved response, resistance, safety, and patient-stratification questions."
+            )
         if literature_titles:
             pieces.append("Relevant clinical literature titles include: " + "; ".join(literature_titles[:3]) + ".")
         return " ".join(pieces)
@@ -176,19 +224,25 @@ class HypothesisCardGeneratorTool(ScientificTool):
             contradictions.append(
                 "Safety/intervention literature was retrieved, so translational risk remains an active uncertainty."
             )
+        has_precedence = "No explicit clinical-precedence evidence" not in precedence
         return ToolResult(
             status="success",
             input=payload,
             output={
-                "title": f"{target} pathway modulation as a candidate strategy for {disease}",
+                "title": (
+                    f"{target} clinical-precedence and mechanism review for {disease}"
+                    if has_precedence
+                    else f"{target} pathway modulation as a candidate strategy for {disease}"
+                ),
                 "hypothesis": (
                     f"Modulating {mechanism} is a planning-level candidate hypothesis for {disease} "
                     "that requires live external evidence before scientific interpretation."
                     if local_only
                     else (
-                        f"Modulating {mechanism} is an evidence-supported research hypothesis for {disease}. "
-                        f"{precedence} Any claim about efficacy or safety must be separated from target validity "
-                        "and made only from retrieved target-specific evidence."
+                        f"{target} has evidence-supported target-disease grounding for {disease}. "
+                        f"{precedence} The remaining scientific work is to resolve mechanism details, "
+                        "response or resistance biology, safety liabilities, and patient-selection strategy; "
+                        "this is not a claim that a new target has been discovered."
                     )
                 ),
                 "evidence": evidence,

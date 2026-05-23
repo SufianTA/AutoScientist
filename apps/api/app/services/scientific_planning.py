@@ -222,9 +222,9 @@ def build_claim_graph(hypothesis_card: dict[str, Any], evidence: list[dict[str, 
             source = item.get("source", "unknown")
             score = item.get("score", {})
             label = score.get("label") if isinstance(score, dict) else None
-            if evidence_type in {EvidenceType.CONTRADICTORY.value} or label == "contradiction":
+            if evidence_type in {EvidenceType.CONTRADICTORY.value} or label in {"contradiction", "contradicts"}:
                 contradiction.append(source)
-            elif evidence_type in {EvidenceType.ABSENCE_OF_EVIDENCE.value, EvidenceType.LOCAL_CONTEXT.value}:
+            elif label == "irrelevant" or evidence_type in {EvidenceType.ABSENCE_OF_EVIDENCE.value, EvidenceType.LOCAL_CONTEXT.value}:
                 gaps.append(source)
             else:
                 support.append(source)

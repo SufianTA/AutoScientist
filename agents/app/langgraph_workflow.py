@@ -848,7 +848,21 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         normalized = target.lower()
         aliases = {normalized}
         if normalized == "tnf":
-            aliases.update({"anti-tnf", "tumor necrosis factor", "infliximab", "adalimumab", "certolizumab", "golimumab"})
+            aliases.update(
+                {
+                    "anti-tnf",
+                    "anti-tnfalpha",
+                    "anti-tnf-alpha",
+                    "tnf-alpha",
+                    "tnf alpha",
+                    "tumor necrosis factor",
+                    "tumour necrosis factor",
+                    "infliximab",
+                    "adalimumab",
+                    "certolizumab",
+                    "golimumab",
+                }
+            )
         if normalized in {"il6", "il6r"}:
             aliases.update({"il-6", "interleukin-6", "il6r", "il-6 receptor", "tocilizumab", "sarilumab"})
         if normalized == "cftr":
@@ -861,7 +875,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         normalized = disease.lower()
         aliases = {normalized}
         if "inflammatory bowel" in normalized or normalized == "ibd":
-            aliases.update({"inflammatory bowel disease", "ibd", "crohn", "ulcerative colitis"})
+            aliases.update({"inflammatory bowel disease", "inflammatorybowel", "ibd", "crohn", "ulcerative colitis"})
         if "rheumatoid" in normalized:
             aliases.update({"rheumatoid arthritis", "ra", "synovitis"})
         if "cystic fibrosis" in normalized:
