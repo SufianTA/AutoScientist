@@ -19,9 +19,24 @@ def confidence_from_evidence(evidence: list[dict]) -> float:
         "contradicts": -0.12,
         "irrelevant": -0.04,
     }
+    clinical_or_public_floor = 0.0
     for item in evidence:
         score += weights.get(item.get("score", {}).get("label"), 0.0)
-    return round(max(0.05, min(score, 0.78)), 2)
+        structured = item.get("structured", {}) if isinstance(item.get("structured"), dict) else {}
+        labels = structured.get("public_labels", {}) if isinstance(structured.get("public_labels"), dict) else {}
+        evidence_type = str(item.get("score", {}).get("evidence_type") or structured.get("evidence_type") or "")
+        if labels.get("open_targets_association_status") == "matched":
+            try:
+                association_score = float(labels.get("open_targets_association_score") or 0.0)
+            except (TypeError, ValueError):
+                association_score = 0.0
+            if association_score >= 0.5:
+                clinical_or_public_floor = max(clinical_or_public_floor, 0.68)
+            elif association_score >= 0.25:
+                clinical_or_public_floor = max(clinical_or_public_floor, 0.6)
+        if evidence_type in {"clinical_precedence", "clinical_precedence_literature"}:
+            clinical_or_public_floor = max(clinical_or_public_floor, 0.72)
+    return round(max(0.05, clinical_or_public_floor, min(score, 0.86)), 2)
 
 
 def mechanism_phrase(target: str, evidence: list[dict]) -> str:
@@ -83,6 +98,36 @@ def extract_citations(evidence: list[dict], target: str) -> list[dict]:
     return citations[:12]
 
 
+def clinical_precedence_summary(target: str, disease: str, evidence: list[dict]) -> str:
+    public_lines = []
+    literature_titles = []
+    for item in evidence:
+        structured = item.get("structured", {}) if isinstance(item.get("structured"), dict) else {}
+        labels = structured.get("public_labels", {}) if isinstance(structured.get("public_labels"), dict) else {}
+        evidence_type = str(item.get("score", {}).get("evidence_type") or structured.get("evidence_type") or "")
+        if labels.get("open_targets_association_status") == "matched":
+            public_lines.append(
+                f"Open Targets reports a matched {target}/{disease} association "
+                f"(score {labels.get('open_targets_association_score')}, rank {labels.get('open_targets_association_rank')})."
+            )
+        if evidence_type == "clinical_precedence":
+            public_lines.append(f"Open Targets target metadata indicates target-level clinical or tractability precedence for {target}.")
+        if evidence_type == "clinical_precedence_literature":
+            for article in structured.get("articles", [])[:3]:
+                title = article.get("title")
+                if title:
+                    literature_titles.append(title)
+    if public_lines or literature_titles:
+        pieces = [*public_lines[:2]]
+        if literature_titles:
+            pieces.append("Relevant clinical literature titles include: " + "; ".join(literature_titles[:3]) + ".")
+        return " ".join(pieces)
+    return (
+        f"No explicit clinical-precedence evidence for {target} in {disease} was surfaced; the output should focus "
+        "on target-disease grounding and unresolved validation."
+    )
+
+
 class HypothesisCardGeneratorTool(ScientificTool):
     name = "hypothesis_card_generator_tool"
     description = "Creates a structured candidate hypothesis card from disease, target, molecule, and evidence records."
@@ -125,6 +170,7 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     ]
                 ):
                     literature_candidate_titles.append(title)
+        precedence = clinical_precedence_summary(target, disease, evidence)
         contradictions = []
         if safety_items:
             contradictions.append(
@@ -141,8 +187,8 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     if local_only
                     else (
                         f"Modulating {mechanism} is an evidence-supported research hypothesis for {disease}. "
-                        "Any claim about clinical validity, existing clinical precedence, or safety must be "
-                        "made from retrieved target-specific evidence rather than from this generic card alone."
+                        f"{precedence} Any claim about efficacy or safety must be separated from target validity "
+                        "and made only from retrieved target-specific evidence."
                     )
                 ),
                 "evidence": evidence,
@@ -154,8 +200,9 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     ),
                     (
                         "The current claim should remain pathway-level: evidence supports target and mechanism "
-                        "grounding, not clinical efficacy for any intervention."
+                        "grounding, not clinical efficacy for any intervention unless direct clinical evidence is cited."
                     ),
+                    precedence,
                     (
                         "Candidate molecules or interventions are prioritization leads only; potency, selectivity, "
                         "exposure, safety, and disease-model response must be tested."

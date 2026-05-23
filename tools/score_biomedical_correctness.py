@@ -80,6 +80,10 @@ def build_score_packet(result: dict[str, Any], rubric: dict[str, Any]) -> dict[s
             "evidence": compact_list(evidence, limit=12, max_chars=1400),
             "experiments": compact_list(experiments, limit=8, max_chars=1200),
             "guardrails": compact_list(guardrails, limit=8, max_chars=1200),
+            "scientific_strategy": compact(report.get("scientific_strategy", {}), max_chars=1800),
+            "claim_graph": compact(report.get("claim_graph", {}), max_chars=1600),
+            "abstention": compact(report.get("abstention", {}), max_chars=1000),
+            "report_evaluation": compact(report.get("report_evaluation", {}), max_chars=1200),
             "tool_calls": compact_tool_calls(tool_calls, limit=20),
         },
     }

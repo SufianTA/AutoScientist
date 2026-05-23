@@ -325,6 +325,8 @@ def run_task(
         "target_ensembl_id": task.get("target_ensembl_id"),
         "disease_efo_id": task.get("disease_efo_id"),
         "expected_capabilities": task.get("expected_capabilities", []),
+        "public_labels": task.get("public_labels", {}),
+        "public_context": task.get("public_context", {}),
     }
     started = time.time()
     result = run_question(task["objective"], config)

@@ -85,7 +85,7 @@ def build_report(run_id: str, db: Session) -> dict:
     else:
         guardrails = [
             "Candidate hypothesis only.",
-            "Computationally prioritized and evidence-supported, not validated.",
+            "Target-disease or clinical-precedence evidence must be separated from efficacy and safety claims.",
             "Requires experimental validation before clinical interpretation.",
         ]
     return {

@@ -284,8 +284,17 @@ def _experiment_gap_matches(experiment: dict[str, Any], gap_ids: list[str]) -> l
     gap_terms = {
         "insufficient_literature_depth": ["literature", "pubmed", "citation", "evidence"],
         "missing_target_disease_association": ["target-disease", "opentargets", "association"],
-        "missing_intervention_specific_evidence": ["intervention", "compound", "potency", "selectivity", "admet"],
-        "missing_safety_evidence": ["safety", "toxicity", "off-target", "admet"],
+        "missing_intervention_specific_evidence": [
+            "intervention",
+            "compound",
+            "potency",
+            "selectivity",
+            "admet",
+            "clinical-precedence",
+            "response",
+            "patient-selection",
+        ],
+        "missing_safety_evidence": ["safety", "toxicity", "off-target", "admet", "adverse", "infection"],
         "missing_cell_context_evidence": ["cell", "single-cell", "transcriptomic", "phenotype", "assay"],
         "missing_falsification_search": ["falsification", "contradict", "failed", "null"],
         "claim_graph_evidence_gap": ["claim", "causal", "mechanism"],
@@ -379,7 +388,10 @@ def _failure_modes(addresses: list[str]) -> list[str]:
 
 def _why_next(addresses: list[str]) -> str:
     if not addresses:
-        return "Baseline validation step retained, but it is not tied to a detected high-priority gap."
+        return (
+            "Decision-grade validation retained for residual uncertainty after deterministic gap triage; "
+            "the experiment should still specify controls, failure criteria, and how confidence changes."
+        )
     return "Chosen because it directly addresses the current strategy gap(s): " + ", ".join(addresses[:3])
 
 
