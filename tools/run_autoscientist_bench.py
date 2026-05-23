@@ -315,6 +315,17 @@ def run_task(
 ) -> dict[str, Any]:
     config = benchmark_run_config(args)
     apply_ablation(config, ablation)
+    config["benchmark_task"] = {
+        "id": task.get("id"),
+        "case_id": task.get("case_id"),
+        "template_id": task.get("template_id"),
+        "domain": task.get("domain"),
+        "gene_symbol": task.get("gene_symbol"),
+        "disease_name": task.get("disease_name"),
+        "target_ensembl_id": task.get("target_ensembl_id"),
+        "disease_efo_id": task.get("disease_efo_id"),
+        "expected_capabilities": task.get("expected_capabilities", []),
+    }
     started = time.time()
     result = run_question(task["objective"], config)
     integrations = summarize_integrations(result, health)

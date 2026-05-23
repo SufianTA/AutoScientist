@@ -62,6 +62,34 @@ def test_workflow_rejects_serialized_context_as_pubmed_query() -> None:
     assert context["pubmed_queries"][0].startswith("TNF rheumatoid arthritis")
 
 
+def test_workflow_merges_benchmark_task_context_into_entities() -> None:
+    workflow = LangGraphScientificWorkflow()
+
+    context = workflow._merge_configured_benchmark_context(
+        {
+            "primary_genes": [],
+            "diseases": [],
+            "candidate_interventions": [],
+            "pathways": [],
+            "pubmed_queries": [],
+            "analysis_goal": "Explain mechanism and safety.",
+        },
+        {
+            "benchmark_task": {
+                "id": "il6_rheumatoid_arthritis__mechanism_safety_review__r1",
+                "gene_symbol": "IL6",
+                "disease_name": "rheumatoid arthritis",
+                "expected_capabilities": ["public_biomedical", "tooluniverse"],
+            }
+        },
+    )
+
+    assert context["primary_genes"] == ["IL6"]
+    assert context["diseases"] == ["rheumatoid arthritis"]
+    assert any(query.startswith("IL6 rheumatoid arthritis") for query in context["pubmed_queries"])
+    assert context["benchmark_task"]["expected_capabilities"] == ["public_biomedical", "tooluniverse"]
+
+
 def test_evidence_claim_abstention_and_report_evaluation_flow() -> None:
     evidence = type_evidence_items(
         [

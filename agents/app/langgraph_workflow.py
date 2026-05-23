@@ -488,7 +488,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             )
         else:
             context = self._heuristic_context(state.objective)
-        return self._normalize_context(context, state.objective)
+        normalized = self._normalize_context(context, state.objective)
+        return self._merge_configured_benchmark_context(normalized, config)
 
     def _heuristic_context(self, objective: str) -> dict[str, Any]:
         stop = {
@@ -608,6 +609,45 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 for query in normalized["pubmed_queries"]
             ]
         return normalized
+
+    def _merge_configured_benchmark_context(
+        self,
+        context: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
+        benchmark_task = config.get("benchmark_task")
+        if not isinstance(benchmark_task, dict):
+            return context
+        gene = str(benchmark_task.get("gene_symbol") or "").strip()
+        disease = str(benchmark_task.get("disease_name") or "").strip()
+        if gene:
+            context["primary_genes"] = list(dict.fromkeys([gene, *context.get("primary_genes", [])]))[:4]
+        if disease:
+            context["diseases"] = list(dict.fromkeys([disease, *context.get("diseases", [])]))[:3]
+        if gene and disease:
+            required_queries = [
+                f"{gene} {disease} mechanism",
+                f"{gene} {disease} target validation",
+                f"{gene} {disease} safety translation",
+            ]
+            existing = list(context.get("pubmed_queries", []))
+            context["pubmed_queries"] = list(dict.fromkeys([*existing, *required_queries]))[:5]
+        context["benchmark_task"] = {
+            key: benchmark_task.get(key)
+            for key in (
+                "id",
+                "case_id",
+                "template_id",
+                "domain",
+                "gene_symbol",
+                "disease_name",
+                "target_ensembl_id",
+                "disease_efo_id",
+                "expected_capabilities",
+            )
+            if benchmark_task.get(key) not in (None, "", [])
+        }
+        return context
 
     def _string_list(self, value: Any) -> list[str]:
         if not value:
