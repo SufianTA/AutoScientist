@@ -115,6 +115,7 @@ def build_report(run_id: str, db: Session) -> dict:
         "report_evaluation": hypothesis_post_content.get("report_evaluation", {}),
         "claim_graph": hypothesis_post_content.get("claim_graph", {}),
         "abstention": hypothesis_post_content.get("abstention", {}),
+        "scientific_strategy": hypothesis_post_content.get("scientific_strategy", {}),
         "next_experiments": next_experiments,
         "experiments": next_experiments,
         "guardrails": guardrails,
@@ -169,6 +170,21 @@ def render_markdown_report(report: dict) -> str:
         lines.append(f"- Allowed output: {ascii_safe(abstention.get('allowed_output', 'not recorded'))}")
         for reason in abstention.get("reasons", []):
             lines.append(f"- Reason: {ascii_safe(reason)}")
+    strategy = report.get("scientific_strategy", {})
+    if strategy:
+        readiness = strategy.get("readiness", {})
+        lines.extend(["", "## Scientific Strategy", ""])
+        lines.append(f"- Readiness: `{readiness.get('tier', 'not recorded')}` ({readiness.get('score', 'n/a')}/100)")
+        if readiness.get("rationale"):
+            lines.append(f"- Rationale: {ascii_safe(readiness.get('rationale'))}")
+        next_action = strategy.get("next_action", {})
+        if next_action:
+            lines.append(f"- Next action: `{next_action.get('action', 'not recorded')}`")
+        for gap in strategy.get("gaps", [])[:6]:
+            lines.append(
+                f"- Gap: `{gap.get('id')}` ({gap.get('severity')}): "
+                f"{ascii_safe(gap.get('rationale', ''))}"
+            )
     lines.extend(
         [
             "",

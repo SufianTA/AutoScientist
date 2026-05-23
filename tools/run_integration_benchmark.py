@@ -82,6 +82,8 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "sciflow_policy_model_id": getattr(args, "sciflow_policy_model_id", "") or "",
         "sciflow_policy_model_path": getattr(args, "sciflow_policy_model_path", "") or "",
         "sciflow_policy_min_score": getattr(args, "sciflow_policy_min_score", 0.15),
+        "strategy_repair_enabled": getattr(args, "strategy_repair_enabled", True),
+        "strategy_repair_max_queries": getattr(args, "strategy_repair_max_queries", 2),
     }
 
 
@@ -320,10 +322,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--sciflow-policy-model-id", default="")
     parser.add_argument("--sciflow-policy-model-path", default="")
     parser.add_argument("--sciflow-policy-min-score", type=float, default=0.15)
-    parser.set_defaults(persist_memory_enabled=True, sciflow_policy_enabled=False)
+    parser.add_argument("--disable-strategy-repair", action="store_true")
+    parser.add_argument("--strategy-repair-max-queries", type=int, default=2)
+    parser.set_defaults(persist_memory_enabled=True, sciflow_policy_enabled=False, strategy_repair_enabled=True)
     args = parser.parse_args(argv)
     args.persist_memory_enabled = not args.disable_memory
     args.sciflow_policy_enabled = bool(args.enable_sciflow_policy)
+    args.strategy_repair_enabled = not args.disable_strategy_repair
     return args
 
 

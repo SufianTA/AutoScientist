@@ -40,6 +40,13 @@ def test_auto_llm_provider_falls_back_to_mock_without_keys(monkeypatch) -> None:
     assert config["llm_model"] == "mock-scientist"
 
 
+def test_strategy_repair_config_is_preserved() -> None:
+    config = build_run_config(_args(strategy_repair_enabled=False, strategy_repair_max_queries=4))
+
+    assert config["strategy_repair_enabled"] is False
+    assert config["strategy_repair_max_queries"] == 4
+
+
 def test_value_score_rewards_executed_integrations_and_provenance() -> None:
     result = {
         "status": "completed",

@@ -12,6 +12,7 @@ It is meant to prove integration and infrastructure value before spending on GPU
 - Full runtime output can be compared with `no_memory`, `no_sciflow`, and `no_public_tools` ablations.
 - Runs leave replay bundles, tool traces, state graph exports, and model packages.
 - SciFlow Policy is used as a workflow-controller advisory layer when enabled.
+- The Scientific Strategy Engine exports evidence gaps, readiness, evidence-repair follow-ups, and value-of-information experiment rankings.
 
 It does not prove biomedical discovery superiority by itself. That requires larger public benchmarks,
 expert scoring, and live-model validation.

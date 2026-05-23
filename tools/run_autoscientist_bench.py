@@ -360,6 +360,8 @@ def benchmark_run_config(args: argparse.Namespace) -> dict[str, Any]:
         sciflow_policy_model_id=args.sciflow_policy_model_id,
         sciflow_policy_model_path=args.sciflow_policy_model_path,
         sciflow_policy_min_score=args.sciflow_policy_min_score,
+        strategy_repair_enabled=not getattr(args, "disable_strategy_repair", False),
+        strategy_repair_max_queries=getattr(args, "strategy_repair_max_queries", 2),
     )
     config = build_run_config(base)
     config["benchmark_suite"] = "AutoScientist-Bench v0.1"
@@ -1027,6 +1029,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--sciflow-policy-model-id", default="")
     parser.add_argument("--sciflow-policy-model-path", default="")
     parser.add_argument("--sciflow-policy-min-score", type=float, default=0.15)
+    parser.add_argument("--disable-strategy-repair", action="store_true")
+    parser.add_argument("--strategy-repair-max-queries", type=int, default=2)
     parser.add_argument("--skip-policy-training", action="store_true")
     parser.add_argument("--policy-model-name", default="scientific_workflow_policy")
     parser.add_argument("--train-neural-policy", action="store_true")

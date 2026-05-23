@@ -41,6 +41,8 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "sciflow_policy_model_id": "",
     "sciflow_policy_model_path": "",
     "sciflow_policy_min_score": 0.15,
+    "strategy_repair_enabled": True,
+    "strategy_repair_max_queries": 2,
 }
 
 
@@ -84,6 +86,11 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
     normalized["sciflow_policy_min_score"] = max(
         0.0,
         min(float(normalized.get("sciflow_policy_min_score", 0.15)), 1.0),
+    )
+    normalized["strategy_repair_enabled"] = bool(normalized.get("strategy_repair_enabled", True))
+    normalized["strategy_repair_max_queries"] = max(
+        0,
+        min(int(normalized.get("strategy_repair_max_queries", 2)), 5),
     )
     return normalized
 
@@ -272,6 +279,7 @@ def persist_orchestrator_result(
         "evaluation_criteria": state.context.get("evaluation_criteria", []),
         "report_evaluation": state.report.get("report_evaluation", {}),
         "abstention": state.context.get("abstention", {}),
+        "scientific_strategy": state.context.get("scientific_strategy", {}),
         "open_scientist": state.report.get("open_scientist", {}),
         "run_config": run.run_config_json,
     }

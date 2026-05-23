@@ -18,6 +18,7 @@ from app.services.scientific_planning import (
     evaluate_report_against_criteria,
     type_evidence_items,
 )
+from app.services.scientific_strategy import build_scientific_strategy, rank_experiments_by_strategy
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
@@ -1402,6 +1403,47 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             if evidence_item:
                 state.evidence.append(evidence_item)
 
+        state.evidence = type_evidence_items(state.evidence)
+        preliminary_strategy = build_scientific_strategy(
+            objective=state.objective,
+            biomedical_context=context,
+            evidence=state.evidence,
+            claim_graph=state.context.get("claim_graph", {}),
+        )
+        state.context["preliminary_scientific_strategy"] = preliminary_strategy
+        strategy_repair_outputs: list[dict[str, Any]] = []
+        strategy_repair_queries: list[str] = []
+        if config.get("strategy_repair_enabled", True):
+            max_repair_queries = max(0, min(int(config.get("strategy_repair_max_queries", 2)), 5))
+            seen_queries = {str(query).strip().lower() for query in pubmed_queries}
+            for followup in preliminary_strategy.get("recommended_followups", []):
+                query = str(followup.get("query", "")).strip()
+                if not query or query.lower() in seen_queries:
+                    continue
+                strategy_repair_queries.append(query)
+                seen_queries.add(query.lower())
+                if len(strategy_repair_queries) >= max_repair_queries:
+                    break
+            for query in strategy_repair_queries:
+                repair_output = execute_call(
+                    "strategy_agent",
+                    "pubmed_literature_search_tool",
+                    {"query": query, "retmax": min(pubmed_retmax, 5)},
+                )
+                strategy_repair_outputs.append(repair_output)
+                state.tool_outputs.append(
+                    {
+                        "tool_name": repair_output["tool_name"],
+                        "tool_source": repair_output["tool_source"],
+                        "result": repair_output["result"],
+                    }
+                )
+                evidence_item = self._evidence_from_tool_output(repair_output)
+                if evidence_item:
+                    state.evidence.append(evidence_item)
+            if strategy_repair_outputs:
+                state.evidence = type_evidence_items(state.evidence)
+
         model_tool_outputs = []
         hypothesis_seed = (
             f"Modulating {self._primary_target(state)}-linked mechanisms may be relevant to {self._primary_disease(state)}."
@@ -1437,6 +1479,12 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 )
         self._execute_enabled_open_scientist_capabilities(state, config)
         state.evidence = type_evidence_items(state.evidence)
+        state.context["scientific_strategy"] = build_scientific_strategy(
+            objective=state.objective,
+            biomedical_context=context,
+            evidence=state.evidence,
+            claim_graph=state.context.get("claim_graph", {}),
+        )
         self._record(
             trace,
             "mechanism_agent",
@@ -1453,11 +1501,25 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "custom_model_tool_count": len(model_tool_outputs),
                 "live_public_tool_count": len(
                     [item for item in live_tool_outputs if item["tool_source"] == "live_public_biomedical"]
+                )
+                + len(
+                    [
+                        item
+                        for item in strategy_repair_outputs
+                        if item["tool_source"] == "live_public_biomedical"
+                    ]
                 ),
                 "tooluniverse_tool_count": len(
                     [item for item in live_tool_outputs if item["tool_source"] == "tooluniverse"]
                 )
                 + len(follow_up_outputs),
+                "scientific_strategy": state.context.get("scientific_strategy", {}),
+                "strategy_repair": {
+                    "enabled": bool(config.get("strategy_repair_enabled", True)),
+                    "queries": strategy_repair_queries,
+                    "executed_count": len(strategy_repair_outputs),
+                    "preliminary_readiness": preliminary_strategy.get("readiness", {}),
+                },
                 "sciflow_policy_application": {
                     "status": execution_policy.get("status", "disabled"),
                     "applied": policy_applied,
@@ -1475,7 +1537,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                         "tool_name": item["tool_name"],
                         "status": item["result"].get("status"),
                     }
-                    for item in [*live_tool_outputs, *follow_up_outputs]
+                    for item in [*live_tool_outputs, *follow_up_outputs, *strategy_repair_outputs]
                 ],
             },
         )
@@ -1641,12 +1703,22 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 score_output = self._deterministic_score_evidence_item(item, hypothesis_seed, state)
                 scored.append({**item, "score": score_output})
         state.evidence = scored
+        state.context["scientific_strategy"] = build_scientific_strategy(
+            objective=state.objective,
+            biomedical_context=state.context.get("biomedical_context", {}),
+            evidence=state.evidence,
+            claim_graph=state.context.get("claim_graph", {}),
+        )
         self._record(
             trace,
             "critic_agent",
             state.current_state.value,
             {"evidence_count": len(scored), "strictness": config.get("evidence_strictness", "balanced")},
-            {"scored_evidence": scored, "llm_calls": state.context.get("llm_calls", [])},
+            {
+                "scored_evidence": scored,
+                "scientific_strategy": state.context["scientific_strategy"],
+                "llm_calls": state.context.get("llm_calls", []),
+            },
         )
         return state
 
@@ -1699,7 +1771,14 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                         state.hypothesis_card[key] = values
         claim_graph = build_claim_graph(state.hypothesis_card, state.evidence)
         state.context["claim_graph"] = claim_graph
+        state.context["scientific_strategy"] = build_scientific_strategy(
+            objective=state.objective,
+            biomedical_context=state.context.get("biomedical_context", {}),
+            evidence=state.evidence,
+            claim_graph=claim_graph,
+        )
         state.hypothesis_card["claim_graph"] = claim_graph
+        state.hypothesis_card["scientific_strategy"] = state.context["scientific_strategy"]
         self._record(
             trace,
             "mechanism_agent",
@@ -1708,6 +1787,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "hypothesis_card": state.hypothesis_card,
                 "claim_graph": claim_graph,
+                "scientific_strategy": state.context["scientific_strategy"],
                 "llm_calls": state.context.get("llm_calls", []),
             },
         )
@@ -1986,7 +2066,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "Return only JSON with keys critique_type, severity, critique, recommended_fix, "
                     "abstention_required, claim_boundary.\n"
                     f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:6000]}\n"
-                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:8000]}"
+                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 14), default=str)[:8000]}\n"
+                    f"Scientific strategy: {json.dumps(state.context.get('scientific_strategy', {}), default=str)[:3000]}"
                 ),
                 max_tokens=1000,
             )
@@ -2033,15 +2114,25 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
     ) -> ResearchRunState:
         state.current_state = AgentStateName.PROPOSE_EXPERIMENTS
         experiments = self.tools["experiment_recommendation_tool"].run(
-            {"hypothesis_card": state.hypothesis_card}
+            {
+                "hypothesis_card": state.hypothesis_card,
+                "scientific_strategy": state.context.get("scientific_strategy", {}),
+                "critique": state.critique,
+            }
         ).model_dump()
-        state.experiments = experiments["output"]["experiments"]
+        state.experiments = rank_experiments_by_strategy(
+            experiments["output"]["experiments"],
+            state.context.get("scientific_strategy", {}),
+        )
         self._record(
             trace,
             "experiment_designer_agent",
             state.current_state.value,
             {"hypothesis_card": state.hypothesis_card, "critique": state.critique},
-            {"experiments": state.experiments},
+            {
+                "experiments": state.experiments,
+                "scientific_strategy": state.context.get("scientific_strategy", {}),
+            },
         )
         return state
 
@@ -2069,6 +2160,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "capability_plan": state.context.get("capability_plan", {}),
             "evaluation_criteria": state.context.get("evaluation_criteria", []),
             "claim_graph": state.context.get("claim_graph", {}),
+            "scientific_strategy": state.context.get("scientific_strategy", {}),
             "abstention": state.context.get("abstention", {}),
             "open_scientist": {
                 "qworld": state.context.get("qworld", {}),
