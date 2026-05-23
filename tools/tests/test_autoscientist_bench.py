@@ -5,8 +5,10 @@ from tools.run_autoscientist_bench import (
     benchmark_run_config,
     benchmark_value_score,
     evaluate_realness_gates,
+    extract_strategy_repair,
     expand_tasks,
     load_manifest,
+    summarize_result_group,
 )
 
 
@@ -205,6 +207,56 @@ def test_benchmark_penalizes_serialized_pubmed_query_inputs() -> None:
 
     assert assessment["checks"]["clean_tool_inputs"] is False
     assert assessment["scientific_quality"]["checks"]["clean_tool_inputs"] is False
+
+
+def test_strategy_repair_is_exported_and_summarized() -> None:
+    result = {
+        "provenance": {
+            "agent_steps": [
+                {
+                    "state_name": "EXECUTE_EVIDENCE_COLLECTION",
+                    "output": {
+                        "strategy_repair": {
+                            "enabled": True,
+                            "queries": ["TNF rheumatoid arthritis failed trial"],
+                            "executed_count": 1,
+                        }
+                    },
+                }
+            ]
+        }
+    }
+
+    repair = extract_strategy_repair(result)
+    summary = summarize_result_group(
+        [
+            {
+                "status": "completed",
+                "final_confidence": 0.5,
+                "replay": {"available": True},
+                "sciflow_policy": {"status": "success"},
+                "strategy_repair": repair,
+                "report": {"scientific_strategy": {"readiness": {"tier": "validation_ready"}}},
+                "integrations": {},
+                "value_assessment": {
+                    "score": 90,
+                    "scientific_quality": {"score": 82},
+                    "controller_impact": {
+                        "applied": True,
+                        "tool_call_count": 3,
+                        "evidence_count": 2,
+                        "public_biomedical_call_count": 1,
+                        "tooluniverse_call_count": 1,
+                    },
+                },
+            }
+        ]
+    )
+
+    assert repair["executed_count"] == 1
+    assert summary["mean_scientific_quality"] == 82
+    assert summary["strategy_repair_runs"] == 1
+    assert summary["validation_ready_runs"] == 1
 
 
 def test_realness_gates_fail_missing_expected_public_tool() -> None:

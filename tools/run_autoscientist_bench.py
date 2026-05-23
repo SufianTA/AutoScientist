@@ -332,6 +332,7 @@ def run_task(
         "replay": replay,
         "sciflow_policy": extract_sciflow_advice(result),
         "sciflow_application": extract_sciflow_application(result),
+        "strategy_repair": extract_strategy_repair(result),
         "trace_summary": result.get("trace_summary"),
         "report": result.get("report", {}),
         "hypothesis": result.get("report", {}).get("hypothesis", {}),
@@ -518,6 +519,18 @@ def extract_sciflow_application(result: dict[str, Any]) -> dict[str, Any]:
         if isinstance(application, dict):
             return application
     return {"status": "not_recorded", "applied": False, "effects": []}
+
+
+def extract_strategy_repair(result: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(result.get("strategy_repair"), dict):
+        return result["strategy_repair"]
+    for step in result.get("provenance", {}).get("agent_steps", []):
+        if step.get("state_name") != "EXECUTE_EVIDENCE_COLLECTION":
+            continue
+        repair = step.get("output", {}).get("strategy_repair")
+        if isinstance(repair, dict):
+            return repair
+    return {"enabled": False, "queries": [], "executed_count": 0}
 
 
 def controller_impact(result: dict[str, Any], application: dict[str, Any]) -> dict[str, Any]:
@@ -793,12 +806,20 @@ def missing_expected_integrations(result: dict[str, Any]) -> list[str]:
 
 def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
     scores = [item["value_assessment"]["score"] for item in results]
+    quality_scores = [
+        item.get("value_assessment", {}).get("scientific_quality", {}).get("score")
+        for item in results
+        if item.get("value_assessment", {}).get("scientific_quality", {}).get("score") is not None
+    ]
     completed = [item for item in results if item.get("status") == "completed"]
     impacts = [item.get("value_assessment", {}).get("controller_impact", {}) for item in results]
+    repairs = [item.get("strategy_repair", {}) for item in results]
+    strategies = [item.get("report", {}).get("scientific_strategy", {}) for item in results]
     return {
         "runs": len(results),
         "completed": len(completed),
         "mean_score": round(statistics.mean(scores), 2) if scores else 0,
+        "mean_scientific_quality": round(statistics.mean(quality_scores), 2) if quality_scores else 0,
         "min_score": min(scores) if scores else 0,
         "max_score": max(scores) if scores else 0,
         "mean_confidence": round(
@@ -810,6 +831,19 @@ def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
         "memory_replay_runs": sum(1 for item in results if item.get("replay", {}).get("available")),
         "controller_advice_runs": sum(1 for item in results if item.get("sciflow_policy", {}).get("status") == "success"),
         "controller_applied_runs": sum(1 for impact in impacts if impact.get("applied")),
+        "strategy_repair_runs": sum(1 for repair in repairs if int(repair.get("executed_count") or 0) > 0),
+        "mean_strategy_repair_queries": round(
+            statistics.mean([len(repair.get("queries") or []) for repair in repairs]),
+            2,
+        )
+        if repairs
+        else 0.0,
+        "validation_ready_runs": sum(
+            1 for strategy in strategies if strategy.get("readiness", {}).get("tier") == "validation_ready"
+        ),
+        "hypothesis_only_runs": sum(
+            1 for strategy in strategies if strategy.get("readiness", {}).get("tier") == "hypothesis_only"
+        ),
         "mean_tool_calls": round(
             statistics.mean([int(impact.get("tool_call_count") or 0) for impact in impacts]),
             2,
@@ -853,8 +887,14 @@ def compare_against_full(summary_by_ablation: dict[str, dict[str, Any]]) -> dict
             continue
         deltas[name] = {
             "mean_score_delta_vs_full": round(full["mean_score"] - item["mean_score"], 2),
+            "mean_scientific_quality_delta_vs_full": round(
+                full.get("mean_scientific_quality", 0) - item.get("mean_scientific_quality", 0),
+                2,
+            ),
             "controller_runs_delta_vs_full": full["controller_advice_runs"] - item["controller_advice_runs"],
             "controller_applied_runs_delta_vs_full": full["controller_applied_runs"] - item["controller_applied_runs"],
+            "strategy_repair_runs_delta_vs_full": full.get("strategy_repair_runs", 0)
+            - item.get("strategy_repair_runs", 0),
             "replay_runs_delta_vs_full": full["memory_replay_runs"] - item["memory_replay_runs"],
             "public_tool_runs_delta_vs_full": full["public_tool_runs"] - item["public_tool_runs"],
             "mean_tool_calls_delta_vs_full": round(full["mean_tool_calls"] - item["mean_tool_calls"], 2),
@@ -921,14 +961,16 @@ def render_summary_markdown(summary: dict[str, Any]) -> str:
         "",
         "## Ablation Summary",
         "",
-        "| Ablation | Runs | Completed | Mean score | Replay runs | Controller advice | Controller applied | Mean evidence | Mean tool calls | Public-tool runs |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Ablation | Runs | Completed | Mean score | Strict quality | Replay runs | Controller advice | Controller applied | Strategy repairs | Mean evidence | Mean tool calls | Public-tool runs |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, item in summary["summary_by_ablation"].items():
         lines.append(
             f"| {name} | {item['runs']} | {item['completed']} | {item['mean_score']} | "
+            f"{item.get('mean_scientific_quality', 0)} | "
             f"{item['memory_replay_runs']} | {item['controller_advice_runs']} | "
-            f"{item['controller_applied_runs']} | {item['mean_evidence_count']} | "
+            f"{item['controller_applied_runs']} | {item.get('strategy_repair_runs', 0)} | "
+            f"{item['mean_evidence_count']} | "
             f"{item['mean_tool_calls']} | {item['public_tool_runs']} |"
         )
     lines.extend(["", "## Full vs Ablation Deltas", "", "```json"])
