@@ -19,3 +19,5 @@ outputs/*
 !outputs/acvr1_fop_cli_report.md
 new_outputs/
 pod_artifacts/
+tmp_ablation_extract/
+tmp_breadth_extract/
