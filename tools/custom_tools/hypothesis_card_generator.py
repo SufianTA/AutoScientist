@@ -1,4 +1,8 @@
 from tools.custom_tools.base import ScientificTool, ToolResult
+from tools.custom_tools.clinical_status import (
+    classify_clinical_status,
+    clinical_literature_titles,
+)
 
 
 def label_counts(evidence: list[dict]) -> dict[str, int]:
@@ -98,50 +102,9 @@ def extract_citations(evidence: list[dict], target: str) -> list[dict]:
     return citations[:12]
 
 
-def target_aliases(target: str) -> set[str]:
-    value = target.lower()
-    aliases = {value}
-    if value == "tnf":
-        aliases.update(
-            {
-                "tnf-alpha",
-                "tnf alpha",
-                "anti-tnf",
-                "anti-tnfalpha",
-                "anti-tnf-alpha",
-                "tumor necrosis factor",
-                "tumour necrosis factor",
-                "infliximab",
-                "adalimumab",
-                "certolizumab",
-                "golimumab",
-            }
-        )
-    if value in {"il6", "il6r"}:
-        aliases.update({"il-6", "interleukin-6", "il-6 receptor", "tocilizumab", "sarilumab"})
-    return {alias for alias in aliases if alias}
-
-
-def disease_aliases(disease: str) -> set[str]:
-    value = disease.lower()
-    aliases = {value}
-    if "inflammatory bowel" in value or value == "ibd":
-        aliases.update({"inflammatory bowel disease", "inflammatorybowel", "ibd", "crohn", "ulcerative colitis"})
-    if "rheumatoid" in value:
-        aliases.update({"rheumatoid arthritis", "synovitis"})
-    return {alias for alias in aliases if alias}
-
-
-def title_matches_context(title: str, target: str, disease: str) -> bool:
-    lowered = title.lower()
-    return any(alias in lowered for alias in target_aliases(target)) and any(
-        alias in lowered for alias in disease_aliases(disease)
-    )
-
-
 def clinical_precedence_summary(target: str, disease: str, evidence: list[dict]) -> str:
     public_lines = []
-    literature_titles = []
+    literature_titles = clinical_literature_titles(evidence, target, disease)
     has_target_level_precedence = False
     for item in evidence:
         structured = item.get("structured", {}) if isinstance(item.get("structured"), dict) else {}
@@ -155,17 +118,12 @@ def clinical_precedence_summary(target: str, disease: str, evidence: list[dict])
         if evidence_type == "clinical_precedence":
             has_target_level_precedence = True
             public_lines.append(f"Open Targets target metadata indicates target-level clinical or tractability precedence for {target}.")
-        if evidence_type == "clinical_precedence_literature":
-            for article in structured.get("articles", [])[:3]:
-                title = article.get("title")
-                if title and title_matches_context(title, target, disease):
-                    literature_titles.append(title)
     if public_lines or literature_titles:
         pieces = [*public_lines[:2]]
-        if has_target_level_precedence and target.lower() == "tnf" and "inflammatory bowel" in disease.lower():
+        if has_target_level_precedence:
             pieces.append(
-                "For TNF in inflammatory bowel disease, this should be framed as established anti-TNF clinical "
-                "precedence with unresolved response, resistance, safety, and patient-stratification questions."
+                "This should be framed as clinical or translational precedence with unresolved response, "
+                "resistance, safety, mechanism, and patient-stratification questions."
             )
         if literature_titles:
             pieces.append("Relevant clinical literature titles include: " + "; ".join(literature_titles[:3]) + ".")
@@ -187,6 +145,8 @@ class HypothesisCardGeneratorTool(ScientificTool):
         evidence = payload.get("evidence", [])
         confidence = confidence_from_evidence(evidence)
         mechanism = mechanism_phrase(target, evidence)
+        clinical_status = classify_clinical_status(target, disease, evidence)
+        confidence = max(confidence, float(clinical_status.get("confidence_floor") or 0.0))
         local_only = bool(evidence) and all(str(item.get("source", "")).startswith("local_") for item in evidence)
         counts = label_counts(evidence)
         safety_items = [
@@ -225,6 +185,22 @@ class HypothesisCardGeneratorTool(ScientificTool):
                 "Safety/intervention literature was retrieved, so translational risk remains an active uncertainty."
             )
         has_precedence = "No explicit clinical-precedence evidence" not in precedence
+        status = str(clinical_status.get("status", "speculative_or_insufficient"))
+        if status == "established_or_clinically_precedented":
+            status_framing = (
+                f"{target} has established or clinically precedented target-disease grounding for {disease}. "
+                "The output should not present this as a new target discovery."
+            )
+        elif status == "genetically_or_publicly_grounded":
+            status_framing = (
+                f"{target} is publicly grounded for {disease}, but association evidence must be separated from "
+                "clinical efficacy, safety, druggability, and intervention directionality."
+            )
+        else:
+            status_framing = (
+                f"{target} remains an early or insufficiently established hypothesis for {disease}; claims require "
+                "explicit validation and stronger public evidence."
+            )
         return ToolResult(
             status="success",
             input=payload,
@@ -239,7 +215,7 @@ class HypothesisCardGeneratorTool(ScientificTool):
                     "that requires live external evidence before scientific interpretation."
                     if local_only
                     else (
-                        f"{target} has evidence-supported target-disease grounding for {disease}. "
+                        f"{status_framing} "
                         f"{precedence} The remaining scientific work is to resolve mechanism details, "
                         "response or resistance biology, safety liabilities, and patient-selection strategy; "
                         "this is not a claim that a new target has been discovered."
@@ -247,7 +223,9 @@ class HypothesisCardGeneratorTool(ScientificTool):
                 ),
                 "evidence": evidence,
                 "evidence_label_counts": counts,
+                "clinical_status": clinical_status,
                 "scientific_assessment": [
+                    clinical_status["interpretation"],
                     (
                         f"The disease-target rationale is biologically plausible when live/public evidence links "
                         f"{target} to {disease} through disease association, pathway, or mechanism records."

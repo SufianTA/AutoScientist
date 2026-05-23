@@ -23,6 +23,7 @@ from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
 from agents.app.state import AgentStateName, ResearchRunState
+from tools.custom_tools.clinical_status import disease_aliases, target_aliases, title_claim_type
 
 
 class LangGraphScientificWorkflow(AgentOrchestrator):
@@ -845,48 +846,23 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         return digest
 
     def _target_aliases(self, target: str) -> set[str]:
-        normalized = target.lower()
-        aliases = {normalized}
-        if normalized == "tnf":
-            aliases.update(
-                {
-                    "anti-tnf",
-                    "anti-tnfalpha",
-                    "anti-tnf-alpha",
-                    "tnf-alpha",
-                    "tnf alpha",
-                    "tumor necrosis factor",
-                    "tumour necrosis factor",
-                    "infliximab",
-                    "adalimumab",
-                    "certolizumab",
-                    "golimumab",
-                }
-            )
-        if normalized in {"il6", "il6r"}:
-            aliases.update({"il-6", "interleukin-6", "il6r", "il-6 receptor", "tocilizumab", "sarilumab"})
-        if normalized == "cftr":
-            aliases.update({"ivacaftor", "lumacaftor", "tezacaftor", "elexacaftor"})
-        if normalized == "pcsk9":
-            aliases.update({"evolocumab", "alirocumab", "inclisiran"})
-        return {alias for alias in aliases if alias}
+        return target_aliases(target)
 
     def _disease_aliases(self, disease: str) -> set[str]:
-        normalized = disease.lower()
-        aliases = {normalized}
-        if "inflammatory bowel" in normalized or normalized == "ibd":
-            aliases.update({"inflammatory bowel disease", "inflammatorybowel", "ibd", "crohn", "ulcerative colitis"})
-        if "rheumatoid" in normalized:
-            aliases.update({"rheumatoid arthritis", "ra", "synovitis"})
-        if "cystic fibrosis" in normalized:
-            aliases.update({"cystic fibrosis", "cf"})
-        return {alias for alias in aliases if alias}
+        return disease_aliases(disease)
 
     def _pubmed_title_relevance(self, item: dict[str, Any], state: ResearchRunState | None) -> dict[str, Any]:
         structured = item.get("structured", {}) if isinstance(item.get("structured"), dict) else {}
         articles = structured.get("articles") or []
         if not articles:
-            return {"relevant": False, "target_hits": 0, "disease_hits": 0, "clinical_hits": 0}
+            return {
+                "relevant": False,
+                "target_hits": 0,
+                "disease_hits": 0,
+                "clinical_hits": 0,
+                "mechanism_hits": 0,
+                "safety_hits": 0,
+            }
         target = self._primary_target(state) if state is not None else ""
         disease = self._primary_disease(state) if state is not None else ""
         target_aliases = self._target_aliases(target)
@@ -894,6 +870,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         target_hits = 0
         disease_hits = 0
         clinical_hits = 0
+        mechanism_hits = 0
+        safety_hits = 0
         for article in articles:
             text = " ".join(
                 str(article.get(key) or "")
@@ -903,13 +881,20 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 target_hits += 1
             if any(alias in text for alias in disease_aliases):
                 disease_hits += 1
-            if any(term in text for term in ["clinical", "trial", "therapy", "treatment", "response", "safety", "adverse"]):
+            claim_type = title_claim_type(text)
+            if claim_type == "clinical_precedence":
                 clinical_hits += 1
+            if claim_type == "mechanistic":
+                mechanism_hits += 1
+            if claim_type == "safety":
+                safety_hits += 1
         return {
             "relevant": target_hits > 0 and disease_hits > 0,
             "target_hits": target_hits,
             "disease_hits": disease_hits,
             "clinical_hits": clinical_hits,
+            "mechanism_hits": mechanism_hits,
+            "safety_hits": safety_hits,
         }
 
     def _deterministic_score_evidence_item(
@@ -972,6 +957,22 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "evidence_type": "clinical_precedence_literature",
                     "rationale": "Retrieved PubMed titles jointly match the target/disease context and include clinical or treatment language.",
                     "warnings": ["Article titles still require manual inspection before efficacy claims."],
+                }
+            if relevance["safety_hits"]:
+                return {
+                    "label": "safety_concern",
+                    "score": 0.7,
+                    "evidence_type": "safety_literature",
+                    "rationale": "Retrieved PubMed titles jointly match the target/disease context and include safety or adverse-event language.",
+                    "warnings": ["Safety evidence requires manual review before translation claims."],
+                }
+            if relevance["mechanism_hits"]:
+                return {
+                    "label": "mechanistic_relevance",
+                    "score": 0.62,
+                    "evidence_type": "mechanistic_literature",
+                    "rationale": "Retrieved PubMed titles jointly match the target/disease context and include mechanism/pathway language.",
+                    "warnings": ["Mechanistic literature supports plausibility, not efficacy."],
                 }
         score = self.tools["evidence_quality_scorer_tool"].run(
             {

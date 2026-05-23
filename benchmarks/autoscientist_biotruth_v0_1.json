@@ -2,7 +2,7 @@
   "schema": "autosci.biotruth_manifest.v0.1",
   "name": "AutoScientist-BioTruth",
   "version": "0.1",
-  "created_at_unix": 1779509024,
+  "created_at_unix": 1779546003,
   "purpose": "Evaluate AutoScientist for biomedical correctness and usefulness, not just integration success. Each task is grounded in public target-disease data and scored by a structured expert-style rubric.",
   "source_seed_cases": "benchmarks\\biotruth_seed_cases_v0_1.json",
   "rubric_path": "benchmarks\\biotruth_rubric_v0_1.json",
@@ -167,7 +167,7 @@
         "open_targets_matched_disease_id": "EFO_0000685",
         "open_targets_matched_disease_name": "rheumatoid arthritis",
         "open_targets_associated_disease_count": 3301,
-        "pubmed_gene_disease_count": 6772,
+        "pubmed_gene_disease_count": 6773,
         "ncbi_gene_count": 1,
         "evidence_availability": "moderate"
       },
@@ -357,7 +357,7 @@
           "status": "success",
           "query": "IL6 rheumatoid arthritis",
           "db": "pubmed",
-          "count": 6772,
+          "count": 6773,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=IL6+rheumatoid+arthritis&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -398,7 +398,7 @@
         "open_targets_matched_disease_id": "EFO_0003767",
         "open_targets_matched_disease_name": "inflammatory bowel disease",
         "open_targets_associated_disease_count": 4041,
-        "pubmed_gene_disease_count": 11402,
+        "pubmed_gene_disease_count": 11401,
         "ncbi_gene_count": 1,
         "evidence_availability": "moderate"
       },
@@ -588,7 +588,7 @@
           "status": "success",
           "query": "TNF inflammatory bowel disease",
           "db": "pubmed",
-          "count": 11402,
+          "count": 11401,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=TNF+inflammatory+bowel+disease&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -629,7 +629,7 @@
         "open_targets_matched_disease_name": "Crohn's disease",
         "open_targets_associated_disease_count": 1062,
         "pubmed_gene_disease_count": 1598,
-        "ncbi_gene_count": 1,
+        "ncbi_gene_count": 0,
         "evidence_availability": "high"
       },
       "public_context": {
@@ -831,10 +831,11 @@
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=NOD2+Crohn+disease&retmode=json&retmax=0"
         },
         "ncbi_gene": {
-          "status": "success",
+          "status": "failure",
           "query": "NOD2[Gene Name] AND Homo sapiens[Organism]",
           "db": "gene",
-          "count": 1,
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=NOD2%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
         }
       },
@@ -1334,7 +1335,7 @@
         "open_targets_matched_disease_id": "EFO_0000756",
         "open_targets_matched_disease_name": "melanoma",
         "open_targets_associated_disease_count": 1559,
-        "pubmed_gene_disease_count": 9089,
+        "pubmed_gene_disease_count": 9090,
         "ncbi_gene_count": 1,
         "evidence_availability": "high"
       },
@@ -1532,7 +1533,7 @@
           "status": "success",
           "query": "BRAF melanoma",
           "db": "pubmed",
-          "count": 9089,
+          "count": 9090,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=BRAF+melanoma&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -1811,7 +1812,7 @@
         "open_targets_matched_disease_id": "EFO_0000305",
         "open_targets_matched_disease_name": "breast carcinoma",
         "open_targets_associated_disease_count": 1658,
-        "pubmed_gene_disease_count": 16165,
+        "pubmed_gene_disease_count": 16166,
         "ncbi_gene_count": 1,
         "evidence_availability": "high"
       },
@@ -2005,7 +2006,7 @@
           "status": "success",
           "query": "ERBB2 breast cancer",
           "db": "pubmed",
-          "count": 16165,
+          "count": 16166,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ERBB2+breast+cancer&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -2046,7 +2047,7 @@
         "open_targets_matched_disease_id": "MONDO_0008903",
         "open_targets_matched_disease_name": "lung cancer",
         "open_targets_associated_disease_count": 1283,
-        "pubmed_gene_disease_count": 8085,
+        "pubmed_gene_disease_count": 8086,
         "ncbi_gene_count": 1,
         "evidence_availability": "moderate"
       },
@@ -2240,7 +2241,7 @@
           "status": "success",
           "query": "ALK lung cancer",
           "db": "pubmed",
-          "count": 8085,
+          "count": 8086,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ALK+lung+cancer&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -2751,7 +2752,7 @@
         "open_targets_matched_disease_id": "MONDO_0009061",
         "open_targets_matched_disease_name": "cystic fibrosis",
         "open_targets_associated_disease_count": 1329,
-        "pubmed_gene_disease_count": 14301,
+        "pubmed_gene_disease_count": 14303,
         "ncbi_gene_count": 1,
         "evidence_availability": "high"
       },
@@ -2953,7 +2954,7 @@
           "status": "success",
           "query": "CFTR cystic fibrosis",
           "db": "pubmed",
-          "count": 14301,
+          "count": 14303,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=CFTR+cystic+fibrosis&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -3230,7 +3231,7 @@
         "open_targets_matched_disease_name": "fibrodysplasia ossificans progressiva",
         "open_targets_associated_disease_count": 521,
         "pubmed_gene_disease_count": 389,
-        "ncbi_gene_count": 1,
+        "ncbi_gene_count": 0,
         "evidence_availability": "high"
       },
       "public_context": {
@@ -3427,10 +3428,11 @@
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ACVR1+fibrodysplasia+ossificans+progressiva&retmode=json&retmax=0"
         },
         "ncbi_gene": {
-          "status": "success",
+          "status": "failure",
           "query": "ACVR1[Gene Name] AND Homo sapiens[Organism]",
           "db": "gene",
-          "count": 1,
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ACVR1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
         }
       },
@@ -3698,8 +3700,8 @@
         "open_targets_matched_disease_id": "MONDO_0010679",
         "open_targets_matched_disease_name": "Duchenne muscular dystrophy",
         "open_targets_associated_disease_count": 1229,
-        "pubmed_gene_disease_count": 16506,
-        "ncbi_gene_count": 0,
+        "pubmed_gene_disease_count": 16507,
+        "ncbi_gene_count": 1,
         "evidence_availability": "high"
       },
       "public_context": {
@@ -3904,15 +3906,14 @@
           "status": "success",
           "query": "DMD Duchenne muscular dystrophy",
           "db": "pubmed",
-          "count": 16506,
+          "count": 16507,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=DMD+Duchenne+muscular+dystrophy&retmode=json&retmax=0"
         },
         "ncbi_gene": {
-          "status": "failure",
+          "status": "success",
           "query": "DMD[Gene Name] AND Homo sapiens[Organism]",
           "db": "gene",
-          "count": 0,
-          "error": "HTTP Error 429: Too Many Requests",
+          "count": 1,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=DMD%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
         }
       },
@@ -4651,7 +4652,7 @@
         "open_targets_matched_disease_id": "MONDO_0004976",
         "open_targets_matched_disease_name": "amyotrophic lateral sclerosis",
         "open_targets_associated_disease_count": 1766,
-        "pubmed_gene_disease_count": 5633,
+        "pubmed_gene_disease_count": 5634,
         "ncbi_gene_count": 1,
         "evidence_availability": "high"
       },
@@ -4845,7 +4846,7 @@
           "status": "success",
           "query": "SOD1 amyotrophic lateral sclerosis",
           "db": "pubmed",
-          "count": 5633,
+          "count": 5634,
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=SOD1+amyotrophic+lateral+sclerosis&retmode=json&retmax=0"
         },
         "ncbi_gene": {
@@ -5126,7 +5127,7 @@
         "open_targets_matched_disease_name": "familial hypercholesterolemia",
         "open_targets_associated_disease_count": 788,
         "pubmed_gene_disease_count": 1622,
-        "ncbi_gene_count": 2,
+        "ncbi_gene_count": 0,
         "evidence_availability": "high"
       },
       "public_context": {
@@ -5331,10 +5332,11 @@
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9+familial+hypercholesterolemia&retmode=json&retmax=0"
         },
         "ncbi_gene": {
-          "status": "success",
+          "status": "failure",
           "query": "PCSK9[Gene Name] AND Homo sapiens[Organism]",
           "db": "gene",
-          "count": 2,
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=PCSK9%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
         }
       },
@@ -5838,7 +5840,7 @@
         "open_targets_matched_disease_name": "age-related macular degeneration",
         "open_targets_associated_disease_count": 2852,
         "pubmed_gene_disease_count": 2675,
-        "ncbi_gene_count": 1,
+        "ncbi_gene_count": 0,
         "evidence_availability": "moderate"
       },
       "public_context": {
@@ -6031,10 +6033,11 @@
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=VEGFA+age-related+macular+degeneration&retmode=json&retmax=0"
         },
         "ncbi_gene": {
-          "status": "success",
+          "status": "failure",
           "query": "VEGFA[Gene Name] AND Homo sapiens[Organism]",
           "db": "gene",
-          "count": 1,
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
           "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=VEGFA%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
         }
       },

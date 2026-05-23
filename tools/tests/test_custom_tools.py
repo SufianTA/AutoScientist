@@ -1,4 +1,5 @@
 from tools.custom_tools.registry import build_custom_tools
+from tools.custom_tools.clinical_status import classify_clinical_status, title_matches_context
 
 
 def test_custom_tools_return_standard_result() -> None:
@@ -89,3 +90,73 @@ def test_experiment_recommendation_is_target_disease_specific() -> None:
     names = " ".join(item["name"] for item in result.output["experiments"]).lower()
     assert "anti-tnf" in names
     assert "response/non-response" in names
+
+
+def test_clinical_status_classifies_established_public_precedence() -> None:
+    status = classify_clinical_status(
+        "ERBB2",
+        "breast cancer",
+        [
+            {
+                "source": "Benchmark public context: Open Targets target-disease association",
+                "text": "ERBB2 breast cancer association.",
+                "structured": {
+                    "public_labels": {
+                        "open_targets_association_status": "matched",
+                        "open_targets_association_score": 0.7,
+                        "pubmed_gene_disease_count": 10000,
+                    }
+                },
+                "score": {"label": "strong_support", "evidence_type": "target_disease_association"},
+            },
+            {
+                "source": "Benchmark public context: Open Targets target tractability",
+                "text": "Approved drug antibody precedence.",
+                "structured": {
+                    "evidence_type": "clinical_precedence",
+                    "positive_tractability": [{"label": "Approved Drug", "modality": "AB", "value": True}],
+                },
+                "score": {"label": "mechanistic_relevance", "evidence_type": "clinical_precedence"},
+            },
+        ],
+    )
+
+    assert status["status"] == "established_or_clinically_precedented"
+    assert status["confidence_floor"] >= 0.72
+
+
+def test_clinical_status_classifies_grounded_but_not_established() -> None:
+    status = classify_clinical_status(
+        "APOE",
+        "Alzheimer disease",
+        [
+            {
+                "source": "Benchmark public context: Open Targets target-disease association",
+                "text": "APOE Alzheimer disease association.",
+                "structured": {
+                    "public_labels": {
+                        "open_targets_association_status": "matched",
+                        "open_targets_association_score": 0.5,
+                        "pubmed_gene_disease_count": 5000,
+                    }
+                },
+                "score": {"label": "strong_support", "evidence_type": "target_disease_association"},
+            }
+        ],
+    )
+
+    assert status["status"] == "genetically_or_publicly_grounded"
+    assert "separate association" in status["interpretation"]
+
+
+def test_title_matching_rejects_off_target_pubmed_titles() -> None:
+    assert title_matches_context(
+        "Long-term safety of anti-TNF therapy in inflammatory bowel disease",
+        "TNF",
+        "inflammatory bowel disease",
+    )
+    assert not title_matches_context(
+        "Real-world effectiveness and safety of upadacitinib in Crohn disease",
+        "TNF",
+        "inflammatory bowel disease",
+    )
