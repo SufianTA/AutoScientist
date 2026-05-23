@@ -98,6 +98,10 @@ def expand_tasks(
                             set(case.get("expected_capabilities", []))
                             | set(template.get("expected_capabilities", []))
                         ),
+                        "public_labels": case.get("public_labels", {}),
+                        "benchmark_tags": case.get("benchmark_tags", []),
+                        "rubric_path": manifest.get("rubric_path"),
+                        "judge_focus": template.get("judge_focus", []),
                         "objective": objective,
                         "public_context": public_context,
                     }
@@ -932,12 +936,11 @@ def top_results(results: list[dict[str, Any]], *, ablation: str) -> list[dict[st
 
 def recommended_gpu_command() -> str:
     return (
-        "python tools/run_autoscientist_bench.py --limit 100 --replicates-per-case 3 "
+        "python tools/run_biotruth_pipeline.py --mode full --limit 100 "
         "--ablations full no_memory no_public_tools no_sciflow "
-        "--llm-provider anthropic --llm-model claude-sonnet-4-6 --llm-api-key-env-var ANTHROPIC_API_KEY "
-        "--enable-sciflow-policy --train-neural-policy --neural-epochs 120 --require-real-llm --strict-real-run "
+        "--llm-provider auto --train-neural-policy --neural-epochs 120 --strict-real-run "
         "--require-expected-integrations --min-full-completion-rate 1.0 --min-full-mean-score 85 "
-        "--min-neural-holdout-top1 0.5 --min-state-graph-nodes 1"
+        "--min-neural-holdout-top1 0.5 --min-state-graph-nodes 1 --score-mode judge"
     )
 
 

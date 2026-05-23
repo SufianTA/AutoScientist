@@ -1,0 +1,200 @@
+{
+  "schema": "autosci.biotruth_rubric.v0.1",
+  "name": "BioTruth Target-Disease Correctness Rubric",
+  "version": "0.1",
+  "created_at": "2026-05-23",
+  "purpose": "Score whether AutoScientist outputs are biologically grounded, useful, auditable, and appropriately cautious on public target-disease discovery tasks.",
+  "primary_sources": [
+    {
+      "name": "Open Targets Platform target-disease evidence",
+      "url": "https://platform-docs.opentargets.org/evidence",
+      "role": "Public target-disease evidence categories and source-specific scoring context."
+    },
+    {
+      "name": "Open Targets Platform target-disease associations",
+      "url": "https://platform-docs.opentargets.org/associations",
+      "role": "Association score semantics and caveat that scores are ranking heuristics, not clinical confidence."
+    },
+    {
+      "name": "Open Targets target prioritisation view",
+      "url": "https://platform-docs.opentargets.org/web-interface/target-prioritisation",
+      "role": "Precedence, tractability, doability, and safety concepts used in target prioritisation."
+    },
+    {
+      "name": "Therapeutics Data Commons leaderboard guidance",
+      "url": "https://tdcommons.ai/benchmark/overview/",
+      "role": "Benchmark discipline: train/validation/test splits, fixed test sets, metrics, and repeated seeds."
+    },
+    {
+      "name": "BioASQ evaluation framework",
+      "url": "https://www.bioasq.org/sites/default/files/PublicDocuments/BioASQ_D4.1-EvaluationFrameworkSpecification_final.pdf",
+      "role": "Biomedical answer-quality dimensions: information recall, precision, repetition, and readability."
+    },
+    {
+      "name": "PubMedQA",
+      "url": "https://pubmedqa.github.io/",
+      "role": "Expert-labeled biomedical QA precedent for yes/no/maybe answers grounded in abstracts."
+    },
+    {
+      "name": "Cochrane RoB 2",
+      "url": "https://www.cochrane.org/learn/courses-and-resources/cochrane-methodology/risk-bias/about-risk-bias-2-rob-2",
+      "role": "Structured risk-of-bias thinking and signaling-question style checks."
+    },
+    {
+      "name": "GRADE approach",
+      "url": "https://www.cochrane.org/learn/courses-and-resources/cochrane-methodology/grade-approach/grade-handbook",
+      "role": "Certainty-of-evidence framing: high, moderate, low, very low."
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "target_disease_validity",
+      "label": "Target-disease validity",
+      "weight": 20,
+      "question": "Does the answer correctly characterize whether the target is biologically implicated in the disease, without overstating Open Targets or literature signals?",
+      "score_anchors": {
+        "0": "Wrong target, wrong disease, fabricated association, or unsupported causal claim.",
+        "1": "Mentions the pair but mostly confuses disease biology or target role.",
+        "2": "Partially plausible but misses important caveats or directionality.",
+        "3": "Generally correct and bounded, with some missing context.",
+        "4": "Strong, evidence-aware characterization of known and uncertain biology.",
+        "5": "Expert-grade synthesis that distinguishes causal, correlative, clinical, and indirect evidence."
+      }
+    },
+    {
+      "id": "evidence_grounding",
+      "label": "Evidence grounding and citation quality",
+      "weight": 20,
+      "question": "Are claims tied to inspectable public evidence, tool traces, citations, or identifiers, and are weak evidence sources treated cautiously?",
+      "score_anchors": {
+        "0": "No traceable evidence or fabricated references.",
+        "1": "References evidence generically but gives no inspectable grounding.",
+        "2": "Some evidence is present but sparse, weakly connected, or citation-poor.",
+        "3": "Adequate evidence with identifiable sources and reasonable linkage to claims.",
+        "4": "Multiple public sources are used and claims are mostly source-grounded.",
+        "5": "Evidence is comprehensive, source-typed, citation-aware, and claim-by-claim traceable."
+      }
+    },
+    {
+      "id": "mechanism_plausibility",
+      "label": "Mechanistic plausibility",
+      "weight": 15,
+      "question": "Does the system explain a plausible mechanism linking target perturbation to disease-relevant biology and separate mechanism from therapeutic actionability?",
+      "score_anchors": {
+        "0": "Mechanism is absent, impossible, or biologically incoherent.",
+        "1": "Mechanism is vague and mostly keyword-based.",
+        "2": "Mechanism is plausible but shallow or missing directionality.",
+        "3": "Mechanism is coherent and connected to disease biology.",
+        "4": "Mechanism includes pathway/cell-context detail and counterarguments.",
+        "5": "Mechanistic reasoning is specific, balanced, and suggests discriminating validation experiments."
+      }
+    },
+    {
+      "id": "safety_and_translation",
+      "label": "Safety and translational caution",
+      "weight": 15,
+      "question": "Does the answer address safety, tractability, human genetics, clinical precedence, and translation risks instead of just ranking a target?",
+      "score_anchors": {
+        "0": "No safety or translational caveats.",
+        "1": "Generic caveats only.",
+        "2": "Mentions safety or tractability but without target-specific detail.",
+        "3": "Covers at least one target-specific safety or translational concern.",
+        "4": "Balances efficacy rationale with tractability, safety, and clinical context.",
+        "5": "Expert-quality risk-benefit framing with clear next evidence needed before translation."
+      }
+    },
+    {
+      "id": "experiment_quality",
+      "label": "Experiment decision quality",
+      "weight": 15,
+      "question": "Are proposed experiments specific, feasible, falsifiable, and chosen to reduce the largest uncertainty in the hypothesis?",
+      "score_anchors": {
+        "0": "No concrete experiment or impossible experiment.",
+        "1": "Generic validation suggestion with no readout or design.",
+        "2": "Some concrete experiments but weakly connected to uncertainty.",
+        "3": "Feasible experiments with readouts and a clear validation goal.",
+        "4": "Experiments target mechanism, context, and failure modes.",
+        "5": "Experiments are prioritized by expected information gain, controls, failure criteria, and decision impact."
+      }
+    },
+    {
+      "id": "calibration_and_limitations",
+      "label": "Calibration and limitations",
+      "weight": 10,
+      "question": "Does the output state uncertainty, failed/weak branches, missing data, and limitations without pretending the benchmark proves discovery?",
+      "score_anchors": {
+        "0": "Overconfident, no limitations, or misleading claim of proof.",
+        "1": "Minimal boilerplate uncertainty.",
+        "2": "Some limitations but not tied to evidence quality.",
+        "3": "Reasonable limitations and confidence language.",
+        "4": "Clear uncertainty accounting and useful failed-branch discussion.",
+        "5": "Excellent calibration with explicit evidence grades and next data needed."
+      }
+    },
+    {
+      "id": "auditability",
+      "label": "Auditability and reproducibility",
+      "weight": 5,
+      "question": "Can another reviewer replay or inspect how the answer was produced, including tool calls, memory writes, and artifact paths?",
+      "score_anchors": {
+        "0": "Opaque output with no trace.",
+        "1": "Minimal run metadata.",
+        "2": "Partial trace exists but key steps are missing.",
+        "3": "Tool and evidence trace is inspectable.",
+        "4": "Replayable trace with memory/provenance links.",
+        "5": "Fully replayable, exportable, and tied to benchmark artifacts."
+      }
+    }
+  ],
+  "critical_failure_flags": [
+    {
+      "id": "fabricated_identifier_or_citation",
+      "description": "Mentions identifiers, papers, or evidence records that are not present in the trace or public sources."
+    },
+    {
+      "id": "wrong_target_or_disease",
+      "description": "The answer evaluates a materially different target or disease from the benchmark task."
+    },
+    {
+      "id": "unsafe_clinical_recommendation",
+      "description": "Gives treatment advice or human-use recommendations instead of research-oriented prioritisation."
+    },
+    {
+      "id": "unsupported_causal_claim",
+      "description": "Claims causal therapeutic validity where the available evidence is only correlative, indirect, or sparse."
+    },
+    {
+      "id": "missing_public_grounding",
+      "description": "Makes target-disease claims without inspectable public evidence or traceable tool outputs."
+    }
+  ],
+  "evidence_certainty_levels": [
+    {
+      "level": "high",
+      "definition": "Multiple independent, target-specific sources support the claim, preferably including human genetics, clinical precedence, curated database evidence, or replicated functional evidence."
+    },
+    {
+      "level": "moderate",
+      "definition": "Several public sources support the claim, but at least one important uncertainty remains around causality, context, safety, or translation."
+    },
+    {
+      "level": "low",
+      "definition": "Evidence is plausible but mainly indirect, text-mined, single-source, model-derived, or missing strong disease-context specificity."
+    },
+    {
+      "level": "very_low",
+      "definition": "Evidence is sparse, contradictory, untraceable, or too indirect to support a useful scientific decision."
+    }
+  ],
+  "score_interpretation": {
+    "85_100": "Strong enough to show as a high-quality system output, subject to expert review.",
+    "70_84": "Useful but needs targeted correction or stronger evidence.",
+    "50_69": "Partial value; execution may work but scientific correctness is not yet strong.",
+    "0_49": "Not credible for sharing as scientific output."
+  },
+  "pass_policy": {
+    "minimum_weighted_score": 75,
+    "minimum_dimension_score": 2,
+    "critical_failures_allowed": 0
+  }
+}

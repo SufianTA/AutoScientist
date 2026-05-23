@@ -46,12 +46,15 @@ def collect_review_package(args: argparse.Namespace) -> dict[str, Any]:
         "artifacts": artifact_index,
         "usage": {
             "start_here": "benchmark_run/benchmark_summary.md",
+            "biotruth_scores": "benchmark_run/biotruth_scores.md",
+            "biotruth_packets": "benchmark_run/biotruth_score_packets.jsonl",
+            "analysis": "benchmark_run/analysis/",
             "state_graph": "benchmark_run/scistate_graph.json",
             "tasks": "benchmark_run/benchmark_tasks.json",
         },
         "caveats": [
             "SciFlow Policy is a workflow-controller model, not a biomedical foundation model.",
-            "Benchmark scores measure integration, provenance, and reproducibility unless expert-scored live tasks are added.",
+            "BioTruth heuristic scores are triage signals; judge-mode or expert review is required for biological correctness claims.",
             "The active benchmark path uses public biomedical data, ToolUniverse/OpenTargets, SciState Graph, and SciFlow Policy.",
         ],
     }
@@ -148,6 +151,9 @@ def render_readme(manifest: dict[str, Any]) -> str:
         "## Contents",
         "",
         "- `benchmark_run/benchmark_summary.md`: concise benchmark summary and ablation deltas.",
+        "- `benchmark_run/biotruth_scores.md`: BioTruth correctness scores when generated.",
+        "- `benchmark_run/biotruth_score_packets.jsonl`: compact review packets for expert or rubric-judge scoring.",
+        "- `benchmark_run/analysis/`: deeper benchmark analysis and limitations.",
         "- `benchmark_run/benchmark_summary.json`: machine-readable summary.",
         "- `benchmark_run/benchmark_tasks.json`: generated task set and public context.",
         "- `benchmark_run/scistate_graph.json`: exported SciState Graph.",

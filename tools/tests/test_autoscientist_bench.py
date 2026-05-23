@@ -87,13 +87,19 @@ def test_template_expected_capabilities_are_added_to_task() -> None:
                 "gene_symbol": "IL6",
                 "disease_name": "rheumatoid arthritis",
                 "expected_capabilities": ["tooluniverse"],
+                "public_labels": {"open_targets_association_score": 0.82},
+                "benchmark_tags": ["open_targets_matched"],
             }
         ],
+        "rubric_path": "benchmarks/biotruth_rubric_v0_1.json",
     }
 
     tasks = expand_tasks(manifest, offline_public_context=True)
 
     assert tasks[0]["expected_capabilities"] == ["public_biomedical", "tooluniverse"]
+    assert tasks[0]["public_labels"]["open_targets_association_score"] == 0.82
+    assert tasks[0]["benchmark_tags"] == ["open_targets_matched"]
+    assert tasks[0]["rubric_path"] == "benchmarks/biotruth_rubric_v0_1.json"
 
 
 def test_ablation_config_disables_memory_and_sciflow() -> None:
