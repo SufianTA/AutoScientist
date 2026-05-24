@@ -43,6 +43,9 @@ MAX_CRITICAL_FAILURE_RATE="${MAX_CRITICAL_FAILURE_RATE:-0.10}"
 MIN_FULL_MEAN_SCORE="${MIN_FULL_MEAN_SCORE:-85}"
 MIN_NEURAL_HOLDOUT_TOP1="${MIN_NEURAL_HOLDOUT_TOP1:-0.50}"
 DRY_RUN="${AUTOSCI_DRY_RUN:-0}"
+CASE_COUNT="$(printf '%s\n' $CASE_IDS | wc -l | tr -d ' ')"
+ABLATION_COUNT="$(printf '%s\n' $ABLATIONS | wc -l | tr -d ' ')"
+EXPECTED_RESULTS="$((LIMIT * ABLATION_COUNT))"
 
 run() {
   if [ "$DRY_RUN" = "1" ]; then
@@ -74,8 +77,10 @@ fi
 echo "=== AutoScientist BioTruth 20-Case Gate ==="
 echo "started_utc=$STAMP"
 echo "workdir=$WORKDIR"
-echo "case_count=20"
-echo "expected_results=80"
+echo "case_count=$CASE_COUNT"
+echo "limit=$LIMIT"
+echo "ablation_count=$ABLATION_COUNT"
+echo "expected_results=$EXPECTED_RESULTS"
 echo "llm=$LLM_PROVIDER/$LLM_MODEL via $LLM_API_KEY_ENV_VAR"
 echo "judge=$JUDGE_LLM_PROVIDER/$JUDGE_LLM_MODEL via $JUDGE_LLM_API_KEY_ENV_VAR"
 echo "log=$LOG_PATH"
