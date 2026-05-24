@@ -115,6 +115,11 @@ def build_report(run_id: str, db: Session) -> dict:
         "report_evaluation": hypothesis_post_content.get("report_evaluation", {}),
         "claim_graph": hypothesis_post_content.get("claim_graph", {}),
         "abstention": hypothesis_post_content.get("abstention", {}),
+        "abstention_policy": hypothesis_post_content.get("abstention_policy", {}),
+        "adaptive_tool_plan": hypothesis_post_content.get("adaptive_tool_plan", {}),
+        "biotruth_critic": hypothesis_post_content.get("biotruth_critic", {}),
+        "contradiction_analysis": hypothesis_post_content.get("contradiction_analysis", {}),
+        "evidence_hierarchy": hypothesis_post_content.get("evidence_hierarchy", {}),
         "scientific_strategy": hypothesis_post_content.get("scientific_strategy", {}),
         "next_experiments": next_experiments,
         "experiments": next_experiments,
@@ -170,6 +175,40 @@ def render_markdown_report(report: dict) -> str:
         lines.append(f"- Allowed output: {ascii_safe(abstention.get('allowed_output', 'not recorded'))}")
         for reason in abstention.get("reasons", []):
             lines.append(f"- Reason: {ascii_safe(reason)}")
+    abstention_policy = report.get("abstention_policy", {})
+    biotruth_critic = report.get("biotruth_critic", {})
+    evidence_hierarchy = report.get("evidence_hierarchy", {})
+    contradiction_analysis = report.get("contradiction_analysis", {})
+    adaptive_tool_plan = report.get("adaptive_tool_plan", {})
+    if any((abstention_policy, biotruth_critic, evidence_hierarchy, contradiction_analysis, adaptive_tool_plan)):
+        lines.extend(["", "## Biomedical Validation Controls", ""])
+        if biotruth_critic:
+            lines.append(
+                f"- BioTruth critic: `{biotruth_critic.get('verdict', 'not recorded')}` "
+                f"(score: `{biotruth_critic.get('weighted_score', 'n/a')}`)"
+            )
+        if evidence_hierarchy:
+            lines.append(
+                f"- Evidence hierarchy: `{evidence_hierarchy.get('evidence_count', 0)}` evidence items; "
+                f"`{evidence_hierarchy.get('high_tier_evidence_count', 0)}` high-tier items; "
+                f"score `{evidence_hierarchy.get('hierarchy_score', 'n/a')}`"
+            )
+        if contradiction_analysis:
+            lines.append(
+                f"- Contradiction search attempted: "
+                f"`{contradiction_analysis.get('contradiction_search_attempted', False)}`; "
+                f"findings `{contradiction_analysis.get('finding_count', contradiction_analysis.get('contradiction_count', 0))}`"
+            )
+        if abstention_policy:
+            lines.append(
+                f"- Abstention policy decision: `{abstention_policy.get('decision', 'not recorded')}` "
+                f"with required flag `{abstention_policy.get('abstention_required', 'n/a')}`"
+            )
+        for recommendation in adaptive_tool_plan.get("recommendations", [])[:6]:
+            lines.append(
+                f"- Recommended follow-up tool: `{recommendation.get('tool_name', 'not recorded')}` "
+                f"for `{recommendation.get('gap_id', 'unclassified_gap')}`"
+            )
     strategy = report.get("scientific_strategy", {})
     if strategy:
         readiness = strategy.get("readiness", {})

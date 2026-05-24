@@ -308,6 +308,21 @@ def _tokens_for_context(context: dict[str, Any]) -> list[str]:
     tool_source = context.get("tool_source")
     if tool_source:
         tokens.add(f"tool_source={str(tool_source).lower()}")
+    outcome = context.get("scientific_outcome") if isinstance(context.get("scientific_outcome"), dict) else {}
+    for key in (
+        "biotruth_verdict",
+        "abstention_decision",
+        "abstention_required",
+        "contradiction_search_attempted",
+    ):
+        value = outcome.get(key)
+        if value is not None:
+            tokens.add(f"outcome_{key}={str(value).lower()}")
+    for gap in outcome.get("adaptive_gaps", []) if isinstance(outcome.get("adaptive_gaps"), list) else []:
+        tokens.add(f"adaptive_gap={str(gap).lower()}")
+    high_tier_count = outcome.get("high_tier_evidence_count")
+    if isinstance(high_tier_count, (int, float)):
+        tokens.add("high_tier_present" if high_tier_count > 0 else "high_tier_absent")
     run_config = context.get("run_config") if isinstance(context.get("run_config"), dict) else {}
     provider = run_config.get("llm_provider")
     if provider:

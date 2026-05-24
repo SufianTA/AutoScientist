@@ -6,12 +6,13 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.db.models import Base, ToolBenchmark, WorkflowPolicyExample
+from app.db.models import AgentStep, Base, Objective, Run, ToolBenchmark, ToolCall, WorkflowPolicyExample
 from app.services.neural_workflow_policy import (
     MODEL_TYPE,
     predict_neural_workflow_policy,
     train_neural_workflow_policy_model,
 )
+from app.services.scientific_memory import persist_policy_examples
 
 
 torch = pytest.importorskip("torch")
@@ -88,5 +89,69 @@ def test_neural_workflow_policy_trains_and_predicts(tmp_path) -> None:
         assert model.metrics_json["top3_training_accuracy"] is not None
         assert predictions
         assert all("probability" in prediction for prediction in predictions)
+    finally:
+        db.close()
+
+
+def test_policy_examples_capture_scientific_outcome_context() -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine)
+    session_cls = sessionmaker(bind=engine)
+    db = session_cls()
+    try:
+        objective = Objective(title="TNF RA", objective_text="Evaluate TNF in rheumatoid arthritis")
+        db.add(objective)
+        db.flush()
+        run = Run(
+            objective_id=objective.id,
+            status="completed",
+            run_config_json={"llm_provider": "mock", "real_data_enabled": True},
+        )
+        db.add(run)
+        db.flush()
+        steps = [
+            AgentStep(
+                run_id=run.id,
+                agent_name="critic_agent",
+                state_name="SCORE_EVIDENCE",
+                output_json={"status": "success"},
+            )
+        ]
+        tool_calls = [
+            ToolCall(
+                run_id=run.id,
+                tool_name="clinical_trials_search_tool",
+                tool_source="live_public_biomedical",
+                input_json={"condition": "rheumatoid arthritis", "query": "TNF"},
+                output_json={"status": "success"},
+                status="success",
+                latency_ms=25,
+            )
+        ]
+        outcome = {
+            "schema": "autosci.scientific_policy_outcome.v0.1",
+            "biotruth_verdict": "support",
+            "biotruth_weighted_score": 84,
+            "abstention_decision": "support_allowed",
+            "high_tier_evidence_count": 2,
+            "adaptive_gaps": [],
+        }
+
+        count = persist_policy_examples(
+            db,
+            run,
+            objective,
+            steps,
+            tool_calls,
+            reward=0.9,
+            scientific_outcome=outcome,
+        )
+        db.commit()
+
+        examples = db.query(WorkflowPolicyExample).order_by(WorkflowPolicyExample.step_index.asc()).all()
+
+        assert count == 2
+        assert examples[0].context_json["scientific_outcome"]["biotruth_verdict"] == "support"
+        assert examples[1].outcome_json["scientific_outcome"]["high_tier_evidence_count"] == 2
     finally:
         db.close()

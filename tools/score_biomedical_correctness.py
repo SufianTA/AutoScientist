@@ -59,6 +59,9 @@ def build_score_packet(result: dict[str, Any], rubric: dict[str, Any]) -> dict[s
             "domain": task.get("domain"),
             "gene_symbol": task.get("gene_symbol"),
             "disease_name": task.get("disease_name"),
+            "gold_label": task.get("gold_label"),
+            "expected_decision": task.get("expected_decision"),
+            "expected_evidence": task.get("expected_evidence", []),
             "objective": task.get("objective"),
             "public_labels": extract_public_labels(task),
             "public_context": compact(task.get("public_context", {}), max_chars=1800),
@@ -82,7 +85,15 @@ def build_score_packet(result: dict[str, Any], rubric: dict[str, Any]) -> dict[s
             "guardrails": compact_list(guardrails, limit=8, max_chars=1200),
             "scientific_strategy": compact(report.get("scientific_strategy", {}), max_chars=1800),
             "claim_graph": compact(report.get("claim_graph", {}), max_chars=1600),
+            "evidence_hierarchy": compact(report.get("evidence_hierarchy", {}), max_chars=1400),
+            "adaptive_tool_plan": compact(report.get("adaptive_tool_plan", {}), max_chars=1400),
             "abstention": compact(report.get("abstention", {}), max_chars=1000),
+            "abstention_policy": compact(report.get("abstention_policy", {}), max_chars=1200),
+            "biotruth_critic": compact(
+                result.get("biotruth_critic") or report.get("biotruth_critic", {}),
+                max_chars=1800,
+            ),
+            "contradiction_analysis": compact(report.get("contradiction_analysis", {}), max_chars=1400),
             "report_evaluation": compact(report.get("report_evaluation", {}), max_chars=1200),
             "tool_calls": compact_tool_calls(tool_calls, limit=20),
         },
@@ -138,11 +149,25 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
     text = packet_text(packet)
     task = packet.get("task", {})
     trace = packet.get("trace", {})
+    answer = packet.get("answer", {}) if isinstance(packet.get("answer"), dict) else {}
     labels = task.get("public_labels") or {}
     evidence_count = int(trace.get("evidence_count") or 0)
     tool_call_count = int(trace.get("tool_call_count") or 0)
     public_call_count = sum_public_calls(trace.get("integrations", {}))
     replay_available = bool(trace.get("replay_available"))
+    hierarchy = answer.get("evidence_hierarchy", {}) if isinstance(answer.get("evidence_hierarchy"), dict) else {}
+    critic = answer.get("biotruth_critic", {}) if isinstance(answer.get("biotruth_critic"), dict) else {}
+    abstention_policy = answer.get("abstention_policy", {}) if isinstance(answer.get("abstention_policy"), dict) else {}
+    contradictions = answer.get("contradiction_analysis", {}) if isinstance(answer.get("contradiction_analysis"), dict) else {}
+    high_tier_count = int(hierarchy.get("high_tier_evidence_count") or 0)
+    hierarchy_score = float(hierarchy.get("hierarchy_score") or 0.0)
+    critic_weighted_score = float(critic.get("weighted_score") or 0.0)
+    critic_verdict = str(critic.get("verdict") or "").lower()
+    abstention_decision = str(abstention_policy.get("decision") or "").lower()
+    contradiction_count = int(contradictions.get("contradiction_count") or 0)
+    contradiction_search_attempted = bool(contradictions.get("contradiction_search_attempted"))
+    expected_decision = str(task.get("expected_decision") or "").lower()
+    gold_label = str(task.get("gold_label") or "").lower()
     gene = str(task.get("gene_symbol") or "").lower()
     disease = str(task.get("disease_name") or "").lower()
     target_present = gene and gene in text
@@ -153,7 +178,13 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
         "target_disease_validity": bounded_dimension(
             1 + int(target_present) + int(disease_present) + int(score >= 0.2) + int(pubmed_count >= 5)
         ),
-        "evidence_grounding": bounded_dimension(1 + min(3, evidence_count // 3) + int(public_call_count > 0)),
+        "evidence_grounding": bounded_dimension(
+            1
+            + min(2, evidence_count // 4)
+            + int(public_call_count > 0)
+            + int(high_tier_count > 0)
+            + int(critic_weighted_score >= 70)
+        ),
         "mechanism_plausibility": bounded_dimension(
             2 + int(any(term in text for term in ["mechanism", "pathway", "cell", "signaling"])) + int(evidence_count >= 6)
         ),
@@ -161,6 +192,7 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
             1 + int(any(term in text for term in ["safety", "toxicity", "adverse", "tractability", "clinical"]))
             + int("guardrails" in json.dumps(packet.get("answer", {}), default=str).lower())
             + int(evidence_count >= 8)
+            + int(high_tier_count > 0)
         ),
         "experiment_quality": bounded_dimension(
             1 + int("experiments" in packet.get("answer", {})) + int("control" in text) + int("failure" in text)
@@ -169,9 +201,29 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
             1 + int(any(term in text for term in ["uncertain", "limitation", "counterevidence", "weak", "failed"]))
             + int("confidence" in text)
             + int(evidence_count >= 8)
+            + int(abstention_decision in {"tentative_only", "abstain", "conflicting"})
+            + int(contradiction_search_attempted)
         ),
         "auditability": bounded_dimension(1 + int(replay_available) + int(tool_call_count >= 4) + int(evidence_count >= 4)),
     }
+    dimensions["scientific_decision_correctness"] = decision_correctness_score(
+        expected_decision=expected_decision,
+        gold_label=gold_label,
+        abstention_decision=abstention_decision,
+        critic_verdict=critic_verdict,
+        high_tier_count=high_tier_count,
+        contradiction_count=contradiction_count,
+    )
+    dimensions["counterevidence_and_abstention"] = bounded_dimension(
+        1
+        + int(contradiction_search_attempted)
+        + int(abstention_decision in {"tentative_only", "abstain", "conflicting"})
+        + int(critic_verdict in {"weak_support", "abstain", "conflicting"})
+        + int(contradiction_count == 0 and contradiction_search_attempted)
+    )
+    dimensions["mechanism_and_translation"] = bounded_dimension(
+        max(dimensions["mechanism_plausibility"], dimensions["safety_and_translation"])
+    )
     critical_failures = []
     if packet.get("status") != "completed":
         critical_failures.append("incomplete_run")
@@ -179,15 +231,32 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
         critical_failures.append("wrong_target_or_disease")
     if evidence_count == 0 or public_call_count == 0:
         critical_failures.append("missing_public_grounding")
+    if critic_verdict == "abstain" and abstention_decision not in {"abstain", "tentative_only"}:
+        critical_failures.append("unsupported_causal_claim")
+    if contradiction_count > 0 and abstention_decision not in {"conflicting", "abstain", "tentative_only"}:
+        critical_failures.append("unsupported_causal_claim")
+    if hierarchy_score < 25 and any(term in text for term in ["validated", "strongly supports", "therapeutic"]):
+        critical_failures.append("unsupported_causal_claim")
+    if expected_decision and dimensions["scientific_decision_correctness"] <= 1:
+        critical_failures.append("incorrect_abstention_behavior")
     return finalize_score(
         dimensions=dimensions,
-        critical_failures=critical_failures,
+        critical_failures=sorted(set(critical_failures)),
         rubric=rubric,
-        evidence_certainty=certainty_from_public_labels(score, pubmed_count),
+        evidence_certainty=evidence_certainty_from_trace(
+            open_targets_score=score,
+            pubmed_count=pubmed_count,
+            high_tier_count=high_tier_count,
+            hierarchy_score=hierarchy_score,
+            critic_weighted_score=critic_weighted_score,
+            critic_verdict=critic_verdict,
+            contradiction_count=contradiction_count,
+        ),
         mode="heuristic_triage",
         rationale=(
-            "Deterministic triage score based on trace structure, public evidence availability, and target/disease "
-            "presence. This is not a substitute for expert or rubric-judge biological correctness scoring."
+            "Deterministic triage score based on trace structure, evidence hierarchy, BioTruth critic output, "
+            "abstention/contradiction handling, public evidence availability, and target/disease presence. "
+            "This is not a substitute for expert biological correctness scoring."
         ),
     )
 
@@ -218,6 +287,66 @@ def certainty_from_public_labels(open_targets_score: float, pubmed_count: int) -
     if open_targets_score > 0 or pubmed_count > 0:
         return "low"
     return "very_low"
+
+
+def evidence_certainty_from_trace(
+    *,
+    open_targets_score: float,
+    pubmed_count: int,
+    high_tier_count: int,
+    hierarchy_score: float,
+    critic_weighted_score: float,
+    critic_verdict: str,
+    contradiction_count: int,
+) -> str:
+    if contradiction_count > 0 or critic_verdict in {"abstain", "conflicting"}:
+        return "very_low"
+    if high_tier_count >= 2 and hierarchy_score >= 65 and critic_weighted_score >= 80:
+        return "high"
+    if high_tier_count >= 1 and hierarchy_score >= 50 and critic_weighted_score >= 65:
+        return "moderate"
+    return certainty_from_public_labels(open_targets_score, pubmed_count)
+
+
+def decision_correctness_score(
+    *,
+    expected_decision: str,
+    gold_label: str,
+    abstention_decision: str,
+    critic_verdict: str,
+    high_tier_count: int,
+    contradiction_count: int,
+) -> int:
+    if not expected_decision and not gold_label:
+        return 3
+    observed = abstention_decision or {
+        "support": "support_allowed",
+        "weak_support": "tentative_only",
+        "conflicting": "conflicting",
+        "abstain": "abstain",
+    }.get(critic_verdict, "")
+    if expected_decision and observed == expected_decision:
+        return 5
+    if expected_decision == "support_allowed":
+        if observed == "tentative_only" and high_tier_count > 0:
+            return 3
+        return 1
+    if expected_decision == "tentative_only":
+        if observed in {"abstain", "conflicting"}:
+            return 3
+        if observed == "support_allowed":
+            return 2 if high_tier_count > 0 else 1
+    if expected_decision == "conflicting":
+        if observed in {"tentative_only", "abstain"} and contradiction_count > 0:
+            return 3
+        return 1
+    if expected_decision == "abstain":
+        if observed == "tentative_only":
+            return 3
+        return 1
+    if gold_label in {"insufficient_evidence", "conflicting", "safety_limited"} and observed == "support_allowed":
+        return 1
+    return 2
 
 
 def judge_score(
@@ -404,10 +533,15 @@ def summarize_scores(scored: list[dict[str, Any]], args: argparse.Namespace, rub
     scored_only = [item for item in scored if item.get("score")]
     by_ablation: dict[str, list[dict[str, Any]]] = defaultdict(list)
     by_domain: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    by_gold_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    by_expected_decision: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for item in scored_only:
         packet = item["packet"]
+        task = packet.get("task", {}) if isinstance(packet.get("task"), dict) else {}
         by_ablation[str(packet.get("ablation") or "unknown")].append(item["score"])
-        by_domain[str(packet.get("task", {}).get("domain") or "unknown")].append(item["score"])
+        by_domain[str(task.get("domain") or "unknown")].append(item["score"])
+        by_gold_label[str(task.get("gold_label") or "unlabeled")].append(item["score"])
+        by_expected_decision[str(task.get("expected_decision") or "unspecified")].append(item["score"])
     return {
         "schema": "autosci.biotruth_score_summary.v0.1",
         "created_at_unix": int(time.time()),
@@ -423,6 +557,10 @@ def summarize_scores(scored: list[dict[str, Any]], args: argparse.Namespace, rub
         "overall": summarize_score_list([item["score"] for item in scored_only]),
         "by_ablation": {key: summarize_score_list(values) for key, values in sorted(by_ablation.items())},
         "by_domain": {key: summarize_score_list(values) for key, values in sorted(by_domain.items())},
+        "by_gold_label": {key: summarize_score_list(values) for key, values in sorted(by_gold_label.items())},
+        "by_expected_decision": {
+            key: summarize_score_list(values) for key, values in sorted(by_expected_decision.items())
+        },
         "limitations": [
             "Heuristic mode is a prefilter and does not establish biological correctness.",
             "Judge mode depends on the chosen model and should be audited with expert spot checks.",
@@ -494,6 +632,16 @@ def render_markdown(summary: dict[str, Any]) -> str:
         lines.append("")
     lines.extend(["## By Domain", ""])
     for name, values in summary.get("by_domain", {}).items():
+        lines.append(f"### {name}")
+        lines.extend(render_summary_block(values))
+        lines.append("")
+    lines.extend(["## By Gold Label", ""])
+    for name, values in summary.get("by_gold_label", {}).items():
+        lines.append(f"### {name}")
+        lines.extend(render_summary_block(values))
+        lines.append("")
+    lines.extend(["## By Expected Decision", ""])
+    for name, values in summary.get("by_expected_decision", {}).items():
         lines.append(f"### {name}")
         lines.extend(render_summary_block(values))
         lines.append("")

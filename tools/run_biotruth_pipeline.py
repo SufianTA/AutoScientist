@@ -189,6 +189,7 @@ def package_review_outputs(
         str(manifest_path),
         str(manifest_path.with_suffix(".md")),
         str(Path("docs/BIOTRUTH_BENCHMARK.md")),
+        str(Path("docs/CLAIMS_AND_LIMITATIONS.md")),
     ]
     if analysis_result:
         extras.extend([analysis_result["analysis_json"], analysis_result["analysis_markdown"]])

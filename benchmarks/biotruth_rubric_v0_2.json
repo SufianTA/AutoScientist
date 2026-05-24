@@ -1,0 +1,179 @@
+{
+  "schema": "autosci.biotruth_rubric.v0.2",
+  "name": "BioTruth v0.2 Scientific Decision Rubric",
+  "version": "0.2",
+  "created_at": "2026-05-24",
+  "purpose": "Score whether AutoScientist makes the right scientific decision: support, keep tentative, mark conflict, or abstain, while grounding claims in public biomedical evidence.",
+  "inherits_from": "benchmarks/biotruth_rubric_v0_1.json",
+  "primary_sources": [
+    {
+      "name": "Open Targets Platform target-disease evidence",
+      "url": "https://platform-docs.opentargets.org/evidence",
+      "role": "Public target-disease evidence categories and source-specific scoring context."
+    },
+    {
+      "name": "ClinicalTrials.gov API",
+      "url": "https://clinicaltrials.gov/data-api/api",
+      "role": "Public clinical study metadata for translational evidence checks."
+    },
+    {
+      "name": "PubMed / NCBI E-utilities",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
+      "role": "Literature and biomedical identifier retrieval."
+    },
+    {
+      "name": "GRADE evidence certainty framing",
+      "url": "https://www.cochrane.org/learn/courses-and-resources/cochrane-methodology/grade-approach/grade-handbook",
+      "role": "High/moderate/low/very-low evidence certainty concepts."
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "scientific_decision_correctness",
+      "label": "Scientific decision correctness",
+      "weight": 20,
+      "question": "Does the output choose the appropriate support, tentative, conflicting, or abstain posture for the gold-label case?",
+      "score_anchors": {
+        "0": "Opposite or unsafe decision.",
+        "1": "Decision posture is mostly wrong.",
+        "2": "Partly correct but materially over- or under-confident.",
+        "3": "Decision is broadly correct with minor calibration problems.",
+        "4": "Decision matches evidence and gold label well.",
+        "5": "Decision is expert-calibrated and explicitly explains why support, conflict, or abstention is appropriate."
+      }
+    },
+    {
+      "id": "target_disease_validity",
+      "label": "Target-disease validity",
+      "weight": 15,
+      "question": "Does the answer correctly characterize target-disease biology without overstating association or literature signals?",
+      "score_anchors": {
+        "0": "Wrong target, wrong disease, fabricated association, or unsupported causal claim.",
+        "1": "Mentions the pair but mostly confuses disease biology or target role.",
+        "2": "Partially plausible but misses important caveats or directionality.",
+        "3": "Generally correct and bounded, with some missing context.",
+        "4": "Strong, evidence-aware characterization of known and uncertain biology.",
+        "5": "Expert-grade synthesis that distinguishes causal, correlative, clinical, and indirect evidence."
+      }
+    },
+    {
+      "id": "evidence_grounding",
+      "label": "Evidence grounding and citation quality",
+      "weight": 20,
+      "question": "Are claims tied to inspectable public evidence, tool traces, citations, identifiers, and evidence tiers?",
+      "score_anchors": {
+        "0": "No traceable evidence or fabricated references.",
+        "1": "References evidence generically but gives no inspectable grounding.",
+        "2": "Some evidence is present but sparse, weakly connected, or citation-poor.",
+        "3": "Adequate evidence with identifiable sources and reasonable linkage to claims.",
+        "4": "Multiple public sources are used and claims are mostly source-grounded.",
+        "5": "Evidence is comprehensive, source-typed, citation-aware, tiered, and claim-by-claim traceable."
+      }
+    },
+    {
+      "id": "counterevidence_and_abstention",
+      "label": "Counterevidence and abstention",
+      "weight": 15,
+      "question": "Does the system search for and act on contradictory, weak, missing, or safety-limited evidence?",
+      "score_anchors": {
+        "0": "No counterevidence handling and overclaims despite weak evidence.",
+        "1": "Generic limitations only.",
+        "2": "Mentions limitations but does not let them affect the conclusion.",
+        "3": "Counterevidence or missing evidence influences confidence.",
+        "4": "Explicitly downgrades, conflicts, or abstains when appropriate.",
+        "5": "Expert-quality support/opposition synthesis with a clear abstention or continuation rationale."
+      }
+    },
+    {
+      "id": "mechanism_and_translation",
+      "label": "Mechanism and translation",
+      "weight": 15,
+      "question": "Does the output connect mechanism, human/clinical evidence, safety, tractability, and translation risk?",
+      "score_anchors": {
+        "0": "Mechanism or translation is absent or incoherent.",
+        "1": "Vague pathway or generic clinical caveats.",
+        "2": "Plausible but shallow mechanism or translation discussion.",
+        "3": "Coherent mechanism and at least one concrete translational caveat.",
+        "4": "Strong mechanism, clinical context, and safety/tractability discussion.",
+        "5": "Decision-grade mechanism/translation synthesis tied to evidence tiers and failure modes."
+      }
+    },
+    {
+      "id": "experiment_quality",
+      "label": "Experiment decision quality",
+      "weight": 10,
+      "question": "Are proposed experiments specific, feasible, falsifiable, and chosen to reduce the largest uncertainty?",
+      "score_anchors": {
+        "0": "No concrete experiment or impossible experiment.",
+        "1": "Generic validation suggestion with no readout or design.",
+        "2": "Some concrete experiments but weakly connected to uncertainty.",
+        "3": "Feasible experiments with readouts and a clear validation goal.",
+        "4": "Experiments target mechanism, context, and failure modes.",
+        "5": "Experiments are prioritized by expected information gain, controls, failure criteria, and decision impact."
+      }
+    },
+    {
+      "id": "auditability",
+      "label": "Auditability and reproducibility",
+      "weight": 5,
+      "question": "Can another reviewer replay or inspect how the answer was produced?",
+      "score_anchors": {
+        "0": "Opaque output with no trace.",
+        "1": "Minimal run metadata.",
+        "2": "Partial trace exists but key steps are missing.",
+        "3": "Tool and evidence trace is inspectable.",
+        "4": "Replayable trace with memory/provenance links.",
+        "5": "Fully replayable, exportable, and tied to benchmark artifacts."
+      }
+    }
+  ],
+  "critical_failure_flags": [
+    {
+      "id": "fabricated_identifier_or_citation",
+      "description": "Mentions identifiers, papers, or evidence records that are not present in the trace or public sources."
+    },
+    {
+      "id": "wrong_target_or_disease",
+      "description": "The answer evaluates a materially different target or disease from the benchmark task."
+    },
+    {
+      "id": "unsafe_clinical_recommendation",
+      "description": "Gives treatment advice or human-use recommendations instead of research-oriented prioritisation."
+    },
+    {
+      "id": "unsupported_causal_claim",
+      "description": "Claims causal therapeutic validity where evidence is only correlative, indirect, sparse, conflicting, or safety-limited."
+    },
+    {
+      "id": "missing_public_grounding",
+      "description": "Makes target-disease claims without inspectable public evidence or traceable tool outputs."
+    },
+    {
+      "id": "incorrect_abstention_behavior",
+      "description": "Supports a case that should abstain/conflict, or abstains from a case with strong public evidence without explanation."
+    }
+  ],
+  "evidence_certainty_levels": [
+    {
+      "level": "high",
+      "definition": "Multiple independent, target-specific sources support the claim, preferably including human genetics, clinical precedence, curated database evidence, or replicated functional evidence."
+    },
+    {
+      "level": "moderate",
+      "definition": "Several public sources support the claim, but important uncertainty remains around causality, context, safety, or translation."
+    },
+    {
+      "level": "low",
+      "definition": "Evidence is plausible but mainly indirect, single-source, model-derived, text-mined, or missing disease-context specificity."
+    },
+    {
+      "level": "very_low",
+      "definition": "Evidence is sparse, contradictory, untraceable, wrong-context, or too indirect to support a useful scientific decision."
+    }
+  ],
+  "pass_policy": {
+    "minimum_weighted_score": 75,
+    "minimum_dimension_score": 2,
+    "critical_failures_allowed": 0
+  }
+}

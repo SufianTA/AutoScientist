@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from app.services.evidence_hierarchy import annotate_evidence_item
+
 
 class ScientificTaskType(str, Enum):
     TARGET_DISCOVERY = "target_discovery"
@@ -203,7 +205,7 @@ def type_evidence_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         evidence_type = item.get("evidence_type") or infer_evidence_type(item)
         structured = dict(item.get("structured", {}))
         structured.setdefault("evidence_type", evidence_type)
-        typed.append({**item, "evidence_type": evidence_type, "structured": structured})
+        typed.append(annotate_evidence_item({**item, "evidence_type": evidence_type, "structured": structured}))
     return typed
 
 

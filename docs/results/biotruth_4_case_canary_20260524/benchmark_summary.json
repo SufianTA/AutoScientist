@@ -1,0 +1,469 @@
+{
+  "schema": "autosci.benchmark_run.v0.1",
+  "name": "AutoScientist-BioTruth",
+  "version": "0.1",
+  "status": "completed",
+  "created_at_unix": 1779639417,
+  "elapsed_seconds": 4728.67,
+  "output_dir": "outputs/autoscientist_bench/20260524_145808",
+  "task_count": 4,
+  "result_count": 16,
+  "health": {
+    "tooluniverse": {
+      "available": true,
+      "status": "ready",
+      "error": null
+    },
+    "open_scientist": {
+      "qworld": {
+        "available": false,
+        "status": "not_installed_or_import_failed",
+        "error": "No module named 'qworld'"
+      },
+      "txagent": {
+        "available": false,
+        "status": "not_installed_or_import_failed",
+        "error": "No module named 'txagent'"
+      },
+      "tooluniverse": {
+        "available": true,
+        "status": "importable",
+        "version": "1.0.4",
+        "error": null
+      },
+      "clawinstitute_board": {
+        "available": true,
+        "status": "local_board_ready",
+        "mode": "local_research_board"
+      }
+    }
+  },
+  "summary_by_ablation": {
+    "full": {
+      "runs": 4,
+      "completed": 4,
+      "mean_score": 100,
+      "mean_scientific_quality": 100,
+      "min_score": 100,
+      "max_score": 100,
+      "mean_confidence": 0.7675,
+      "memory_replay_runs": 4,
+      "controller_advice_runs": 4,
+      "controller_applied_runs": 4,
+      "strategy_repair_runs": 0,
+      "mean_strategy_repair_queries": 0,
+      "validation_ready_runs": 4,
+      "hypothesis_only_runs": 0,
+      "mean_tool_calls": 34,
+      "mean_evidence_count": 23.5,
+      "mean_public_biomedical_calls": 11.25,
+      "mean_tooluniverse_calls": 10.25,
+      "public_tool_runs": 4
+    },
+    "no_memory": {
+      "runs": 4,
+      "completed": 4,
+      "mean_score": 100,
+      "mean_scientific_quality": 95,
+      "min_score": 100,
+      "max_score": 100,
+      "mean_confidence": 0.79,
+      "memory_replay_runs": 0,
+      "controller_advice_runs": 0,
+      "controller_applied_runs": 0,
+      "strategy_repair_runs": 0,
+      "mean_strategy_repair_queries": 0,
+      "validation_ready_runs": 4,
+      "hypothesis_only_runs": 0,
+      "mean_tool_calls": 30,
+      "mean_evidence_count": 20.5,
+      "mean_public_biomedical_calls": 9.25,
+      "mean_tooluniverse_calls": 9.25,
+      "public_tool_runs": 4
+    },
+    "no_public_tools": {
+      "runs": 4,
+      "completed": 4,
+      "mean_score": 65,
+      "mean_scientific_quality": 54,
+      "min_score": 65,
+      "max_score": 65,
+      "mean_confidence": 0.85,
+      "memory_replay_runs": 4,
+      "controller_advice_runs": 4,
+      "controller_applied_runs": 0,
+      "strategy_repair_runs": 0,
+      "mean_strategy_repair_queries": 0,
+      "validation_ready_runs": 0,
+      "hypothesis_only_runs": 4,
+      "mean_tool_calls": 0,
+      "mean_evidence_count": 2,
+      "mean_public_biomedical_calls": 0,
+      "mean_tooluniverse_calls": 0,
+      "public_tool_runs": 0
+    },
+    "no_sciflow": {
+      "runs": 4,
+      "completed": 4,
+      "mean_score": 100,
+      "mean_scientific_quality": 95,
+      "min_score": 100,
+      "max_score": 100,
+      "mean_confidence": 0.795,
+      "memory_replay_runs": 4,
+      "controller_advice_runs": 0,
+      "controller_applied_runs": 0,
+      "strategy_repair_runs": 0,
+      "mean_strategy_repair_queries": 0,
+      "validation_ready_runs": 4,
+      "hypothesis_only_runs": 0,
+      "mean_tool_calls": 30,
+      "mean_evidence_count": 20.25,
+      "mean_public_biomedical_calls": 9.25,
+      "mean_tooluniverse_calls": 9.25,
+      "public_tool_runs": 4
+    }
+  },
+  "full_vs_ablation_deltas": {
+    "no_memory": {
+      "mean_score_delta_vs_full": 0,
+      "mean_scientific_quality_delta_vs_full": 5,
+      "controller_runs_delta_vs_full": 4,
+      "controller_applied_runs_delta_vs_full": 4,
+      "strategy_repair_runs_delta_vs_full": 0,
+      "replay_runs_delta_vs_full": 4,
+      "public_tool_runs_delta_vs_full": 0,
+      "mean_tool_calls_delta_vs_full": 4,
+      "mean_evidence_count_delta_vs_full": 3.0,
+      "mean_public_biomedical_calls_delta_vs_full": 2.0,
+      "mean_tooluniverse_calls_delta_vs_full": 1.0
+    },
+    "no_public_tools": {
+      "mean_score_delta_vs_full": 35,
+      "mean_scientific_quality_delta_vs_full": 46,
+      "controller_runs_delta_vs_full": 0,
+      "controller_applied_runs_delta_vs_full": 4,
+      "strategy_repair_runs_delta_vs_full": 0,
+      "replay_runs_delta_vs_full": 0,
+      "public_tool_runs_delta_vs_full": 4,
+      "mean_tool_calls_delta_vs_full": 34,
+      "mean_evidence_count_delta_vs_full": 21.5,
+      "mean_public_biomedical_calls_delta_vs_full": 11.25,
+      "mean_tooluniverse_calls_delta_vs_full": 10.25
+    },
+    "no_sciflow": {
+      "mean_score_delta_vs_full": 0,
+      "mean_scientific_quality_delta_vs_full": 5,
+      "controller_runs_delta_vs_full": 4,
+      "controller_applied_runs_delta_vs_full": 4,
+      "strategy_repair_runs_delta_vs_full": 0,
+      "replay_runs_delta_vs_full": 0,
+      "public_tool_runs_delta_vs_full": 0,
+      "mean_tool_calls_delta_vs_full": 4,
+      "mean_evidence_count_delta_vs_full": 3.25,
+      "mean_public_biomedical_calls_delta_vs_full": 2.0,
+      "mean_tooluniverse_calls_delta_vs_full": 1.0
+    }
+  },
+  "trained_policy": {
+    "id": "policymodel_0b53b118f999",
+    "name": "scientific_workflow_policy",
+    "version": "20260524160600",
+    "model_type": "scientific_workflow_policy",
+    "artifact_path": "outputs/autoscientist_bench/20260524_145808/models/scientific_workflow_policy_20260524160600.json",
+    "training_summary": {
+      "num_examples": 42552,
+      "training_examples": 32813,
+      "holdout_examples": 9739,
+      "num_actions": 26,
+      "top_actions": [
+        [
+          "state_transition:TOOL_CALL_COMPLETED",
+          6074
+        ],
+        [
+          "state_transition:LLM_CALL_STARTED",
+          4972
+        ],
+        [
+          "state_transition:LLM_CALL_COMPLETED",
+          4972
+        ],
+        [
+          "state_transition:TOOL_CALL_STARTED",
+          3668
+        ],
+        [
+          "tool_call:evidence_quality_scorer_tool",
+          2406
+        ],
+        [
+          "tool_call:pubmed_literature_search_tool",
+          2004
+        ],
+        [
+          "state_transition:AGENT_POSITION_COMPLETED",
+          1332
+        ],
+        [
+          "tool_call:OpenTargets_get_associated_targets_by_disease_efoId",
+          762
+        ],
+        [
+          "state_transition:INITIALIZE_FRAMEWORK",
+          479
+        ],
+        [
+          "state_transition:PLAN_RESEARCH",
+          479
+        ]
+      ]
+    },
+    "metrics": {
+      "num_examples": 42552,
+      "training_examples": 32813,
+      "holdout_examples": 9739,
+      "top1_training_accuracy": 0.3028,
+      "top3_training_accuracy": 0.5689,
+      "mrr_training": 0.498,
+      "top1_holdout_accuracy": 0.1945,
+      "top3_holdout_accuracy": 0.6201,
+      "mrr_holdout": 0.4531
+    },
+    "created_at": "2026-05-24T16:07:10.532127"
+  },
+  "neural_policy": {
+    "id": "policymodel_06459348a92a",
+    "name": "neural_scientific_workflow_policy",
+    "version": "20260524161627",
+    "model_type": "neural_scientific_workflow_policy",
+    "artifact_path": "outputs/autoscientist_bench/20260524_145808/models/neural_scientific_workflow_policy_20260524161627/manifest.json",
+    "training_summary": {
+      "num_examples": 42552,
+      "training_examples": 32813,
+      "holdout_examples": 9739,
+      "num_actions": 26,
+      "top_actions": [
+        [
+          "state_transition:TOOL_CALL_COMPLETED",
+          7968
+        ],
+        [
+          "state_transition:LLM_CALL_STARTED",
+          6281
+        ],
+        [
+          "state_transition:LLM_CALL_COMPLETED",
+          6281
+        ],
+        [
+          "state_transition:TOOL_CALL_STARTED",
+          5205
+        ],
+        [
+          "tool_call:pubmed_literature_search_tool",
+          3064
+        ],
+        [
+          "tool_call:evidence_quality_scorer_tool",
+          2763
+        ],
+        [
+          "state_transition:AGENT_POSITION_COMPLETED",
+          1689
+        ],
+        [
+          "tool_call:OpenTargets_get_associated_targets_by_disease_efoId",
+          818
+        ],
+        [
+          "state_transition:INITIALIZE_FRAMEWORK",
+          599
+        ],
+        [
+          "state_transition:PLAN_RESEARCH",
+          599
+        ]
+      ],
+      "framework": "pytorch",
+      "architecture": {
+        "input": "bag_of_context_tokens",
+        "hidden_dim": 128,
+        "output": "workflow_action_softmax",
+        "vocab_size": 898,
+        "num_actions": 26
+      }
+    },
+    "metrics": {
+      "num_examples": 42552,
+      "training_examples": 32813,
+      "holdout_examples": 9739,
+      "top1_training_accuracy": 0.862,
+      "top3_training_accuracy": 1.0,
+      "mrr_training": 0.9281,
+      "top1_holdout_accuracy": 0.8434,
+      "top3_holdout_accuracy": 0.9998,
+      "mrr_holdout": 0.9166,
+      "majority_top1_holdout_accuracy": 0.1945,
+      "majority_top3_holdout_accuracy": 0.4633,
+      "majority_mrr_holdout": 0.3902
+    },
+    "created_at": "2026-05-24T16:16:27.676270"
+  },
+  "state_graph": {
+    "path": "outputs/autoscientist_bench/20260524_145808/scistate_graph.json",
+    "summary": {
+      "nodes": 4405,
+      "edges": 31459,
+      "hypotheses": 599,
+      "entities": 1000,
+      "experiments": 1000,
+      "tools": 9
+    }
+  },
+  "package": {
+    "package_dir": "outputs/autoscientist_bench/20260524_145808/packages/neural_scientific_workflow_policy_20260524161627",
+    "zip_path": "outputs/autoscientist_bench/20260524_145808/packages/neural_scientific_workflow_policy_20260524161627.zip",
+    "manifest": "outputs/autoscientist_bench/20260524_145808/packages/neural_scientific_workflow_policy_20260524161627/manifest.json",
+    "model_card": "outputs/autoscientist_bench/20260524_145808/packages/neural_scientific_workflow_policy_20260524161627/MODEL_CARD.md",
+    "readme": "outputs/autoscientist_bench/20260524_145808/packages/neural_scientific_workflow_policy_20260524161627/README.md",
+    "model": {
+      "id": "policymodel_06459348a92a",
+      "name": "neural_scientific_workflow_policy",
+      "version": "20260524161627",
+      "model_type": "neural_scientific_workflow_policy",
+      "source_artifact_path": "outputs/autoscientist_bench/20260524_145808/models/neural_scientific_workflow_policy_20260524161627/manifest.json",
+      "packaged_artifact_path": "outputs/autoscientist_bench/20260524_145808/packages/neural_scientific_workflow_policy_20260524161627/neural_model/manifest.json",
+      "training_summary": {
+        "num_examples": 42552,
+        "training_examples": 32813,
+        "holdout_examples": 9739,
+        "num_actions": 26,
+        "top_actions": [
+          [
+            "state_transition:TOOL_CALL_COMPLETED",
+            7968
+          ],
+          [
+            "state_transition:LLM_CALL_STARTED",
+            6281
+          ],
+          [
+            "state_transition:LLM_CALL_COMPLETED",
+            6281
+          ],
+          [
+            "state_transition:TOOL_CALL_STARTED",
+            5205
+          ],
+          [
+            "tool_call:pubmed_literature_search_tool",
+            3064
+          ],
+          [
+            "tool_call:evidence_quality_scorer_tool",
+            2763
+          ],
+          [
+            "state_transition:AGENT_POSITION_COMPLETED",
+            1689
+          ],
+          [
+            "tool_call:OpenTargets_get_associated_targets_by_disease_efoId",
+            818
+          ],
+          [
+            "state_transition:INITIALIZE_FRAMEWORK",
+            599
+          ],
+          [
+            "state_transition:PLAN_RESEARCH",
+            599
+          ]
+        ],
+        "framework": "pytorch",
+        "architecture": {
+          "input": "bag_of_context_tokens",
+          "hidden_dim": 128,
+          "output": "workflow_action_softmax",
+          "vocab_size": 898,
+          "num_actions": 26
+        }
+      },
+      "metrics": {
+        "num_examples": 42552,
+        "training_examples": 32813,
+        "holdout_examples": 9739,
+        "top1_training_accuracy": 0.862,
+        "top3_training_accuracy": 1.0,
+        "mrr_training": 0.9281,
+        "top1_holdout_accuracy": 0.8434,
+        "top3_holdout_accuracy": 0.9998,
+        "mrr_holdout": 0.9166,
+        "majority_top1_holdout_accuracy": 0.1945,
+        "majority_top3_holdout_accuracy": 0.4633,
+        "majority_mrr_holdout": 0.3902
+      },
+      "created_at": "2026-05-24T16:16:27.676270"
+    }
+  },
+  "top_full_results": [
+    {
+      "task_id": "il6_rheumatoid_arthritis__target_validity_review__r1",
+      "run_id": "run_311418762daa",
+      "score": 100,
+      "confidence": 0.75,
+      "artifact_path": "outputs/autoscientist_bench/20260524_145808/il6_rheumatoid_arthritis__target_validity_review__r1__full.json",
+      "hypothesis_title": "IL6/IL6R Axis as a Validated Therapeutic Target in Rheumatoid Arthritis"
+    },
+    {
+      "task_id": "tnf_inflammatory_bowel_disease__target_validity_review__r1",
+      "run_id": "run_26981d0f25c8",
+      "score": 100,
+      "confidence": 0.72,
+      "artifact_path": "outputs/autoscientist_bench/20260524_145808/tnf_inflammatory_bowel_disease__target_validity_review__r1__full.json",
+      "hypothesis_title": "TNF as a Therapeutic Target in Inflammatory Bowel Disease: Established Validity with Unresolved Resistance and Patient-Selection Questions"
+    },
+    {
+      "task_id": "braf_melanoma__target_validity_review__r1",
+      "run_id": "run_3ca09bb511fe",
+      "score": 100,
+      "confidence": 0.82,
+      "artifact_path": "outputs/autoscientist_bench/20260524_145808/braf_melanoma__target_validity_review__r1__full.json",
+      "hypothesis_title": "BRAF as a Therapeutic Target in Melanoma: Calibrated Confidence Assessment"
+    },
+    {
+      "task_id": "egfr_lung_adenocarcinoma__target_validity_review__r1",
+      "run_id": "run_93dd3b2c0b87",
+      "score": 100,
+      "confidence": 0.78,
+      "artifact_path": "outputs/autoscientist_bench/20260524_145808/egfr_lung_adenocarcinoma__target_validity_review__r1__full.json",
+      "hypothesis_title": "EGFR as a Therapeutic Target in Lung Adenocarcinoma: Calibrated Confidence Assessment"
+    }
+  ],
+  "recommended_gpu_command": "python tools/run_biotruth_pipeline.py --mode full --limit 100 --ablations full no_memory no_public_tools no_sciflow --llm-provider auto --train-neural-policy --neural-epochs 120 --strict-real-run --require-expected-integrations --min-full-completion-rate 1.0 --min-full-mean-score 85 --min-neural-holdout-top1 0.5 --min-state-graph-nodes 1 --score-mode judge",
+  "realness_gates": {
+    "passed": true,
+    "strict_real_run": true,
+    "required_full_integrations": [
+      "local_board",
+      "memory_replay",
+      "public_biomedical",
+      "sciflow_policy",
+      "tooluniverse"
+    ],
+    "require_expected_integrations": true,
+    "min_full_completion_rate": 1.0,
+    "observed_full_completion_rate": 1.0,
+    "min_full_mean_score": 85.0,
+    "observed_full_mean_score": 100.0,
+    "min_neural_holdout_top1": 0.5,
+    "observed_neural_holdout_top1": 0.8434,
+    "min_state_graph_nodes": 1,
+    "observed_state_graph_nodes": 4405,
+    "failures": [],
+    "result_failures": []
+  },
+  "summary_path": "outputs/autoscientist_bench/20260524_145808/benchmark_summary.json",
+  "summary_markdown_path": "outputs/autoscientist_bench/20260524_145808/benchmark_summary.md"
+}

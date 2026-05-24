@@ -87,6 +87,9 @@ def test_template_expected_capabilities_are_added_to_task() -> None:
                 "gene_symbol": "IL6",
                 "disease_name": "rheumatoid arthritis",
                 "expected_capabilities": ["tooluniverse"],
+                "gold_label": "strong_support",
+                "expected_decision": "support_allowed",
+                "expected_evidence": ["clinical_trials"],
                 "public_labels": {"open_targets_association_score": 0.82},
                 "benchmark_tags": ["open_targets_matched"],
             }
@@ -98,6 +101,9 @@ def test_template_expected_capabilities_are_added_to_task() -> None:
 
     assert tasks[0]["expected_capabilities"] == ["public_biomedical", "tooluniverse"]
     assert tasks[0]["public_labels"]["open_targets_association_score"] == 0.82
+    assert tasks[0]["gold_label"] == "strong_support"
+    assert tasks[0]["expected_decision"] == "support_allowed"
+    assert tasks[0]["expected_evidence"] == ["clinical_trials"]
     assert tasks[0]["benchmark_tags"] == ["open_targets_matched"]
     assert tasks[0]["rubric_path"] == "benchmarks/biotruth_rubric_v0_1.json"
 

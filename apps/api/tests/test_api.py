@@ -130,6 +130,38 @@ def test_cli_runner_returns_full_provenance() -> None:
     )
 
 
+def test_cli_runner_report_exposes_validation_controls() -> None:
+    result = run_question(
+        "Evaluate whether TNF is a supported therapeutic target for rheumatoid arthritis.",
+        {
+            "agent_count": 2,
+            "max_runtime_minutes": 5,
+            "evidence_strictness": "balanced",
+            "benchmark_task": {
+                "gene_symbol": "TNF",
+                "disease_name": "rheumatoid arthritis",
+                "public_labels": {
+                    "open_targets_association_status": "matched",
+                    "open_targets_association_score": 0.86,
+                    "pubmed_gene_disease_count": 100,
+                },
+            },
+        },
+    )
+
+    report = result["report"]
+    assert report["biotruth_critic"]["schema"] == "autosci.biotruth_critic.v0.1"
+    assert report["biotruth_critic"]["dimension_scores"]["disease_relevance"] >= 3
+    assert report["abstention_policy"]["schema"] == "autosci.abstention_policy.v0.1"
+    assert report["contradiction_analysis"]["schema"] == "autosci.contradiction_analysis.v0.1"
+    assert report["evidence_hierarchy"]["schema"] == "autosci.evidence_hierarchy_summary.v0.1"
+    assert report["adaptive_tool_plan"]["schema"] == "autosci.adaptive_tool_plan.v0.1"
+
+    markdown = format_result(result, "markdown")
+    assert "## Biomedical Validation Controls" in markdown
+    assert "BioTruth critic" in markdown
+
+
 def test_cli_runner_is_not_acvr1_hardcoded_for_other_targets() -> None:
     result = run_question(
         "Generate a therapeutic hypothesis for PCSK9-driven familial hypercholesterolemia.",

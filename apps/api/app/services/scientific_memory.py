@@ -56,7 +56,15 @@ def persist_scientific_memory(db: Session, run: Run, state: Any | None = None) -
     replay = persist_replay_bundle(db, run, objective, steps, tool_calls, evidence, hypotheses, posts)
     tool_benchmarks = update_tool_benchmarks(db, run, tool_calls, evidence)
     agent_memories = update_agent_role_memory(db, run, steps)
-    policy_examples = persist_policy_examples(db, run, objective, steps, tool_calls, reward=_run_reward(run, state))
+    policy_examples = persist_policy_examples(
+        db,
+        run,
+        objective,
+        steps,
+        tool_calls,
+        reward=_run_reward(run, state),
+        scientific_outcome=_scientific_outcome_context(state),
+    )
 
     return {
         "entities": len(entity_ids),
@@ -244,10 +252,12 @@ def persist_policy_examples(
     tool_calls: list[ToolCall],
     *,
     reward: float | None = None,
+    scientific_outcome: dict[str, Any] | None = None,
 ) -> int:
     if db.query(WorkflowPolicyExample).filter(WorkflowPolicyExample.run_id == run.id).first():
         return 0
     reward = _run_reward(run) if reward is None else reward
+    scientific_outcome = scientific_outcome or {}
     objective_text = objective.objective_text if objective else ""
     count = 0
     previous_state = "START"
@@ -264,8 +274,9 @@ def persist_policy_examples(
                     "previous_state": previous_state,
                     "agent_name": step.agent_name,
                     "run_config": run.run_config_json,
+                    "scientific_outcome": scientific_outcome,
                 },
-                outcome_json=step.output_json,
+                outcome_json={**(step.output_json or {}), "scientific_outcome": scientific_outcome},
                 reward=reward,
             )
         )
@@ -283,13 +294,44 @@ def persist_policy_examples(
                     "objective": objective_text,
                     "tool_source": call.tool_source,
                     "run_config": run.run_config_json,
+                    "scientific_outcome": scientific_outcome,
                 },
-                outcome_json={"status": call.status, "latency_ms": call.latency_ms},
+                outcome_json={
+                    "status": call.status,
+                    "latency_ms": call.latency_ms,
+                    "scientific_outcome": scientific_outcome,
+                },
                 reward=reward if call.status == "success" else min(0.0, reward - 0.25),
             )
         )
         count += 1
     return count
+
+
+def _scientific_outcome_context(state: Any | None) -> dict[str, Any]:
+    if state is None:
+        return {}
+    context = getattr(state, "context", {}) or {}
+    hypothesis_card = getattr(state, "hypothesis_card", {}) or {}
+    critic = context.get("biotruth_critic") or hypothesis_card.get("biotruth_critic") or {}
+    abstention_policy = context.get("abstention_policy") or hypothesis_card.get("abstention_policy") or {}
+    hierarchy = context.get("evidence_hierarchy") or {}
+    contradictions = context.get("contradiction_analysis") or {}
+    adaptive_plan = context.get("adaptive_tool_plan") or {}
+    return {
+        "schema": "autosci.scientific_policy_outcome.v0.1",
+        "biotruth_verdict": critic.get("verdict") if isinstance(critic, dict) else None,
+        "biotruth_weighted_score": critic.get("weighted_score") if isinstance(critic, dict) else None,
+        "abstention_decision": abstention_policy.get("decision") if isinstance(abstention_policy, dict) else None,
+        "abstention_required": abstention_policy.get("abstention_required") if isinstance(abstention_policy, dict) else None,
+        "evidence_hierarchy_score": hierarchy.get("hierarchy_score") if isinstance(hierarchy, dict) else None,
+        "high_tier_evidence_count": hierarchy.get("high_tier_evidence_count") if isinstance(hierarchy, dict) else None,
+        "contradiction_count": contradictions.get("contradiction_count") if isinstance(contradictions, dict) else None,
+        "contradiction_search_attempted": contradictions.get("contradiction_search_attempted")
+        if isinstance(contradictions, dict)
+        else None,
+        "adaptive_gaps": adaptive_plan.get("gaps", []) if isinstance(adaptive_plan, dict) else [],
+    }
 
 
 def train_workflow_policy_model(
@@ -911,7 +953,23 @@ def _add_confidence_evolution_edges(
 
 def _tokens_for_context(context: dict[str, Any], state_name: str) -> list[str]:
     text = json.dumps(context, default=str).lower() + " " + state_name.lower()
-    return sorted(set(TOKEN_RE.findall(text)))[:256]
+    tokens = set(TOKEN_RE.findall(text))
+    outcome = context.get("scientific_outcome") if isinstance(context.get("scientific_outcome"), dict) else {}
+    for key in (
+        "biotruth_verdict",
+        "abstention_decision",
+        "abstention_required",
+        "contradiction_search_attempted",
+    ):
+        value = outcome.get(key)
+        if value is not None:
+            tokens.add(f"outcome_{key}_{str(value).lower()}")
+    for gap in outcome.get("adaptive_gaps", []) if isinstance(outcome.get("adaptive_gaps"), list) else []:
+        tokens.add(f"adaptive_gap_{str(gap).lower()}")
+    high_tier_count = outcome.get("high_tier_evidence_count")
+    if isinstance(high_tier_count, (int, float)):
+        tokens.add("high_tier_present" if high_tier_count > 0 else "high_tier_absent")
+    return sorted(tokens)[:256]
 
 
 def _salient_terms(text: str) -> list[str]:

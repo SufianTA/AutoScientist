@@ -18,6 +18,9 @@ def test_build_biotruth_manifest_from_mocked_public_sources(tmp_path: Path, monk
                         "target_ensembl_id": "ENSG00000136244",
                         "disease_name": "rheumatoid arthritis",
                         "disease_efo_id": "EFO_0000685",
+                        "gold_label": "strong_support",
+                        "expected_decision": "support_allowed",
+                        "expected_evidence": ["clinical_trials"],
                     }
                 ]
             }
@@ -66,6 +69,9 @@ def test_build_biotruth_manifest_from_mocked_public_sources(tmp_path: Path, monk
     assert manifest["schema"] == "autosci.biotruth_manifest.v0.1"
     assert manifest["seed_cases"][0]["public_labels"]["open_targets_association_status"] == "matched"
     assert manifest["seed_cases"][0]["public_labels"]["evidence_availability"] == "high"
+    assert manifest["seed_cases"][0]["gold_label"] == "strong_support"
+    assert tasks[0]["expected_decision"] == "support_allowed"
+    assert "gold:strong_support" in manifest["seed_cases"][0]["benchmark_tags"]
     assert len(tasks) == 4
     assert Path(output["manifest_path"]).exists()
     assert Path(output["tasks_jsonl_path"]).exists()

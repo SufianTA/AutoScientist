@@ -4,6 +4,7 @@ from pathlib import Path
 from tools import score_biomedical_correctness as scorer
 from tools.score_biomedical_correctness import (
     build_judge_prompt,
+    build_score_packet,
     build_score_packets,
     heuristic_score,
     load_benchmark_results,
@@ -103,6 +104,27 @@ def test_judge_prompt_uses_exact_json_schema() -> None:
         assert f'"{dimension["id"]}": 0' in prompt
 
 
+def test_score_packet_includes_biotruth_critic() -> None:
+    packet = build_score_packet(
+        {
+            "task": {"id": "case", "gene_symbol": "BRAF", "disease_name": "melanoma"},
+            "ablation": "full",
+            "run_id": "run_1",
+            "status": "completed",
+            "report": {
+                "biotruth_critic": {
+                    "schema": "autosci.biotruth_critic.v0.1",
+                    "verdict": "support",
+                    "weighted_score": 82.0,
+                }
+            },
+        },
+        {"schema": "autosci.biotruth_rubric.v0.1"},
+    )
+
+    assert packet["answer"]["biotruth_critic"]["verdict"] == "support"
+
+
 def test_judge_mode_records_provider_failure(monkeypatch) -> None:
     rubric = load_json(Path("benchmarks/biotruth_rubric_v0_1.json"))
 
@@ -124,3 +146,122 @@ def test_judge_mode_records_provider_failure(monkeypatch) -> None:
 
     assert scored[0]["score"]["mode"] == "llm_judge_failed"
     assert "judge_failed" in scored[0]["score"]["critical_failures"]
+
+
+def test_heuristic_score_rewards_evidence_hierarchy_and_biotruth_critic() -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_1.json"))
+    packet = build_score_packet(
+        {
+            "task": {
+                "id": "case",
+                "gene_symbol": "TNF",
+                "disease_name": "rheumatoid arthritis",
+                "public_labels": {"open_targets_association_score": 0.75, "pubmed_gene_disease_count": 200},
+            },
+            "ablation": "full",
+            "run_id": "run_1",
+            "status": "completed",
+            "integrations": {
+                "public_biomedical": {"executed": True, "call_count": 5},
+                "tooluniverse": {"executed": True, "call_count": 2},
+            },
+            "replay": {"available": True},
+            "report": {
+                "hypothesis": {"text": "TNF rheumatoid arthritis hypothesis with safety and confidence limits."},
+                "evidence": [{"source": "ClinicalTrials.gov", "text": "clinical trial evidence"}] * 8,
+                "experiments": [{"name": "controlled perturbation", "readout": "failure criteria"}],
+                "evidence_hierarchy": {
+                    "high_tier_evidence_count": 2,
+                    "hierarchy_score": 72,
+                },
+                "biotruth_critic": {"verdict": "support", "weighted_score": 84},
+                "abstention_policy": {"decision": "support_allowed"},
+                "contradiction_analysis": {"contradiction_search_attempted": True, "contradiction_count": 0},
+            },
+            "tool_calls": [
+                {"tool_name": "clinical_trials_search_tool", "tool_source": "live_public_biomedical", "status": "success"}
+            ]
+            * 5,
+        },
+        rubric,
+    )
+
+    score = heuristic_score(packet, rubric)
+
+    assert score["evidence_certainty"] == "high"
+    assert score["dimension_scores"]["evidence_grounding"] >= 4
+
+
+def test_heuristic_score_flags_unresolved_contradiction() -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_1.json"))
+    packet = build_score_packet(
+        {
+            "task": {
+                "id": "case",
+                "gene_symbol": "TNF",
+                "disease_name": "rheumatoid arthritis",
+                "public_labels": {"open_targets_association_score": 0.75, "pubmed_gene_disease_count": 200},
+            },
+            "ablation": "full",
+            "run_id": "run_1",
+            "status": "completed",
+            "integrations": {"public_biomedical": {"executed": True, "call_count": 3}},
+            "report": {
+                "hypothesis": {"text": "TNF rheumatoid arthritis is validated as therapeutic."},
+                "evidence": [{"source": "PubMed", "text": "TNF rheumatoid arthritis"}],
+                "evidence_hierarchy": {"high_tier_evidence_count": 0, "hierarchy_score": 10},
+                "biotruth_critic": {"verdict": "conflicting", "weighted_score": 35},
+                "abstention_policy": {"decision": "support_allowed"},
+                "contradiction_analysis": {"contradiction_search_attempted": True, "contradiction_count": 1},
+            },
+        },
+        rubric,
+    )
+
+    score = heuristic_score(packet, rubric)
+
+    assert score["evidence_certainty"] == "very_low"
+    assert "unsupported_causal_claim" in score["critical_failures"]
+
+
+def test_v02_rubric_scores_expected_decision_and_label_breakdowns() -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_2.json"))
+    packet = build_score_packet(
+        {
+            "task": {
+                "id": "case",
+                "domain": "oncology",
+                "gene_symbol": "CFTR",
+                "disease_name": "melanoma",
+                "gold_label": "insufficient_evidence",
+                "expected_decision": "abstain",
+                "expected_evidence": ["absence_of_target_disease_support"],
+                "public_labels": {"open_targets_association_score": 0.0, "pubmed_gene_disease_count": 0},
+            },
+            "ablation": "full",
+            "run_id": "run_1",
+            "status": "completed",
+            "integrations": {"public_biomedical": {"executed": True, "call_count": 2}},
+            "report": {
+                "hypothesis": {"text": "CFTR melanoma evidence is insufficient; abstain from therapeutic claim."},
+                "evidence": [{"source": "PubMed", "text": "CFTR melanoma no disease-specific support"}],
+                "evidence_hierarchy": {"high_tier_evidence_count": 0, "hierarchy_score": 20},
+                "biotruth_critic": {"verdict": "abstain", "weighted_score": 25},
+                "abstention_policy": {"decision": "abstain"},
+                "contradiction_analysis": {"contradiction_search_attempted": True, "contradiction_count": 0},
+            },
+        },
+        rubric,
+    )
+    score = heuristic_score(packet, rubric)
+
+    class Args:
+        bench_dir = Path("unused")
+        mode = "heuristic"
+
+    summary = summarize_scores([{"packet": packet, "score": score}], Args(), rubric)
+
+    assert packet["task"]["gold_label"] == "insufficient_evidence"
+    assert score["dimension_scores"]["scientific_decision_correctness"] == 5
+    assert summary["by_gold_label"]["insufficient_evidence"]["count"] == 1
+    assert summary["by_expected_decision"]["abstain"]["count"] == 1

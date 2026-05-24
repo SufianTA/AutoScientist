@@ -103,7 +103,7 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "schema": "autosci.biotruth_manifest.v0.1",
         "name": "AutoScientist-BioTruth",
-        "version": "0.1",
+        "version": str(seed_doc.get("version") or rubric.get("version") or "0.1"),
         "created_at_unix": int(started),
         "purpose": (
             "Evaluate AutoScientist for biomedical correctness and usefulness, not just integration "
@@ -398,6 +398,10 @@ def evidence_availability(open_targets_score: Any, pubmed_count: int) -> str:
 def benchmark_tags(case: dict[str, Any]) -> list[str]:
     labels = case.get("public_labels", {})
     tags = [str(case.get("domain") or "biomedicine")]
+    if case.get("gold_label"):
+        tags.append(f"gold:{case['gold_label']}")
+    if case.get("expected_decision"):
+        tags.append(f"decision:{case['expected_decision']}")
     if labels.get("open_targets_association_status") == "matched":
         tags.append("open_targets_matched")
     if int(labels.get("pubmed_gene_disease_count") or 0) >= 25:
@@ -428,6 +432,10 @@ def expand_tasks(manifest: dict[str, Any]) -> list[dict[str, Any]]:
                     "judge_focus": template.get("judge_focus", []),
                     "rubric_path": manifest.get("rubric_path"),
                     "public_labels": case.get("public_labels", {}),
+                    "gold_label": case.get("gold_label"),
+                    "expected_decision": case.get("expected_decision"),
+                    "expected_evidence": case.get("expected_evidence", []),
+                    "case_rationale": case.get("case_rationale"),
                     "benchmark_tags": case.get("benchmark_tags", []),
                 }
             )
@@ -458,12 +466,15 @@ def render_summary(manifest: dict[str, Any], output_path: Path, tasks_path: Path
     cases = manifest.get("seed_cases", [])
     templates = manifest.get("task_templates", [])
     domain_counts: dict[str, int] = {}
+    label_counts: dict[str, int] = {}
     for case in cases:
         domain = str(case.get("domain") or "unknown")
         domain_counts[domain] = domain_counts.get(domain, 0) + 1
+        label = str(case.get("gold_label") or "unlabeled")
+        label_counts[label] = label_counts.get(label, 0) + 1
     matched = sum(1 for case in cases if case.get("public_labels", {}).get("open_targets_association_status") == "matched")
     lines = [
-        "# AutoScientist-BioTruth v0.1",
+        f"# AutoScientist-BioTruth v{manifest.get('version', '0.1')}",
         "",
         f"Manifest: `{output_path}`",
         f"Expanded task JSONL: `{tasks_path}`",
@@ -477,20 +488,24 @@ def render_summary(manifest: dict[str, Any], output_path: Path, tasks_path: Path
     ]
     for domain, count in sorted(domain_counts.items()):
         lines.append(f"- `{domain}`: {count}")
+    lines.extend(["", "## Gold Labels", ""])
+    for label, count in sorted(label_counts.items()):
+        lines.append(f"- `{label}`: {count}")
     lines.extend(
         [
             "",
             "## Cases",
             "",
-            "| Case | Domain | Target | Disease | Open Targets | PubMed | Evidence availability |",
-            "| --- | --- | --- | --- | ---: | ---: | --- |",
+            "| Case | Domain | Label | Expected decision | Target | Disease | Open Targets | PubMed | Evidence availability |",
+            "| --- | --- | --- | --- | --- | --- | ---: | ---: | --- |",
         ]
     )
     for case in cases:
         labels = case.get("public_labels", {})
         lines.append(
-            f"| `{case['id']}` | {case.get('domain')} | {case.get('gene_symbol')} | "
-            f"{case.get('disease_name')} | {labels.get('open_targets_association_score')} | "
+            f"| `{case['id']}` | {case.get('domain')} | {case.get('gold_label') or ''} | "
+            f"{case.get('expected_decision') or ''} | {case.get('gene_symbol')} | {case.get('disease_name')} | "
+            f"{labels.get('open_targets_association_score')} | "
             f"{labels.get('pubmed_gene_disease_count')} | {labels.get('evidence_availability')} |"
         )
     lines.extend(["", "## Caveats", ""])

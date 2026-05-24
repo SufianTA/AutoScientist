@@ -1,0 +1,185 @@
+{
+  "schema": "autosci.biotruth_seed_cases.v0.2",
+  "name": "BioTruth v0.2 Stratified Biomedical Validation Cases",
+  "version": "0.2",
+  "created_at": "2026-05-24",
+  "purpose": "A stratified target-disease benchmark for testing whether AutoScientist can support, downgrade, conflict-label, or abstain from biomedical hypotheses based on public evidence quality.",
+  "selection_policy": {
+    "case_count": 12,
+    "expanded_task_policy": "Four task templates per case, producing 48 benchmark tasks by default.",
+    "domains": [
+      "autoimmune_inflammation",
+      "oncology",
+      "rare_mendelian",
+      "neurodegeneration",
+      "cardiometabolic"
+    ],
+    "gold_label_policy": [
+      "strong_support cases should usually produce support_allowed with high-tier evidence.",
+      "moderate_support cases should usually produce tentative_only unless clinical evidence is strong.",
+      "weak_support cases should be downgraded and should not be reported as validated.",
+      "conflicting cases require explicit counterevidence handling.",
+      "safety_limited cases require translation caveats even when biology is plausible.",
+      "insufficient_evidence cases should abstain or remain tentative."
+    ],
+    "rationale": [
+      "Measure scientific decision behavior, not only tool availability.",
+      "Include cases where the correct outcome is not always support.",
+      "Focus on public-data-friendly biomedical domains with target-disease evidence, clinical context, and common failure modes."
+    ]
+  },
+  "gold_label_definitions": {
+    "strong_support": "Public evidence should support the target-disease relationship with clinical, genetic, or strong disease-specific evidence.",
+    "moderate_support": "Evidence is biologically plausible but important causal, subtype, or translational uncertainty remains.",
+    "weak_support": "Evidence may include association or co-mention but should not justify a strong therapeutic claim.",
+    "conflicting": "Support exists but important negative, subtype, resistance, or directionality evidence must be weighed.",
+    "safety_limited": "Target biology is plausible or established, but safety, delivery, modality, or translation risks should dominate the conclusion.",
+    "insufficient_evidence": "The system should abstain or explicitly state that evidence is inadequate for a useful target-disease claim."
+  },
+  "seed_cases": [
+    {
+      "id": "tnf_rheumatoid_arthritis_strong",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "TNF",
+      "target_ensembl_id": "ENSG00000232810",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "gold_label": "strong_support",
+      "expected_decision": "support_allowed",
+      "expected_evidence": ["clinical_trials", "approved_or_clinical_precedence", "mechanism", "safety_caveats"],
+      "case_rationale": "Clinically established inflammatory target where the system should support the biology while still surfacing safety and response limitations."
+    },
+    {
+      "id": "braf_melanoma_strong",
+      "domain": "oncology",
+      "gene_symbol": "BRAF",
+      "target_ensembl_id": "ENSG00000157764",
+      "disease_name": "melanoma",
+      "disease_efo_id": "EFO_0000756",
+      "gold_label": "strong_support",
+      "expected_decision": "support_allowed",
+      "expected_evidence": ["variant_specificity", "clinical_precedence", "resistance_caveats"],
+      "case_rationale": "Precision oncology positive control requiring mutation-specific framing and resistance caveats."
+    },
+    {
+      "id": "cftr_cystic_fibrosis_strong",
+      "domain": "rare_mendelian",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "disease_name": "cystic fibrosis",
+      "disease_efo_id": "MONDO_0009061",
+      "gold_label": "strong_support",
+      "expected_decision": "support_allowed",
+      "expected_evidence": ["monogenic_causality", "clinical_precedence", "genotype_specificity"],
+      "case_rationale": "Monogenic disease with validated target biology and genotype-specific modulator translation."
+    },
+    {
+      "id": "nod2_crohn_moderate",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "NOD2",
+      "target_ensembl_id": "ENSG00000167207",
+      "disease_name": "Crohn disease",
+      "disease_efo_id": "MONDO_0005011",
+      "gold_label": "moderate_support",
+      "expected_decision": "tentative_only",
+      "expected_evidence": ["human_genetics", "innate_immunity_mechanism", "translation_uncertainty"],
+      "case_rationale": "Genetically implicated immune biology where association is real but intervention direction and druggability are not straightforward."
+    },
+    {
+      "id": "apoe_alzheimer_moderate",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APOE",
+      "target_ensembl_id": "ENSG00000130203",
+      "disease_name": "Alzheimer disease",
+      "disease_efo_id": "EFO_0000249",
+      "gold_label": "moderate_support",
+      "expected_decision": "tentative_only",
+      "expected_evidence": ["risk_genetics", "causal_uncertainty", "therapeutic_directionality"],
+      "case_rationale": "Strong risk genetics case where the system should avoid equating risk association with a direct therapeutic target."
+    },
+    {
+      "id": "ptpn22_rheumatoid_arthritis_weak",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "PTPN22",
+      "target_ensembl_id": "ENSG00000134242",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "gold_label": "weak_support",
+      "expected_decision": "tentative_only",
+      "expected_evidence": ["autoimmune_genetics", "directionality_gap", "translation_uncertainty"],
+      "case_rationale": "Autoimmune genetics signal with a high risk of overclaiming therapeutic actionability."
+    },
+    {
+      "id": "app_alzheimer_conflicting",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APP",
+      "target_ensembl_id": "ENSG00000142192",
+      "disease_name": "Alzheimer disease",
+      "disease_efo_id": "EFO_0000249",
+      "gold_label": "conflicting",
+      "expected_decision": "conflicting",
+      "expected_evidence": ["amyloid_biology", "clinical_trial_failures_or_mixed_results", "safety_caveats"],
+      "case_rationale": "Strong disease relevance but a history of translational complexity and mixed clinical evidence that must be handled explicitly."
+    },
+    {
+      "id": "kras_pancreatic_cancer_conflicting",
+      "domain": "oncology",
+      "gene_symbol": "KRAS",
+      "target_ensembl_id": "ENSG00000133703",
+      "disease_name": "pancreatic cancer",
+      "disease_efo_id": "EFO_0002618",
+      "gold_label": "conflicting",
+      "expected_decision": "conflicting",
+      "expected_evidence": ["oncogenic_driver", "allele_specificity", "drugging_difficulty", "resistance"],
+      "case_rationale": "High-confidence oncogenic biology with difficult targetability and allele/subtype constraints."
+    },
+    {
+      "id": "lrrk2_parkinson_safety_limited",
+      "domain": "neurodegeneration",
+      "gene_symbol": "LRRK2",
+      "target_ensembl_id": "ENSG00000188906",
+      "disease_name": "Parkinson disease",
+      "disease_efo_id": "EFO_0002508",
+      "gold_label": "safety_limited",
+      "expected_decision": "tentative_only",
+      "expected_evidence": ["genetics", "kinase_tractability", "lung_or_systemic_safety", "patient_subtype"],
+      "case_rationale": "Plausible genetically grounded target where safety and patient selection should constrain claims."
+    },
+    {
+      "id": "htt_huntington_safety_limited",
+      "domain": "neurodegeneration",
+      "gene_symbol": "HTT",
+      "target_ensembl_id": "ENSG00000197386",
+      "disease_name": "Huntington disease",
+      "disease_efo_id": "EFO_0003898",
+      "gold_label": "safety_limited",
+      "expected_decision": "tentative_only",
+      "expected_evidence": ["monogenic_causality", "cns_delivery", "allele_specificity", "lowering_safety"],
+      "case_rationale": "Causal target where delivery, allele selectivity, and normal HTT function make translation safety-limited."
+    },
+    {
+      "id": "egfr_rheumatoid_arthritis_insufficient",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "EGFR",
+      "target_ensembl_id": "ENSG00000146648",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "gold_label": "insufficient_evidence",
+      "expected_decision": "abstain",
+      "expected_evidence": ["wrong_context_risk", "absence_of_disease_specific_support"],
+      "case_rationale": "Deliberately mismatched target-disease pair used to test abstention and wrong-context detection."
+    },
+    {
+      "id": "cftr_melanoma_insufficient",
+      "domain": "oncology",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "disease_name": "melanoma",
+      "disease_efo_id": "EFO_0000756",
+      "gold_label": "insufficient_evidence",
+      "expected_decision": "abstain",
+      "expected_evidence": ["wrong_context_risk", "absence_of_target_disease_support"],
+      "case_rationale": "Known target in another disease paired with melanoma to test whether the system resists irrelevant target reuse."
+    }
+  ]
+}

@@ -44,6 +44,7 @@ def collect_review_package(args: argparse.Namespace) -> dict[str, Any]:
         "package_name": package_name,
         "artifact_count": len(artifact_index),
         "artifacts": artifact_index,
+        "artifact_guide": "ARTIFACT_GUIDE.md",
         "usage": {
             "start_here": "benchmark_run/benchmark_summary.md",
             "biotruth_scores": "benchmark_run/biotruth_scores.md",
@@ -60,6 +61,7 @@ def collect_review_package(args: argparse.Namespace) -> dict[str, Any]:
     }
     (staging / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     (staging / "README.md").write_text(render_readme(manifest), encoding="utf-8")
+    (staging / "ARTIFACT_GUIDE.md").write_text(render_artifact_guide(manifest), encoding="utf-8")
     secret_hits = scan_for_secrets(staging)
     zip_path = output_dir / f"{package_name}.zip"
     result = {
@@ -158,6 +160,7 @@ def render_readme(manifest: dict[str, Any]) -> str:
         "- `benchmark_run/benchmark_tasks.json`: generated task set and public context.",
         "- `benchmark_run/scistate_graph.json`: exported SciState Graph.",
         "- `benchmark_run/packages/`: packaged SciFlow Policy artifacts when generated.",
+        "- `ARTIFACT_GUIDE.md`: reviewer-oriented explanation of each artifact class.",
         "",
         "## Caveats",
         "",
@@ -169,6 +172,70 @@ def render_readme(manifest: dict[str, Any]) -> str:
     if len(manifest["artifacts"]) > 200:
         lines.append(f"- ... {len(manifest['artifacts']) - 200} more artifacts")
     return "\n".join(lines)
+
+
+def render_artifact_guide(manifest: dict[str, Any]) -> str:
+    artifacts = manifest.get("artifacts", [])
+    lines = [
+        "# Artifact Guide",
+        "",
+        "Use this file to decide what to inspect first and what each artifact is meant to prove.",
+        "",
+        "## Recommended Review Order",
+        "",
+        "1. `README.md`: package orientation and caveats.",
+        "2. `benchmark_run/benchmark_summary.md`: task completion, ablations, and headline metrics.",
+        "3. `benchmark_run/biotruth_scores.md`: correctness scoring and failure rates.",
+        "4. `benchmark_run/analysis/`: deeper ablation and tool-use analysis.",
+        "5. `benchmark_run/biotruth_score_packets.jsonl`: compact packets for expert review.",
+        "6. `benchmark_run/scistate_graph.json`: persistent scientific memory graph.",
+        "7. `benchmark_run/packages/`: SciFlow Policy package and model card, when present.",
+        "",
+        "## Artifact Classes",
+        "",
+        "- Benchmark summaries show whether runs completed and whether the full system beat ablations.",
+        "- Score packets are the best unit for manual biological review because they contain task, answer, evidence, critic, abstention, and tool traces.",
+        "- Replay bundles support reproducibility by preserving state transitions, tool calls, evidence, hypotheses, and board posts.",
+        "- SciState Graph exports persistent entities, hypotheses, causal links, experiments, tools, and replay lineage.",
+        "- SciFlow Policy packages describe the workflow-controller model trained from traces and scientific outcomes.",
+        "- Claims and limitation docs define what the package does and does not prove.",
+        "",
+        "## Included Files",
+        "",
+    ]
+    for artifact in artifacts:
+        path = str(artifact.get("path", ""))
+        lines.append(f"- `{path}`: {describe_artifact_path(path)}")
+    return "\n".join(lines)
+
+
+def describe_artifact_path(path: str) -> str:
+    normalized = path.replace("\\", "/").lower()
+    if normalized.endswith("benchmark_summary.md"):
+        return "human-readable benchmark completion and ablation summary"
+    if normalized.endswith("benchmark_summary.json"):
+        return "machine-readable benchmark completion and gate summary"
+    if normalized.endswith("biotruth_scores.md"):
+        return "human-readable correctness score summary"
+    if normalized.endswith("biotruth_scores.json"):
+        return "machine-readable score packets and score objects"
+    if normalized.endswith("biotruth_score_packets.jsonl"):
+        return "line-delimited compact packets for expert or judge review"
+    if normalized.endswith("scistate_graph.json"):
+        return "scientific memory graph export"
+    if "/analysis/" in normalized:
+        return "benchmark analysis, failure analysis, or ablation comparison"
+    if "/packages/" in normalized:
+        return "packaged SciFlow Policy, state graph, model card, or manifest"
+    if normalized.endswith("claims_and_limitations.md"):
+        return "public claim boundary and limitations"
+    if normalized.endswith(".jsonl"):
+        return "line-delimited structured benchmark data"
+    if normalized.endswith(".json"):
+        return "structured machine-readable artifact"
+    if normalized.endswith(".md"):
+        return "human-readable documentation"
+    return "supporting artifact"
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

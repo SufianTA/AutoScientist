@@ -98,6 +98,10 @@ def expand_tasks(
                             set(case.get("expected_capabilities", []))
                             | set(template.get("expected_capabilities", []))
                         ),
+                        "gold_label": case.get("gold_label"),
+                        "expected_decision": case.get("expected_decision"),
+                        "expected_evidence": case.get("expected_evidence", []),
+                        "case_rationale": case.get("case_rationale"),
                         "public_labels": case.get("public_labels", {}),
                         "benchmark_tags": case.get("benchmark_tags", []),
                         "rubric_path": manifest.get("rubric_path"),
@@ -325,6 +329,10 @@ def run_task(
         "target_ensembl_id": task.get("target_ensembl_id"),
         "disease_efo_id": task.get("disease_efo_id"),
         "expected_capabilities": task.get("expected_capabilities", []),
+        "gold_label": task.get("gold_label"),
+        "expected_decision": task.get("expected_decision"),
+        "expected_evidence": task.get("expected_evidence", []),
+        "case_rationale": task.get("case_rationale"),
         "public_labels": task.get("public_labels", {}),
         "public_context": task.get("public_context", {}),
     }
@@ -356,6 +364,9 @@ def run_task(
         "evidence_count": len(result.get("report", {}).get("evidence", [])),
         "guardrails": result.get("report", {}).get("guardrails", []),
         "experiments": report_experiments(result.get("report", {})),
+        "biotruth_critic": result.get("report", {}).get("biotruth_critic", {}),
+        "abstention_policy": result.get("report", {}).get("abstention_policy", {}),
+        "contradiction_analysis": result.get("report", {}).get("contradiction_analysis", {}),
         "tool_calls": result.get("provenance", {}).get("tool_calls", []),
     }
 

@@ -28,3 +28,5 @@ def test_collect_review_package_from_benchmark_dir(tmp_path: Path) -> None:
     assert Path(result["zip_path"]).exists()
     assert result["secret_like_matches"] == []
     assert not (Path(result["package_dir"]) / "benchmark_run" / ".env").exists()
+    assert (Path(result["package_dir"]) / "ARTIFACT_GUIDE.md").exists()
+    assert "benchmark completion" in (Path(result["package_dir"]) / "ARTIFACT_GUIDE.md").read_text(encoding="utf-8")

@@ -12,6 +12,9 @@ def test_custom_tools_return_standard_result() -> None:
     assert "ncbi_gene_profile_tool" in tools
     assert "pubmed_literature_search_tool" in tools
     assert "pubchem_candidate_lookup_tool" in tools
+    assert "clinical_trials_search_tool" in tools
+    assert "reactome_pathway_search_tool" in tools
+    assert "openfda_adverse_event_tool" in tools
 
 
 def test_evidence_scorer_labels_acvr1_fop_mechanism() -> None:
@@ -44,6 +47,101 @@ def test_live_biomedical_tools_require_explicit_inputs() -> None:
     assert tools["ncbi_gene_profile_tool"].run({}).status == "failure"
     assert tools["pubmed_literature_search_tool"].run({}).status == "failure"
     assert tools["pubchem_candidate_lookup_tool"].run({}).status == "failure"
+    assert tools["clinical_trials_search_tool"].run({}).status == "failure"
+    assert tools["reactome_pathway_search_tool"].run({}).status == "failure"
+    assert tools["openfda_adverse_event_tool"].run({}).status == "failure"
+
+
+def test_clinical_trials_tool_parses_v2_response(monkeypatch) -> None:
+    from tools.custom_tools import live_biomedical
+
+    def fake_fetch_json(url: str, timeout: int = 20) -> dict:
+        assert "clinicaltrials.gov/api/v2/studies" in url
+        assert "query.cond=rheumatoid+arthritis" in url
+        return {
+            "studies": [
+                {
+                    "protocolSection": {
+                        "identificationModule": {"nctId": "NCT000001", "briefTitle": "TNF blockade in RA"},
+                        "statusModule": {"overallStatus": "COMPLETED"},
+                        "designModule": {"phases": ["PHASE3"], "studyType": "INTERVENTIONAL"},
+                        "conditionsModule": {"conditions": ["Rheumatoid Arthritis"]},
+                        "armsInterventionsModule": {
+                            "interventions": [{"name": "adalimumab"}, {"name": "placebo"}]
+                        },
+                        "outcomesModule": {"primaryOutcomes": [{"measure": "ACR20 response"}]},
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(live_biomedical, "fetch_json", fake_fetch_json)
+    tool = build_custom_tools()["clinical_trials_search_tool"]
+    result = tool.run({"condition": "rheumatoid arthritis", "query": "TNF", "page_size": 3})
+
+    assert result.status == "success"
+    assert result.output["studies"][0]["nct_id"] == "NCT000001"
+    assert result.output["studies"][0]["phase"] == ["PHASE3"]
+    assert result.output["studies"][0]["primary_outcomes"] == ["ACR20 response"]
+
+
+def test_reactome_pathway_tool_parses_response(monkeypatch) -> None:
+    from tools.custom_tools import live_biomedical
+
+    def fake_fetch_json(url: str, timeout: int = 20) -> dict:
+        assert "reactome.org/ContentService/search/query" in url
+        return {
+            "rowCount": 1,
+            "results": [
+                {
+                    "stId": "R-HSA-12345",
+                    "name": "TNF signaling",
+                    "schemaClass": "Pathway",
+                    "speciesName": "Homo sapiens",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(live_biomedical, "fetch_json", fake_fetch_json)
+    tool = build_custom_tools()["reactome_pathway_search_tool"]
+    result = tool.run({"query": "TNF", "page_size": 3})
+
+    assert result.status == "success"
+    assert result.output["pathways"][0]["stable_id"] == "R-HSA-12345"
+    assert result.output["pathways"][0]["name"] == "TNF signaling"
+
+
+def test_openfda_adverse_event_tool_parses_response(monkeypatch) -> None:
+    from tools.custom_tools import live_biomedical
+
+    def fake_fetch_json(url: str, timeout: int = 20) -> dict:
+        assert "api.fda.gov/drug/event.json" in url
+        return {
+            "meta": {"results": {"total": 7}},
+            "results": [
+                {
+                    "safetyreportid": "100",
+                    "serious": "1",
+                    "receivedate": "20260101",
+                    "primarysourcecountry": "US",
+                    "patient": {
+                        "reaction": [
+                            {"reactionmeddrapt": "Injection site reaction"},
+                            {"reactionmeddrapt": "Headache"},
+                        ]
+                    },
+                }
+            ],
+        }
+
+    monkeypatch.setattr(live_biomedical, "fetch_json", fake_fetch_json)
+    tool = build_custom_tools()["openfda_adverse_event_tool"]
+    result = tool.run({"drug_name": "adalimumab", "limit": 3})
+
+    assert result.status == "success"
+    assert result.output["total_matching_reports"] == 7
+    assert result.output["serious_reports_in_returned"] == 1
+    assert result.output["common_reactions"][0]["reaction"] == "Headache"
 
 
 def test_hypothesis_card_does_not_downgrade_clinically_established_targets() -> None:

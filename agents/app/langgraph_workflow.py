@@ -9,6 +9,11 @@ from datetime import datetime
 from typing import Any, Callable
 
 from app.services.llm_provider import call_llm, parse_json_object, require_real_provider
+from app.services.biotruth_critic import evaluate_hypothesis
+from app.services.abstention_policy import evaluate_abstention_policy
+from app.services.adaptive_tool_planner import plan_adaptive_tools
+from app.services.contradiction_detector import detect_contradictions
+from app.services.evidence_hierarchy import summarize_evidence_hierarchy
 from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
 from app.services.scientific_planning import (
     build_abstention_assessment,
@@ -1083,6 +1088,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.current_state = AgentStateName.CLASSIFY_OBJECTIVE
         biomedical_context = self._extract_context(state, config)
         state.context["biomedical_context"] = biomedical_context
+        if isinstance(biomedical_context.get("benchmark_task"), dict):
+            state.context["benchmark_task"] = biomedical_context["benchmark_task"]
         classification = classify_objective(state.objective, biomedical_context).model_dump()
         capability_plan = build_capability_plan(classification)
         criteria_result = self.open_scientist.generate_qworld_criteria(state.objective, classification, config)
@@ -1182,6 +1189,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "ncbi_gene_profile_tool",
                 "pubmed_literature_search_tool",
                 "pubchem_candidate_lookup_tool",
+                "clinical_trials_search_tool",
+                "reactome_pathway_search_tool",
+                "openfda_adverse_event_tool",
                 "OpenTargets_get_disease_id_description_by_name",
                 "OpenTargets_get_drug_chembId_by_generic_name",
                 "evidence_quality_scorer_tool",
@@ -1324,6 +1334,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "ncbi_gene_profile_tool",
             "pubmed_literature_search_tool",
             "pubchem_candidate_lookup_tool",
+            "clinical_trials_search_tool",
+            "reactome_pathway_search_tool",
+            "openfda_adverse_event_tool",
             "OpenTargets_get_disease_id_description_by_name",
             "OpenTargets_get_drug_chembId_by_generic_name",
             "OpenTargets_get_associated_targets_by_disease_efoId",
@@ -1564,6 +1577,29 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": query, "retmax": pubmed_retmax}))
         if candidates:
             live_calls.append(("molecule_agent", "pubchem_candidate_lookup_tool", {"names": candidates}))
+        for gene in genes:
+            live_calls.append(("omics_agent", "reactome_pathway_search_tool", {"query": gene, "page_size": 5}))
+        for pathway in context.get("pathways", [])[:2]:
+            live_calls.append(("omics_agent", "reactome_pathway_search_tool", {"query": pathway, "page_size": 5}))
+        for disease in diseases[:2]:
+            if genes:
+                live_calls.append(
+                    (
+                        "clinical_agent",
+                        "clinical_trials_search_tool",
+                        {"condition": disease, "query": genes[0], "page_size": 5},
+                    )
+                )
+            for candidate in candidates[:2]:
+                live_calls.append(
+                    (
+                        "clinical_agent",
+                        "clinical_trials_search_tool",
+                        {"condition": disease, "query": candidate, "page_size": 5},
+                    )
+                )
+        for candidate in candidates[:3]:
+            live_calls.append(("safety_agent", "openfda_adverse_event_tool", {"drug_name": candidate, "limit": 5}))
         for disease in diseases:
             live_calls.append(
                 (
@@ -1679,12 +1715,33 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             claim_graph=state.context.get("claim_graph", {}),
         )
         state.context["preliminary_scientific_strategy"] = preliminary_strategy
+        preliminary_hierarchy = summarize_evidence_hierarchy(state.evidence)
+        preliminary_contradictions = detect_contradictions(
+            task=context.get("benchmark_task", config.get("benchmark_task", {})),
+            evidence=state.evidence,
+            tool_calls=state.tool_outputs,
+        )
+        adaptive_plan = plan_adaptive_tools(
+            task=context.get("benchmark_task", config.get("benchmark_task", {})),
+            evidence_hierarchy=preliminary_hierarchy,
+            contradiction_analysis=preliminary_contradictions,
+            max_recommendations=max(2, min(int(config.get("strategy_repair_max_queries", 2)) + 2, 6)),
+        )
+        state.context["adaptive_tool_plan"] = adaptive_plan
         strategy_repair_outputs: list[dict[str, Any]] = []
         strategy_repair_queries: list[str] = []
         if config.get("strategy_repair_enabled", True):
             max_repair_queries = max(0, min(int(config.get("strategy_repair_max_queries", 2)), 5))
             seen_queries = {str(query).strip().lower() for query in pubmed_queries}
-            for followup in preliminary_strategy.get("recommended_followups", []):
+            planned_followups = [
+                *[
+                    {"query": item.get("query")}
+                    for item in adaptive_plan.get("recommendations", [])
+                    if item.get("tool_name") == "pubmed_literature_search_tool" and item.get("query")
+                ],
+                *preliminary_strategy.get("recommended_followups", []),
+            ]
+            for followup in planned_followups:
                 query = str(followup.get("query", "")).strip()
                 if not query or query.lower() in seen_queries:
                     continue
@@ -1782,6 +1839,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 )
                 + len(follow_up_outputs),
                 "scientific_strategy": state.context.get("scientific_strategy", {}),
+                "adaptive_tool_plan": state.context.get("adaptive_tool_plan", {}),
                 "strategy_repair": {
                     "enabled": bool(config.get("strategy_repair_enabled", True)),
                     "queries": strategy_repair_queries,
@@ -1928,6 +1986,51 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "text": f"PubChem returned candidate/intervention records for: {names}.",
                 "structured": output,
             }
+        if tool_name == "clinical_trials_search_tool":
+            studies = output.get("studies", [])
+            if not studies:
+                return {
+                    "source": f"ClinicalTrials.gov: {output.get('condition')} {output.get('query')}",
+                    "text": "ClinicalTrials.gov returned no matching studies for the supplied condition/query.",
+                    "structured": output,
+                }
+            summaries = []
+            for study in studies[:4]:
+                phase = ", ".join(study.get("phase") or []) or "phase not listed"
+                title = study.get("title") or study.get("nct_id") or "study"
+                status = study.get("status") or "status not listed"
+                summaries.append(f"{title} ({status}, {phase})")
+            return {
+                "source": f"ClinicalTrials.gov: {output.get('condition')} {output.get('query')}",
+                "text": "ClinicalTrials.gov returned translational study records: " + "; ".join(summaries),
+                "structured": output,
+            }
+        if tool_name == "reactome_pathway_search_tool":
+            pathways = output.get("pathways", [])
+            if not pathways:
+                return {
+                    "source": f"Reactome: {output.get('query')}",
+                    "text": "Reactome returned no pathway records for this query.",
+                    "structured": output,
+                }
+            names = "; ".join(pathway.get("name", "") for pathway in pathways[:4] if pathway.get("name"))
+            return {
+                "source": f"Reactome: {output.get('query')}",
+                "text": f"Reactome returned pathway/mechanism records: {names}.",
+                "structured": output,
+            }
+        if tool_name == "openfda_adverse_event_tool":
+            reactions = output.get("common_reactions", [])
+            reaction_text = "; ".join(item.get("reaction", "") for item in reactions[:5] if item.get("reaction"))
+            return {
+                "source": f"openFDA adverse events: {output.get('drug_name')}",
+                "text": (
+                    f"openFDA returned {output.get('total_matching_reports', 0)} matching adverse-event reports. "
+                    f"Common returned reaction terms include: {reaction_text or 'none in returned reports'}. "
+                    "These are safety signals, not incidence rates or causal proof."
+                ),
+                "structured": output,
+            }
         raw = output.get("raw", {})
         return {
             "source": f"ToolUniverse: {tool_name}",
@@ -1984,6 +2087,14 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 score_output = self._deterministic_score_evidence_item(item, hypothesis_seed, state)
                 scored.append({**item, "score": score_output})
         state.evidence = scored
+        state.context["evidence_hierarchy"] = summarize_evidence_hierarchy(state.evidence)
+        if "adaptive_tool_plan" not in state.context:
+            state.context["adaptive_tool_plan"] = plan_adaptive_tools(
+                task=state.context.get("benchmark_task", {}),
+                evidence_hierarchy=state.context["evidence_hierarchy"],
+                contradiction_analysis={},
+                max_recommendations=max(2, min(int(config.get("strategy_repair_max_queries", 2)) + 2, 6)),
+            )
         state.context["scientific_strategy"] = build_scientific_strategy(
             objective=state.objective,
             biomedical_context=state.context.get("biomedical_context", {}),
@@ -1997,6 +2108,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {"evidence_count": len(scored), "strictness": config.get("evidence_strictness", "balanced")},
             {
                 "scored_evidence": scored,
+                "evidence_hierarchy": state.context["evidence_hierarchy"],
                 "scientific_strategy": state.context["scientific_strategy"],
                 "llm_calls": state.context.get("llm_calls", []),
             },
@@ -2414,6 +2526,54 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if abstention["abstention_required"]:
             state.critique["abstention_required"] = True
             state.critique["claim_boundary"] = abstention["allowed_output"]
+        biotruth_critic = evaluate_hypothesis(
+            task=state.context.get("benchmark_task", {}),
+            hypothesis=state.hypothesis_card,
+            evidence=state.evidence,
+            tool_calls=state.tool_outputs,
+            public_labels=state.context.get("benchmark_task", {}).get("public_labels", {}),
+        )
+        contradiction_analysis = detect_contradictions(
+            task=state.context.get("benchmark_task", {}),
+            evidence=state.evidence,
+            tool_calls=state.tool_outputs,
+        )
+        abstention_policy = evaluate_abstention_policy(
+            critic=biotruth_critic,
+            evidence_hierarchy=state.context.get("evidence_hierarchy", {}),
+            contradiction_analysis=contradiction_analysis,
+            existing_abstention=state.context.get("abstention", {}),
+        )
+        state.context["adaptive_tool_plan"] = plan_adaptive_tools(
+            task=state.context.get("benchmark_task", {}),
+            evidence_hierarchy=state.context.get("evidence_hierarchy", {}),
+            contradiction_analysis=contradiction_analysis,
+            max_recommendations=max(2, min(int(config.get("strategy_repair_max_queries", 2)) + 2, 6)),
+        )
+        state.context["biotruth_critic"] = biotruth_critic
+        state.context["contradiction_analysis"] = contradiction_analysis
+        state.context["abstention_policy"] = abstention_policy
+        state.critique["biotruth_critic"] = biotruth_critic
+        state.critique["contradiction_analysis"] = contradiction_analysis
+        state.critique["abstention_policy"] = abstention_policy
+        state.hypothesis_card["biotruth_critic"] = biotruth_critic
+        state.hypothesis_card["contradiction_analysis"] = contradiction_analysis
+        state.hypothesis_card["abstention_policy"] = abstention_policy
+        if abstention_policy["decision"] in {"abstain", "conflicting"}:
+            state.critique["abstention_required"] = True
+            state.critique["claim_boundary"] = abstention_policy["claim_boundary"]
+            state.context["abstention"] = {
+                **state.context.get("abstention", {}),
+                "abstention_required": abstention_policy["abstention_required"],
+                "reasons": sorted(
+                    set(
+                        state.context.get("abstention", {}).get("reasons", [])
+                        + biotruth_critic.get("abstention_reasons", [])
+                        + abstention_policy.get("reasons", [])
+                    )
+                ),
+                "allowed_output": abstention_policy["claim_boundary"],
+            }
         self._record(
             trace,
             "critic_agent",
@@ -2477,8 +2637,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "capability_plan": state.context.get("capability_plan", {}),
             "evaluation_criteria": state.context.get("evaluation_criteria", []),
             "claim_graph": state.context.get("claim_graph", {}),
+            "evidence_hierarchy": state.context.get("evidence_hierarchy", {}),
+            "adaptive_tool_plan": state.context.get("adaptive_tool_plan", {}),
             "scientific_strategy": state.context.get("scientific_strategy", {}),
             "abstention": state.context.get("abstention", {}),
+            "abstention_policy": state.context.get("abstention_policy", {}),
+            "biotruth_critic": state.context.get("biotruth_critic", {}),
+            "contradiction_analysis": state.context.get("contradiction_analysis", {}),
             "open_scientist": {
                 "qworld": state.context.get("qworld", {}),
                 "health": state.context.get("open_scientist_health", {}),
