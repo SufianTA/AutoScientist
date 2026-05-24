@@ -18,6 +18,8 @@ JUDGE_LLM_PROVIDER="${JUDGE_LLM_PROVIDER:-gemini}"
 JUDGE_LLM_MODEL="${JUDGE_LLM_MODEL:-gemini-2.5-flash}"
 JUDGE_LLM_API_KEY_ENV_VAR="${JUDGE_LLM_API_KEY_ENV_VAR:-GEMINI_API_KEY}"
 JUDGE_LLM_MAX_TOKENS="${JUDGE_LLM_MAX_TOKENS:-4096}"
+SCORE_MODE="${SCORE_MODE:-judge}"
+MAX_SCORE_RESULTS="${MAX_SCORE_RESULTS:-$LIMIT}"
 NEURAL_EPOCHS="${NEURAL_EPOCHS:-100}"
 NEURAL_HIDDEN_DIM="${NEURAL_HIDDEN_DIM:-128}"
 NEURAL_BATCH_SIZE="${NEURAL_BATCH_SIZE:-32}"
@@ -63,6 +65,11 @@ if [ -d ".git" ]; then
   run git status --short
 fi
 
+if command -v apt-get >/dev/null 2>&1; then
+  run apt-get update
+  run apt-get install -y --no-install-recommends libxrender1 libxext6 libsm6 libglib2.0-0 libgl1
+fi
+
 if [ -f "$VENV/bin/activate" ]; then
   # shellcheck disable=SC1090
   source "$VENV/bin/activate"
@@ -85,7 +92,8 @@ echo "log=$LOG_PATH"
 run python tools/machine_preflight.py \
   --workspace "$WORKDIR" \
   --output-dir outputs/preflight \
-  --require-gpu
+  --require-gpu \
+  --require-tooluniverse
 
 run python tools/build_biotruth_benchmark.py \
   --seed-cases "$SEED_CASES" \
@@ -119,8 +127,8 @@ python tools/run_biotruth_pipeline.py \
   --neural-epochs "$NEURAL_EPOCHS" \
   --neural-hidden-dim "$NEURAL_HIDDEN_DIM" \
   --neural-batch-size "$NEURAL_BATCH_SIZE" \
-  --score-mode judge \
-  --max-score-results "$LIMIT" \
+  --score-mode "$SCORE_MODE" \
+  --max-score-results "$MAX_SCORE_RESULTS" \
   --judge-llm-provider "$JUDGE_LLM_PROVIDER" \
   --judge-llm-model "$JUDGE_LLM_MODEL" \
   --judge-llm-api-key-env-var "$JUDGE_LLM_API_KEY_ENV_VAR" \
