@@ -51,9 +51,26 @@ def test_abstention_policy_support_allowed_for_strong_clean_case() -> None:
         existing_abstention={"reasons": []},
     )
 
-    assert result["schema"] == "autosci.abstention_policy.v0.1"
+    assert result["schema"] == "autosci.abstention_policy.v0.2"
     assert result["decision"] == "support_allowed"
     assert result["abstention_required"] is False
+
+
+def test_abstention_policy_downgrades_when_actionability_is_only_tentative() -> None:
+    result = evaluate_abstention_policy(
+        critic={"verdict": "support", "weighted_score": 86},
+        evidence_hierarchy={"evidence_count": 8, "high_tier_evidence_count": 3, "weak_only": False, "hierarchy_score": 70},
+        contradiction_analysis={"finding_count": 0, "contradiction_search_attempted": True},
+        actionability_profile={
+            "level": "moderate",
+            "recommended_decision": "tentative_only",
+            "reasons": ["no_disease_specific_intervention_evidence"],
+        },
+        existing_abstention={"reasons": []},
+    )
+
+    assert result["decision"] == "tentative_only"
+    assert "no_disease_specific_intervention_evidence" in result["reasons"]
 
 
 def test_abstention_policy_abstains_for_weak_or_empty_case() -> None:

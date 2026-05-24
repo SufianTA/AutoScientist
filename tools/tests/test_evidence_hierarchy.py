@@ -34,6 +34,18 @@ def test_evidence_hierarchy_classifies_clinicaltrials_records_as_tier_1() -> Non
     assert classification["evidence_kind"] == "clinical"
 
 
+def test_evidence_hierarchy_does_not_treat_pubmed_query_words_as_clinical_precedence() -> None:
+    classification = classify_evidence_item(
+        {
+            "source": "PubMed: TARGET disease clinical precedence response",
+            "text": "PubMed literature search found records about TARGET disease mechanism but no trial result.",
+            "evidence_type": "literature",
+        }
+    )
+
+    assert classification["evidence_tier"] != "tier_1_clinical_translational"
+
+
 def test_evidence_hierarchy_classifies_human_genetics_as_tier_2() -> None:
     classification = classify_evidence_item(
         {

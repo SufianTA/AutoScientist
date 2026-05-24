@@ -326,7 +326,11 @@ def _scientific_outcome_context(state: Any | None) -> dict[str, Any]:
         "abstention_required": abstention_policy.get("abstention_required") if isinstance(abstention_policy, dict) else None,
         "evidence_hierarchy_score": hierarchy.get("hierarchy_score") if isinstance(hierarchy, dict) else None,
         "high_tier_evidence_count": hierarchy.get("high_tier_evidence_count") if isinstance(hierarchy, dict) else None,
-        "contradiction_count": contradictions.get("contradiction_count") if isinstance(contradictions, dict) else None,
+        "contradiction_count": (
+            contradictions.get("finding_count", contradictions.get("contradiction_count"))
+            if isinstance(contradictions, dict)
+            else None
+        ),
         "contradiction_search_attempted": contradictions.get("contradiction_search_attempted")
         if isinstance(contradictions, dict)
         else None,

@@ -139,6 +139,7 @@ def test_biotruth_critic_schema_is_stable() -> None:
         "dimension_scores",
         "dimension_weights",
         "evidence_tier_counts",
+        "actionability_profile",
         "contradictions",
         "missing_evidence",
         "abstention_reasons",

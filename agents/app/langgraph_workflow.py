@@ -12,6 +12,7 @@ from app.services.llm_provider import call_llm, parse_json_object, require_real_
 from app.services.biotruth_critic import evaluate_hypothesis
 from app.services.abstention_policy import evaluate_abstention_policy
 from app.services.adaptive_tool_planner import plan_adaptive_tools
+from app.services.actionability_assessor import assess_actionability
 from app.services.contradiction_detector import detect_contradictions
 from app.services.evidence_hierarchy import summarize_evidence_hierarchy
 from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
@@ -2538,10 +2539,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             evidence=state.evidence,
             tool_calls=state.tool_outputs,
         )
+        actionability_profile = assess_actionability(
+            task=state.context.get("benchmark_task", {}),
+            evidence=state.evidence,
+            evidence_hierarchy=state.context.get("evidence_hierarchy", {}),
+            contradiction_analysis=contradiction_analysis,
+        )
         abstention_policy = evaluate_abstention_policy(
             critic=biotruth_critic,
             evidence_hierarchy=state.context.get("evidence_hierarchy", {}),
             contradiction_analysis=contradiction_analysis,
+            actionability_profile=actionability_profile,
             existing_abstention=state.context.get("abstention", {}),
         )
         state.context["adaptive_tool_plan"] = plan_adaptive_tools(
@@ -2552,12 +2560,15 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         )
         state.context["biotruth_critic"] = biotruth_critic
         state.context["contradiction_analysis"] = contradiction_analysis
+        state.context["actionability_profile"] = actionability_profile
         state.context["abstention_policy"] = abstention_policy
         state.critique["biotruth_critic"] = biotruth_critic
         state.critique["contradiction_analysis"] = contradiction_analysis
+        state.critique["actionability_profile"] = actionability_profile
         state.critique["abstention_policy"] = abstention_policy
         state.hypothesis_card["biotruth_critic"] = biotruth_critic
         state.hypothesis_card["contradiction_analysis"] = contradiction_analysis
+        state.hypothesis_card["actionability_profile"] = actionability_profile
         state.hypothesis_card["abstention_policy"] = abstention_policy
         if abstention_policy["decision"] in {"abstain", "conflicting"}:
             state.critique["abstention_required"] = True
@@ -2642,6 +2653,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "scientific_strategy": state.context.get("scientific_strategy", {}),
             "abstention": state.context.get("abstention", {}),
             "abstention_policy": state.context.get("abstention_policy", {}),
+            "actionability_profile": state.context.get("actionability_profile", {}),
             "biotruth_critic": state.context.get("biotruth_critic", {}),
             "contradiction_analysis": state.context.get("contradiction_analysis", {}),
             "open_scientist": {

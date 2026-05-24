@@ -8,6 +8,7 @@ def evaluate_abstention_policy(
     critic: dict[str, Any],
     evidence_hierarchy: dict[str, Any],
     contradiction_analysis: dict[str, Any],
+    actionability_profile: dict[str, Any] | None = None,
     existing_abstention: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Combine scientific quality signals into a final abstention decision."""
@@ -31,6 +32,19 @@ def evaluate_abstention_policy(
         reasons.add("unresolved_counterevidence")
     if not contradiction_analysis.get("contradiction_search_attempted"):
         reasons.add("contradiction_search_incomplete")
+    actionability = actionability_profile or {}
+    actionability_decision = str(actionability.get("recommended_decision") or "")
+    actionability_level = str(actionability.get("level") or "")
+    for reason in actionability.get("reasons", []) if isinstance(actionability.get("reasons"), list) else []:
+        if reason in {
+            "no_target_disease_grounded_evidence",
+            "no_disease_specific_clinical_precedence",
+            "no_disease_specific_intervention_evidence",
+            "negative_or_conflicting_signals_present",
+            "safety_signals_require_translation_caution",
+            "clinical_terms_appear_in_query_context",
+        }:
+            reasons.add(reason)
 
     decision = "support_allowed"
     if {"critic_abstained", "no_evidence", "critic_score_below_support_threshold"} & reasons:
@@ -39,9 +53,15 @@ def evaluate_abstention_policy(
         decision = "conflicting"
     elif {"weak_only_evidence", "no_high_tier_evidence", "contradiction_search_incomplete"} & reasons:
         decision = "tentative_only"
+    if actionability_decision == "abstain":
+        decision = "abstain"
+    elif actionability_decision == "conflicting" and decision != "abstain":
+        decision = "conflicting"
+    elif actionability_decision == "tentative_only" and decision == "support_allowed":
+        decision = "tentative_only"
 
     return {
-        "schema": "autosci.abstention_policy.v0.1",
+        "schema": "autosci.abstention_policy.v0.2",
         "decision": decision,
         "abstention_required": decision == "abstain",
         "claim_boundary": claim_boundary(decision),
@@ -53,6 +73,8 @@ def evaluate_abstention_policy(
             "high_tier_evidence_count": evidence_hierarchy.get("high_tier_evidence_count"),
             "contradiction_finding_count": contradiction_analysis.get("finding_count"),
             "contradiction_search_attempted": contradiction_analysis.get("contradiction_search_attempted"),
+            "actionability_level": actionability_level,
+            "actionability_recommended_decision": actionability_decision,
         },
     }
 

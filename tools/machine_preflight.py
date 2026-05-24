@@ -16,6 +16,13 @@ from typing import Any
 from app.env import load_environment
 from app.services.llm_provider import call_llm, validate_provider_config
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
+from tools.custom_tools.live_biomedical import (
+    ClinicalTrialsSearchTool,
+    NCBIGeneProfileTool,
+    OpenFDAAdverseEventTool,
+    PubMedLiteratureSearchTool,
+    ReactomePathwaySearchTool,
+)
 
 
 def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
@@ -43,6 +50,8 @@ def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
                 test_call=args.test_llm,
             )
         )
+    if args.execute_public_tools:
+        checks.append(check_public_biomedical_tools(require=args.require_public_tools))
     if not args.skip_tooluniverse:
         checks.append(
             check_tooluniverse(
@@ -261,6 +270,55 @@ def check_tooluniverse(*, require: bool, execute: bool) -> dict[str, Any]:
     )
 
 
+def check_public_biomedical_tools(*, require: bool) -> dict[str, Any]:
+    tool_specs = [
+        (NCBIGeneProfileTool(), {"gene_symbol": "TNF", "organism": "Homo sapiens"}),
+        (PubMedLiteratureSearchTool(), {"query": "TNF rheumatoid arthritis", "retmax": 2}),
+        (ClinicalTrialsSearchTool(), {"condition": "rheumatoid arthritis", "query": "adalimumab", "page_size": 2}),
+        (ReactomePathwaySearchTool(), {"query": "TNF", "page_size": 2}),
+        (OpenFDAAdverseEventTool(), {"drug_name": "adalimumab", "limit": 2}),
+    ]
+    details: dict[str, Any] = {"tools": {}}
+    failures: list[str] = []
+    for tool, payload in tool_specs:
+        try:
+            result = tool.run(payload).model_dump()
+            status = str(result.get("status") or "")
+            output = result.get("output", {}) if isinstance(result.get("output"), dict) else {}
+            details["tools"][tool.name] = {
+                "status": status,
+                "confidence": result.get("confidence"),
+                "sources": result.get("sources", [])[:2],
+                "summary": summarize_public_tool_output(tool.name, output),
+                "warnings": result.get("warnings", [])[:3],
+            }
+            if status not in {"success", "partial"}:
+                failures.append(f"{tool.name}:{status}")
+        except Exception as exc:
+            failures.append(f"{tool.name}:exception")
+            details["tools"][tool.name] = {"status": "failure", "error": str(exc)[:500]}
+    status = "pass" if not failures else "fail" if require else "warn"
+    message = "public biomedical tools executed" if not failures else f"public tool failures: {', '.join(failures)}"
+    return check("public_biomedical_tools", status, message, critical=require and bool(failures), details=details)
+
+
+def summarize_public_tool_output(tool_name: str, output: dict[str, Any]) -> dict[str, Any]:
+    if tool_name == "ncbi_gene_profile_tool":
+        return {"gene_id": output.get("gene_id"), "gene_symbol": output.get("gene_symbol")}
+    if tool_name == "pubmed_literature_search_tool":
+        return {"count": output.get("count"), "returned": len(output.get("articles", []) or [])}
+    if tool_name == "clinical_trials_search_tool":
+        return {"count": output.get("count"), "returned": len(output.get("studies", []) or [])}
+    if tool_name == "reactome_pathway_search_tool":
+        return {"row_count": output.get("row_count"), "returned": len(output.get("pathways", []) or [])}
+    if tool_name == "openfda_adverse_event_tool":
+        return {
+            "total_matching_reports": output.get("total_matching_reports"),
+            "returned_reports": output.get("returned_reports"),
+        }
+    return {"keys": sorted(output)[:8]}
+
+
 def check(name: str, status: str, message: str, *, critical: bool = False, details: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
         "name": name,
@@ -314,6 +372,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--require-tooluniverse", action="store_true")
     parser.add_argument("--execute-tooluniverse", action="store_true")
     parser.add_argument("--skip-tooluniverse", action="store_true")
+    parser.add_argument("--execute-public-tools", action="store_true")
+    parser.add_argument("--require-public-tools", action="store_true")
     parser.add_argument("--llm-provider", default="")
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--llm-api-key-env-var", default="")

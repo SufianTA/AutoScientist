@@ -21,6 +21,7 @@ These were selected because they completed cleanly in the interrupted 20-case ga
 
 - hard machine preflight passes;
 - Anthropic live LLM preflight passes before generation;
+- public biomedical execution preflight passes for NCBI Gene, PubMed, ClinicalTrials.gov, Reactome, and openFDA;
 - ToolUniverse execution preflight passes;
 - 16/16 result artifacts complete;
 - full ablation completion rate is 1.0;

@@ -280,6 +280,7 @@ def persist_orchestrator_result(
         "report_evaluation": state.report.get("report_evaluation", {}),
         "abstention": state.context.get("abstention", {}),
         "abstention_policy": state.context.get("abstention_policy", {}),
+        "actionability_profile": state.context.get("actionability_profile", {}),
         "adaptive_tool_plan": state.context.get("adaptive_tool_plan", {}),
         "biotruth_critic": state.context.get("biotruth_critic", {}),
         "contradiction_analysis": state.context.get("contradiction_analysis", {}),

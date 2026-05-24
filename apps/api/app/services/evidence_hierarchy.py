@@ -93,23 +93,7 @@ def evidence_text(item: dict[str, Any]) -> str:
 
 
 def infer_tier(text: str) -> str:
-    if any(
-        term in text
-        for term in [
-            "approved drug",
-            "approved therapy",
-            "clinical trial",
-            "clinicaltrials.gov",
-            "clinical_precedence",
-            "interventional",
-            "phase ",
-            "phase1",
-            "phase2",
-            "phase3",
-            "phase4",
-            "translational study",
-        ]
-    ):
+    if has_clinical_translational_signal(text):
         return "tier_1_clinical_translational"
     if any(term in text for term in ["human", "patient", "gwas", "genetic", "variant", "cohort", "patient-derived"]):
         return "tier_2_human_biology"
@@ -123,6 +107,31 @@ def infer_tier(text: str) -> str:
     if any(term in text for term in ["pubmed", "literature", "co-mention", "records", "review"]):
         return "tier_5_literature_context"
     return "tier_unknown"
+
+
+def has_clinical_translational_signal(text: str) -> bool:
+    strong_terms = [
+        "approved drug",
+        "approved therapy",
+        "maximum clinical stage of approval",
+        "approved indication",
+        "approved indications",
+        "clinicaltrials.gov",
+        "interventional",
+        "phase 1",
+        "phase 2",
+        "phase 3",
+        "phase 4",
+        "randomized",
+        "trial results",
+        "clinical trial evidence",
+        "translational study",
+    ]
+    if any(term in text for term in strong_terms):
+        return True
+    if "clinical_precedence" in text and any(term in text for term in ["approved", "phase", "trial", "interventional"]):
+        return True
+    return False
 
 
 def infer_evidence_kind(text: str, tier: str) -> str:

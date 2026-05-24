@@ -116,6 +116,7 @@ def build_report(run_id: str, db: Session) -> dict:
         "claim_graph": hypothesis_post_content.get("claim_graph", {}),
         "abstention": hypothesis_post_content.get("abstention", {}),
         "abstention_policy": hypothesis_post_content.get("abstention_policy", {}),
+        "actionability_profile": hypothesis_post_content.get("actionability_profile", {}),
         "adaptive_tool_plan": hypothesis_post_content.get("adaptive_tool_plan", {}),
         "biotruth_critic": hypothesis_post_content.get("biotruth_critic", {}),
         "contradiction_analysis": hypothesis_post_content.get("contradiction_analysis", {}),
@@ -179,8 +180,9 @@ def render_markdown_report(report: dict) -> str:
     biotruth_critic = report.get("biotruth_critic", {})
     evidence_hierarchy = report.get("evidence_hierarchy", {})
     contradiction_analysis = report.get("contradiction_analysis", {})
+    actionability_profile = report.get("actionability_profile", {})
     adaptive_tool_plan = report.get("adaptive_tool_plan", {})
-    if any((abstention_policy, biotruth_critic, evidence_hierarchy, contradiction_analysis, adaptive_tool_plan)):
+    if any((abstention_policy, biotruth_critic, evidence_hierarchy, contradiction_analysis, actionability_profile, adaptive_tool_plan)):
         lines.extend(["", "## Biomedical Validation Controls", ""])
         if biotruth_critic:
             lines.append(
@@ -203,6 +205,11 @@ def render_markdown_report(report: dict) -> str:
             lines.append(
                 f"- Abstention policy decision: `{abstention_policy.get('decision', 'not recorded')}` "
                 f"with required flag `{abstention_policy.get('abstention_required', 'n/a')}`"
+            )
+        if actionability_profile:
+            lines.append(
+                f"- Actionability profile: `{actionability_profile.get('level', 'not recorded')}` "
+                f"with recommended decision `{actionability_profile.get('recommended_decision', 'n/a')}`"
             )
         for recommendation in adaptive_tool_plan.get("recommendations", [])[:6]:
             lines.append(

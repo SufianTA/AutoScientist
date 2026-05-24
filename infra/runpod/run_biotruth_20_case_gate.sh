@@ -111,6 +111,8 @@ run python tools/machine_preflight.py \
   --output-dir outputs/preflight \
   --min-free-gb 10 \
   --require-gpu \
+  --require-public-tools \
+  --execute-public-tools \
   --require-tooluniverse \
   --execute-tooluniverse \
   --llm-provider "$LLM_PROVIDER" \

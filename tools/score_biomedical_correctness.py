@@ -89,6 +89,7 @@ def build_score_packet(result: dict[str, Any], rubric: dict[str, Any]) -> dict[s
             "adaptive_tool_plan": compact(report.get("adaptive_tool_plan", {}), max_chars=1400),
             "abstention": compact(report.get("abstention", {}), max_chars=1000),
             "abstention_policy": compact(report.get("abstention_policy", {}), max_chars=1200),
+            "actionability_profile": compact(report.get("actionability_profile", {}), max_chars=1400),
             "biotruth_critic": compact(
                 result.get("biotruth_critic") or report.get("biotruth_critic", {}),
                 max_chars=1800,
@@ -159,12 +160,13 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
     critic = answer.get("biotruth_critic", {}) if isinstance(answer.get("biotruth_critic"), dict) else {}
     abstention_policy = answer.get("abstention_policy", {}) if isinstance(answer.get("abstention_policy"), dict) else {}
     contradictions = answer.get("contradiction_analysis", {}) if isinstance(answer.get("contradiction_analysis"), dict) else {}
+    actionability = answer.get("actionability_profile", {}) if isinstance(answer.get("actionability_profile"), dict) else {}
     high_tier_count = int(hierarchy.get("high_tier_evidence_count") or 0)
     hierarchy_score = float(hierarchy.get("hierarchy_score") or 0.0)
     critic_weighted_score = float(critic.get("weighted_score") or 0.0)
     critic_verdict = str(critic.get("verdict") or "").lower()
     abstention_decision = str(abstention_policy.get("decision") or "").lower()
-    contradiction_count = int(contradictions.get("contradiction_count") or 0)
+    contradiction_count = int(contradictions.get("finding_count") or contradictions.get("contradiction_count") or 0)
     contradiction_search_attempted = bool(contradictions.get("contradiction_search_attempted"))
     expected_decision = str(task.get("expected_decision") or "").lower()
     gold_label = str(task.get("gold_label") or "").lower()
@@ -193,6 +195,7 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
             + int("guardrails" in json.dumps(packet.get("answer", {}), default=str).lower())
             + int(evidence_count >= 8)
             + int(high_tier_count > 0)
+            + int(actionability.get("level") == "high")
         ),
         "experiment_quality": bounded_dimension(
             1 + int("experiments" in packet.get("answer", {})) + int("control" in text) + int("failure" in text)
@@ -213,6 +216,7 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
         critic_verdict=critic_verdict,
         high_tier_count=high_tier_count,
         contradiction_count=contradiction_count,
+        actionability_decision=str(actionability.get("recommended_decision") or ""),
     )
     dimensions["counterevidence_and_abstention"] = bounded_dimension(
         1
@@ -316,10 +320,11 @@ def decision_correctness_score(
     critic_verdict: str,
     high_tier_count: int,
     contradiction_count: int,
+    actionability_decision: str = "",
 ) -> int:
     if not expected_decision and not gold_label:
         return 3
-    observed = abstention_decision or {
+    observed = abstention_decision or actionability_decision or {
         "support": "support_allowed",
         "weak_support": "tentative_only",
         "conflicting": "conflicting",

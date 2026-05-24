@@ -38,7 +38,7 @@ else
 fi
 run "$VENV/bin/python" -m pip install -e ".[dev,tooluniverse,neural]"
 
-PREFLIGHT_FLAGS=(--workspace "$WORKDIR" --output-dir "$WORKDIR/outputs/preflight" --require-gpu)
+PREFLIGHT_FLAGS=(--workspace "$WORKDIR" --output-dir "$WORKDIR/outputs/preflight" --require-gpu --execute-public-tools --require-public-tools)
 run "$VENV/bin/python" tools/machine_preflight.py "${PREFLIGHT_FLAGS[@]}"
 
 echo "AutoScientist bootstrap complete."

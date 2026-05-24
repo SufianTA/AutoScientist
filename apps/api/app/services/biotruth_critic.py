@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 from app.services.evidence_hierarchy import classify_evidence_item
+from app.services.actionability_assessor import assess_actionability
 
 
 DIMENSION_WEIGHTS = {
@@ -105,12 +106,17 @@ def evaluate_hypothesis(
     tier_counts = evidence_tier_counts(evidence_items)
     contradictions = contradiction_items(evidence_items)
     text = corpus_text(task, hypothesis, evidence_items)
+    actionability = assess_actionability(
+        task=task,
+        evidence=evidence_items,
+        evidence_hierarchy={"tier_counts": dict(tier_counts)},
+    )
     scores = {
         "disease_relevance": disease_relevance_score(task, text, labels, evidence_items),
         "causal_support": causal_support_score(text, evidence_items, labels),
         "mechanistic_plausibility": keyword_score(text, MECHANISM_TERMS, base=1, scale=1),
         "human_evidence": human_evidence_score(text, labels),
-        "translational_support": translational_score(text, labels),
+        "translational_support": translational_score(text, labels, actionability),
         "contradiction_handling": contradiction_score(text, contradictions),
         "safety_awareness": safety_score(text, evidence_items),
         "uncertainty_calibration": uncertainty_score(text, hypothesis, evidence_items),
@@ -127,6 +133,7 @@ def evaluate_hypothesis(
         "dimension_scores": scores,
         "dimension_weights": DIMENSION_WEIGHTS,
         "evidence_tier_counts": dict(tier_counts),
+        "actionability_profile": actionability,
         "contradictions": contradictions[:8],
         "missing_evidence": missing,
         "abstention_reasons": abstention_reasons,
@@ -223,9 +230,11 @@ def human_evidence_score(text: str, labels: dict[str, Any]) -> int:
     return bounded(score)
 
 
-def translational_score(text: str, labels: dict[str, Any]) -> int:
+def translational_score(text: str, labels: dict[str, Any], actionability: dict[str, Any]) -> int:
     score = keyword_score(text, TRANSLATION_TERMS, base=0, scale=1)
-    if "approved" in text or "clinical_precedence" in text:
+    if actionability.get("level") == "high":
+        score += 2
+    elif actionability.get("level") == "moderate":
         score += 1
     if labels.get("evidence_availability") == "high":
         score += 1
@@ -319,7 +328,12 @@ def critic_verdict(
         return "abstain"
     if contradictions and weighted < 70:
         return "conflicting"
-    if weighted >= 75 and "disease_relevance" not in missing and "causal_support" not in missing:
+    if (
+        weighted >= 75
+        and "disease_relevance" not in missing
+        and "causal_support" not in missing
+        and scores.get("translational_support", 0) >= 3
+    ):
         return "support"
     if weighted >= 50:
         return "weak_support"
