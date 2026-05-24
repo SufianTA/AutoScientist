@@ -31,6 +31,7 @@ def test_explicit_llm_provider_is_preserved() -> None:
 
 def test_auto_llm_provider_falls_back_to_mock_without_keys(monkeypatch) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
 
@@ -38,6 +39,18 @@ def test_auto_llm_provider_falls_back_to_mock_without_keys(monkeypatch) -> None:
 
     assert config["llm_provider"] == "mock"
     assert config["llm_model"] == "mock-scientist"
+
+
+def test_auto_llm_provider_accepts_anthropic_key_alias(monkeypatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("ANTHROPIC_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    config = build_run_config(_args(llm_provider="auto"))
+
+    assert config["llm_provider"] == "anthropic"
+    assert config["llm_api_key_env_var"] == "ANTHROPIC_KEY"
 
 
 def test_strategy_repair_config_is_preserved() -> None:

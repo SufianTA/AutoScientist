@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from app.env import load_environment
+from app.services.llm_provider import call_llm, validate_provider_config
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 
 
@@ -33,8 +34,22 @@ def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
         check_network("NCBI E-utilities", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9&retmode=json&retmax=0"),
         check_open_targets_graphql(),
     ]
+    if args.llm_provider:
+        checks.append(
+            check_llm_provider(
+                provider=args.llm_provider,
+                model=args.llm_model,
+                api_key_env_var=args.llm_api_key_env_var,
+                test_call=args.test_llm,
+            )
+        )
     if not args.skip_tooluniverse:
-        checks.append(check_tooluniverse(require=args.require_tooluniverse))
+        checks.append(
+            check_tooluniverse(
+                require=args.require_tooluniverse,
+                execute=args.execute_tooluniverse,
+            )
+        )
     result = {
         "schema": "autosci.machine_preflight.v1",
         "created_at_unix": int(started),
@@ -84,11 +99,62 @@ def check_disk(workspace: Path, *, min_free_gb: float) -> dict[str, Any]:
 
 
 def check_env_keys() -> dict[str, Any]:
-    keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
+    keys = ["ANTHROPIC_API_KEY", "ANTHROPIC_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
     present = {name: bool(os.getenv(name)) for name in keys}
     provider_count = sum(1 for name in keys if present[name])
     status = "pass" if provider_count else "warn"
     return check("env_keys", status, "provider key present" if provider_count else "no provider key found", details=present)
+
+
+def check_llm_provider(
+    *,
+    provider: str,
+    model: str,
+    api_key_env_var: str,
+    test_call: bool,
+) -> dict[str, Any]:
+    validation = validate_provider_config(provider, api_key_env_var or None)
+    if not validation.get("valid"):
+        return check(
+            "llm_provider",
+            "fail",
+            validation.get("error") or f"Invalid LLM provider config for {provider}.",
+            critical=True,
+            details=validation,
+        )
+    selected_model = model or validation.get("default_model") or ""
+    if not test_call:
+        return check(
+            "llm_provider",
+            "pass",
+            f"{provider}/{selected_model} configured; live call skipped",
+            details=validation,
+        )
+    try:
+        result = call_llm(
+            provider=provider,
+            model=selected_model,
+            api_key_env_var=api_key_env_var or None,
+            system_prompt="Return a tiny plain text health check answer.",
+            prompt="Say only: ok",
+            max_tokens=16,
+            temperature=0.0,
+        )
+        return check(
+            "llm_provider",
+            "pass",
+            f"{provider}/{selected_model} live call succeeded in {result.get('latency_ms')} ms",
+            critical=True,
+            details={"provider": provider, "model": selected_model, "status": result.get("status")},
+        )
+    except Exception as exc:
+        return check(
+            "llm_provider",
+            "fail",
+            str(exc)[:500],
+            critical=True,
+            details={"provider": provider, "model": selected_model, "api_key_env_var": api_key_env_var},
+        )
 
 
 def check_module(module_name: str) -> dict[str, Any]:
@@ -159,15 +225,39 @@ def check_open_targets_graphql() -> dict[str, Any]:
         return check("network:Open Targets GraphQL", "warn", str(exc)[:300], details={"url": url})
 
 
-def check_tooluniverse(*, require: bool) -> dict[str, Any]:
+def check_tooluniverse(*, require: bool, execute: bool) -> dict[str, Any]:
     health = ToolUniverseAdapter().tooluniverse_health()
     available = bool(health.get("available"))
+    details: dict[str, Any] = {"health": health}
+    if available and execute:
+        try:
+            result = ToolUniverseAdapter(scan_all=False).execute(
+                "OpenTargets_get_associated_targets_by_disease_efoId",
+                {"efoId": "EFO_0000685"},
+            )
+            rows = (
+                result.get("output", {})
+                .get("raw", {})
+                .get("data", {})
+                .get("disease", {})
+                .get("associatedTargets", {})
+                .get("rows", [])
+            )
+            details["execution"] = {
+                "status": result.get("status"),
+                "row_count": len(rows),
+                "first_symbol": rows[0].get("target", {}).get("approvedSymbol") if rows else None,
+            }
+            available = result.get("status") == "success" and bool(rows)
+        except Exception as exc:
+            details["execution"] = {"status": "failure", "error": str(exc)[:500]}
+            available = False
     return check(
         "tooluniverse",
         "pass" if available else "fail" if require else "warn",
-        health.get("status") or "unknown",
+        "ready and executable" if available and execute else health.get("status") or "unknown",
         critical=require and not available,
-        details=health,
+        details=details,
     )
 
 
@@ -222,7 +312,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-free-gb", type=float, default=2.0)
     parser.add_argument("--require-gpu", action="store_true")
     parser.add_argument("--require-tooluniverse", action="store_true")
+    parser.add_argument("--execute-tooluniverse", action="store_true")
     parser.add_argument("--skip-tooluniverse", action="store_true")
+    parser.add_argument("--llm-provider", default="")
+    parser.add_argument("--llm-model", default="")
+    parser.add_argument("--llm-api-key-env-var", default="")
+    parser.add_argument("--test-llm", action="store_true")
     return parser.parse_args(argv)
 
 

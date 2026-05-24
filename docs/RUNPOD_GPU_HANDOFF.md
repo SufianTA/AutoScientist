@@ -56,9 +56,10 @@ Example:
 GEMINI_API_KEY=...
 OPENAI_API_KEY=...
 ANTHROPIC_API_KEY=...
+ANTHROPIC_KEY=...
 ```
 
-The final commands below use Gemini by default because it is the currently configured live provider path. Qworld is disabled by default in the GPU script to avoid uncontrolled criteria-generation cost during the final benchmark.
+The BioTruth 20-case gate below uses Anthropic by default because the current Gemini project has shown spend-cap failures. Qworld is disabled by default in the GPU scripts to avoid uncontrolled criteria-generation cost during the final benchmark.
 
 ## Preflight
 
@@ -69,6 +70,23 @@ cd /workspace/AutoScientist
 
 Do not continue if this fails.
 
+## BioTruth 20-Case Gate
+
+Use this before a 100-task campaign. It runs 20 diverse target-disease cases with one audit-heavy workflow per case and four ablations, so the expected output is 80 real runs plus judge scoring, case studies, a state graph, and a policy package.
+
+```bash
+cd /workspace/AutoScientist
+LLM_PROVIDER=anthropic \
+LLM_MODEL=claude-sonnet-4-6 \
+LLM_API_KEY_ENV_VAR=ANTHROPIC_KEY \
+JUDGE_LLM_PROVIDER=anthropic \
+JUDGE_LLM_MODEL=claude-sonnet-4-6 \
+JUDGE_LLM_API_KEY_ENV_VAR=ANTHROPIC_KEY \
+bash infra/runpod/run_biotruth_20_case_gate.sh
+```
+
+The script fails before the paid benchmark if GPU, live LLM, NCBI, Open Targets, executable ToolUniverse, or required Python packages are not ready.
+
 ## Controlled Acceptance Run
 
 Run this first. It is sized to prove the full path without burning the whole budget.
@@ -76,7 +94,7 @@ Run this first. It is sized to prove the full path without burning the whole bud
 ```bash
 cd /workspace/AutoScientist
 LLM_PROVIDER=gemini \
-LLM_MODEL=gemini-2.5-flash \
+LLM_MODEL=gemini-3-flash-preview \
 LLM_API_KEY_ENV_VAR=GEMINI_API_KEY \
 MANIFEST=benchmarks/autoscientist_bench_v0_2_public.json \
 SEED_POLICY=1 \
@@ -110,7 +128,7 @@ Only run this after the controlled acceptance run passes.
 ```bash
 cd /workspace/AutoScientist
 LLM_PROVIDER=gemini \
-LLM_MODEL=gemini-2.5-flash \
+LLM_MODEL=gemini-3-flash-preview \
 LLM_API_KEY_ENV_VAR=GEMINI_API_KEY \
 MANIFEST=benchmarks/autoscientist_bench_v0_2_public.json \
 SEED_POLICY=1 \
@@ -133,7 +151,7 @@ Use this only if the acceptance run fails and you need a cheap diagnosis.
 ```bash
 cd /workspace/AutoScientist
 LLM_PROVIDER=gemini \
-LLM_MODEL=gemini-2.5-flash \
+LLM_MODEL=gemini-3-flash-preview \
 LLM_API_KEY_ENV_VAR=GEMINI_API_KEY \
 CASE_IDS="il6_rheumatoid_arthritis" \
 TEMPLATE_IDS="experiment_design" \

@@ -5,33 +5,43 @@ WORKDIR="${WORKDIR:-/workspace/AutoScientist}"
 VENV="${VENV:-/opt/autosci-venv}"
 SEED_CASES="${SEED_CASES:-benchmarks/biotruth_seed_cases_v0_1.json}"
 RUBRIC="${RUBRIC:-benchmarks/biotruth_rubric_v0_1.json}"
-MANIFEST="${MANIFEST:-benchmarks/autoscientist_biotruth_deep_100.json}"
-LIMIT="${LIMIT:-100}"
-MAX_CASES="${MAX_CASES:-25}"
-TEMPLATES_PER_CASE="${TEMPLATES_PER_CASE:-4}"
-REPLICATES="${REPLICATES:-1}"
-LLM_PROVIDER="${LLM_PROVIDER:-gemini}"
-LLM_MODEL="${LLM_MODEL:-gemini-3-flash-preview}"
-LLM_API_KEY_ENV_VAR="${LLM_API_KEY_ENV_VAR:-GEMINI_API_KEY}"
-LLM_MAX_TOKENS="${LLM_MAX_TOKENS:-1600}"
-JUDGE_LLM_PROVIDER="${JUDGE_LLM_PROVIDER:-gemini}"
-JUDGE_LLM_MODEL="${JUDGE_LLM_MODEL:-gemini-3-flash-preview}"
-JUDGE_LLM_API_KEY_ENV_VAR="${JUDGE_LLM_API_KEY_ENV_VAR:-GEMINI_API_KEY}"
-JUDGE_LLM_MAX_TOKENS="${JUDGE_LLM_MAX_TOKENS:-4096}"
-SCORE_MODE="${SCORE_MODE:-judge}"
-MAX_SCORE_RESULTS="${MAX_SCORE_RESULTS:-$LIMIT}"
-NEURAL_EPOCHS="${NEURAL_EPOCHS:-100}"
-NEURAL_HIDDEN_DIM="${NEURAL_HIDDEN_DIM:-128}"
-NEURAL_BATCH_SIZE="${NEURAL_BATCH_SIZE:-32}"
-AGENT_COUNT="${AGENT_COUNT:-3}"
-MAX_RUNTIME_MINUTES="${MAX_RUNTIME_MINUTES:-240}"
-PUBLIC_TIMEOUT_SECONDS="${PUBLIC_TIMEOUT_SECONDS:-15}"
-ASSOCIATION_SCAN_SIZE="${ASSOCIATION_SCAN_SIZE:-150}"
-MAX_CRITICAL_FAILURE_RATE="${MAX_CRITICAL_FAILURE_RATE:-0.20}"
-REVIEW_PACKAGE_NAME="${REVIEW_PACKAGE_NAME:-autoscientist_biotruth_100_deep_discovery}"
+MANIFEST="${MANIFEST:-benchmarks/autoscientist_biotruth_20_case_gate.json}"
 OUTPUT_DIR="${OUTPUT_DIR:-outputs/autoscientist_bench}"
 REVIEW_OUTPUT_DIR="${REVIEW_OUTPUT_DIR:-outputs/review_packages}"
 RUN_LOG_DIR="${RUN_LOG_DIR:-outputs/run_logs}"
+REVIEW_PACKAGE_NAME="${REVIEW_PACKAGE_NAME:-autoscientist_biotruth_20_case_gate}"
+
+# This is 20 disease/target cases, one audit-heavy workflow each.
+# The benchmark still runs four ablations, so the expected result count is 80.
+CASE_IDS="${CASE_IDS:-il6_rheumatoid_arthritis tnf_inflammatory_bowel_disease nod2_crohn_disease tyk2_psoriasis braf_melanoma egfr_lung_adenocarcinoma erbb2_breast_cancer alk_lung_cancer parp1_ovarian_cancer cftr_cystic_fibrosis smn1_spinal_muscular_atrophy acvr1_fibrodysplasia_ossificans_progressiva dmd_duchenne_muscular_dystrophy app_alzheimer_disease apoe_alzheimer_disease lrrk2_parkinson_disease pcsk9_familial_hypercholesterolemia slc5a2_type_2_diabetes f9_hemophilia_b vegfa_age_related_macular_degeneration}"
+TEMPLATE_IDS="${TEMPLATE_IDS:-target_validity_review}"
+LIMIT="${LIMIT:-20}"
+MAX_CASES="${MAX_CASES:-25}"
+TEMPLATES_PER_CASE="${TEMPLATES_PER_CASE:-1}"
+REPLICATES="${REPLICATES:-1}"
+ABLATIONS="${ABLATIONS:-full no_memory no_public_tools no_sciflow}"
+
+LLM_PROVIDER="${LLM_PROVIDER:-anthropic}"
+LLM_MODEL="${LLM_MODEL:-claude-sonnet-4-6}"
+LLM_API_KEY_ENV_VAR="${LLM_API_KEY_ENV_VAR:-ANTHROPIC_KEY}"
+LLM_MAX_TOKENS="${LLM_MAX_TOKENS:-1600}"
+JUDGE_LLM_PROVIDER="${JUDGE_LLM_PROVIDER:-anthropic}"
+JUDGE_LLM_MODEL="${JUDGE_LLM_MODEL:-claude-sonnet-4-6}"
+JUDGE_LLM_API_KEY_ENV_VAR="${JUDGE_LLM_API_KEY_ENV_VAR:-ANTHROPIC_KEY}"
+JUDGE_LLM_MAX_TOKENS="${JUDGE_LLM_MAX_TOKENS:-2200}"
+SCORE_MODE="${SCORE_MODE:-judge}"
+MAX_SCORE_RESULTS="${MAX_SCORE_RESULTS:-80}"
+
+NEURAL_EPOCHS="${NEURAL_EPOCHS:-80}"
+NEURAL_HIDDEN_DIM="${NEURAL_HIDDEN_DIM:-128}"
+NEURAL_BATCH_SIZE="${NEURAL_BATCH_SIZE:-32}"
+AGENT_COUNT="${AGENT_COUNT:-3}"
+MAX_RUNTIME_MINUTES="${MAX_RUNTIME_MINUTES:-180}"
+PUBLIC_TIMEOUT_SECONDS="${PUBLIC_TIMEOUT_SECONDS:-20}"
+ASSOCIATION_SCAN_SIZE="${ASSOCIATION_SCAN_SIZE:-150}"
+MAX_CRITICAL_FAILURE_RATE="${MAX_CRITICAL_FAILURE_RATE:-0.10}"
+MIN_FULL_MEAN_SCORE="${MIN_FULL_MEAN_SCORE:-85}"
+MIN_NEURAL_HOLDOUT_TOP1="${MIN_NEURAL_HOLDOUT_TOP1:-0.50}"
 DRY_RUN="${AUTOSCI_DRY_RUN:-0}"
 
 run() {
@@ -52,7 +62,7 @@ fi
 
 mkdir -p "$RUN_LOG_DIR" "$REVIEW_OUTPUT_DIR"
 STAMP="$(date -u +%Y%m%d_%H%M%S)"
-LOG_PATH="$RUN_LOG_DIR/deep_discovery_100_${STAMP}.log"
+LOG_PATH="$RUN_LOG_DIR/biotruth_20_case_gate_${STAMP}.log"
 
 if [ -f ".env" ]; then
   set -a
@@ -60,6 +70,15 @@ if [ -f ".env" ]; then
   source ".env"
   set +a
 fi
+
+echo "=== AutoScientist BioTruth 20-Case Gate ==="
+echo "started_utc=$STAMP"
+echo "workdir=$WORKDIR"
+echo "case_count=20"
+echo "expected_results=80"
+echo "llm=$LLM_PROVIDER/$LLM_MODEL via $LLM_API_KEY_ENV_VAR"
+echo "judge=$JUDGE_LLM_PROVIDER/$JUDGE_LLM_MODEL via $JUDGE_LLM_API_KEY_ENV_VAR"
+echo "log=$LOG_PATH"
 
 if [ -d ".git" ]; then
   run git status --short
@@ -82,24 +101,35 @@ else
   run python -m pip install -e ".[dev,tooluniverse,neural]"
 fi
 
-echo "=== AutoScientist Deep Discovery Campaign ==="
-echo "started_utc=$STAMP"
-echo "workdir=$WORKDIR"
-echo "limit=$LIMIT"
-echo "manifest=$MANIFEST"
-echo "log=$LOG_PATH"
+run python tools/machine_preflight.py \
+  --workspace "$WORKDIR" \
+  --output-dir outputs/preflight \
+  --min-free-gb 10 \
+  --require-gpu \
+  --require-tooluniverse \
+  --execute-tooluniverse \
+  --llm-provider "$LLM_PROVIDER" \
+  --llm-model "$LLM_MODEL" \
+  --llm-api-key-env-var "$LLM_API_KEY_ENV_VAR" \
+  --test-llm
 
 run python tools/machine_preflight.py \
   --workspace "$WORKDIR" \
   --output-dir outputs/preflight \
+  --min-free-gb 10 \
   --require-gpu \
-  --require-tooluniverse
+  --skip-tooluniverse \
+  --llm-provider "$JUDGE_LLM_PROVIDER" \
+  --llm-model "$JUDGE_LLM_MODEL" \
+  --llm-api-key-env-var "$JUDGE_LLM_API_KEY_ENV_VAR" \
+  --test-llm
 
 run python tools/build_biotruth_benchmark.py \
   --seed-cases "$SEED_CASES" \
   --rubric "$RUBRIC" \
   --output-manifest "$MANIFEST" \
   --max-cases "$MAX_CASES" \
+  --case-ids $CASE_IDS \
   --templates-per-case "$TEMPLATES_PER_CASE" \
   --association-scan-size "$ASSOCIATION_SCAN_SIZE" \
   --public-timeout-seconds "$PUBLIC_TIMEOUT_SECONDS"
@@ -115,8 +145,10 @@ python tools/run_biotruth_pipeline.py \
   --review-output-dir "$REVIEW_OUTPUT_DIR" \
   --review-package-name "$REVIEW_PACKAGE_NAME" \
   --limit "$LIMIT" \
+  --case-ids $CASE_IDS \
+  --template-ids $TEMPLATE_IDS \
   --replicates-per-case "$REPLICATES" \
-  --ablations full \
+  --ablations $ABLATIONS \
   --llm-provider "$LLM_PROVIDER" \
   --llm-model "$LLM_MODEL" \
   --llm-api-key-env-var "$LLM_API_KEY_ENV_VAR" \
@@ -137,6 +169,10 @@ python tools/run_biotruth_pipeline.py \
   --agent-count "$AGENT_COUNT" \
   --max-runtime-minutes "$MAX_RUNTIME_MINUTES" \
   --max-critical-failure-rate "$MAX_CRITICAL_FAILURE_RATE" \
+  --min-full-completion-rate 1.0 \
+  --min-full-mean-score "$MIN_FULL_MEAN_SCORE" \
+  --min-neural-holdout-top1 "$MIN_NEURAL_HOLDOUT_TOP1" \
+  --min-state-graph-nodes 1 \
   2>&1 | tee "$LOG_PATH"
 PIPELINE_STATUS="${PIPESTATUS[0]}"
 set -e
@@ -154,7 +190,7 @@ if [ -z "$LATEST_BENCH_DIR" ] || [ ! -d "$LATEST_BENCH_DIR" ]; then
   exit 2
 fi
 
-CASE_STUDY_DIR="outputs/discovery_case_studies/biotruth_100_deep_discovery_${STAMP}"
+CASE_STUDY_DIR="outputs/discovery_case_studies/biotruth_20_case_gate_${STAMP}"
 run python tools/build_discovery_case_study.py \
   --bench-dir "$LATEST_BENCH_DIR" \
   --output-dir "$CASE_STUDY_DIR"
@@ -171,11 +207,12 @@ run python -m zipfile -c "$FINAL_PACKAGE" \
   "$CASE_STUDY_DIR" \
   "$MANIFEST" \
   "${MANIFEST%.json}.md" \
-  "docs/BIOTRUTH_100_CASE_SELECTION.md" \
-  "docs/END_TO_END_DISCOVERY_CASE_STUDIES.md"
+  "benchmarks/biotruth_seed_cases_v0_1.json" \
+  "benchmarks/biotruth_rubric_v0_1.json" \
+  "docs/BIOTRUTH_BENCHMARK.md"
 
 cat <<EOF
-=== Deep discovery campaign finished ===
+=== BioTruth 20-case gate finished ===
 pipeline_status=$PIPELINE_STATUS
 benchmark_dir=$LATEST_BENCH_DIR
 case_study_dir=$CASE_STUDY_DIR

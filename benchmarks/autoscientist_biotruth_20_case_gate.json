@@ -1,0 +1,4825 @@
+{
+  "schema": "autosci.biotruth_manifest.v0.1",
+  "name": "AutoScientist-BioTruth",
+  "version": "0.1",
+  "created_at_unix": 1779590740,
+  "purpose": "Evaluate AutoScientist for biomedical correctness and usefulness, not just integration success. Each task is grounded in public target-disease data and scored by a structured expert-style rubric.",
+  "source_seed_cases": "benchmarks\\biotruth_seed_cases_v0_1.json",
+  "rubric_path": "benchmarks\\biotruth_rubric_v0_1.json",
+  "rubric": {
+    "id": "BioTruth Target-Disease Correctness Rubric",
+    "schema": "autosci.biotruth_rubric.v0.1",
+    "version": "0.1",
+    "pass_policy": {
+      "minimum_weighted_score": 75,
+      "minimum_dimension_score": 2,
+      "critical_failures_allowed": 0
+    },
+    "dimension_count": 7
+  },
+  "primary_sources": [
+    {
+      "name": "Open Targets Platform target-disease evidence",
+      "url": "https://platform-docs.opentargets.org/evidence",
+      "role": "Public target-disease evidence categories and source-specific scoring context."
+    },
+    {
+      "name": "Open Targets Platform target-disease associations",
+      "url": "https://platform-docs.opentargets.org/associations",
+      "role": "Association score semantics and caveat that scores are ranking heuristics, not clinical confidence."
+    },
+    {
+      "name": "Open Targets target prioritisation view",
+      "url": "https://platform-docs.opentargets.org/web-interface/target-prioritisation",
+      "role": "Precedence, tractability, doability, and safety concepts used in target prioritisation."
+    },
+    {
+      "name": "Therapeutics Data Commons leaderboard guidance",
+      "url": "https://tdcommons.ai/benchmark/overview/",
+      "role": "Benchmark discipline: train/validation/test splits, fixed test sets, metrics, and repeated seeds."
+    },
+    {
+      "name": "BioASQ evaluation framework",
+      "url": "https://www.bioasq.org/sites/default/files/PublicDocuments/BioASQ_D4.1-EvaluationFrameworkSpecification_final.pdf",
+      "role": "Biomedical answer-quality dimensions: information recall, precision, repetition, and readability."
+    },
+    {
+      "name": "PubMedQA",
+      "url": "https://pubmedqa.github.io/",
+      "role": "Expert-labeled biomedical QA precedent for yes/no/maybe answers grounded in abstracts."
+    },
+    {
+      "name": "Cochrane RoB 2",
+      "url": "https://www.cochrane.org/learn/courses-and-resources/cochrane-methodology/risk-bias/about-risk-bias-2-rob-2",
+      "role": "Structured risk-of-bias thinking and signaling-question style checks."
+    },
+    {
+      "name": "GRADE approach",
+      "url": "https://www.cochrane.org/learn/courses-and-resources/cochrane-methodology/grade-approach/grade-handbook",
+      "role": "Certainty-of-evidence framing: high, moderate, low, very low."
+    }
+  ],
+  "selection_policy": {
+    "case_count": 25,
+    "expanded_task_policy": "Four task templates per case, producing 100 benchmark tasks.",
+    "domains": [
+      "autoimmune_inflammation",
+      "oncology",
+      "rare_mendelian",
+      "neurodegeneration",
+      "cardiometabolic",
+      "hematology",
+      "ophthalmology"
+    ],
+    "rationale": [
+      "Prefer target-disease pairs with enough public literature and database evidence for automated grounding.",
+      "Mix strong positives, clinically mature targets, genetically grounded targets, and translationally difficult targets.",
+      "Avoid relying on one disease area so the workflow controller is not only tuned to rheumatoid arthritis-style tasks."
+    ],
+    "max_cases": 25,
+    "templates_per_case": 1,
+    "association_scan_size": 150,
+    "public_context_mode": "live"
+  },
+  "task_templates": [
+    {
+      "id": "target_validity_review",
+      "objective_template": "Evaluate whether {gene_symbol} is a scientifically credible therapeutic target for {disease_name}. Use public target-disease evidence, separate causal from correlative signals, identify counterevidence, and produce a calibrated confidence judgement.",
+      "judge_focus": [
+        "target_disease_validity",
+        "evidence_grounding",
+        "calibration_and_limitations"
+      ],
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy",
+        "scistate_graph"
+      ]
+    }
+  ],
+  "seed_cases": [
+    {
+      "id": "il6_rheumatoid_arthritis",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "IL6",
+      "target_ensembl_id": "ENSG00000136244",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "case_rationale": "Canonical inflammatory cytokine biology with clinical and safety tradeoffs.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.51481,
+        "open_targets_association_rank": 3,
+        "open_targets_matched_disease_id": "EFO_0000685",
+        "open_targets_matched_disease_name": "rheumatoid arthritis",
+        "open_targets_associated_disease_count": 3301,
+        "pubmed_gene_disease_count": 6773,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000136244",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000136244",
+            "approvedSymbol": "IL6",
+            "approvedName": "interleukin 6",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 3301,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 3,
+          "score": 0.51481,
+          "disease": {
+            "id": "EFO_0000685",
+            "name": "rheumatoid arthritis"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9871540203637452
+            },
+            {
+              "id": "clinical",
+              "score": 0.6729044247634033
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.607930797611621
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "IL6 rheumatoid arthritis",
+          "db": "pubmed",
+          "count": 6773,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=IL6+rheumatoid+arthritis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "IL6[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=IL6%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "autoimmune_inflammation",
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "tnf_inflammatory_bowel_disease",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "TNF",
+      "target_ensembl_id": "ENSG00000232810",
+      "disease_name": "inflammatory bowel disease",
+      "disease_efo_id": "",
+      "case_rationale": "Clinically validated inflammatory target with disease-subtype and safety nuance.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.409018,
+        "open_targets_association_rank": 18,
+        "open_targets_matched_disease_id": "EFO_0003767",
+        "open_targets_matched_disease_name": "inflammatory bowel disease",
+        "open_targets_associated_disease_count": 4041,
+        "pubmed_gene_disease_count": 11401,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000232810",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000232810",
+            "approvedSymbol": "TNF",
+            "approvedName": "tumor necrosis factor",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 4041,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 18,
+          "score": 0.409018,
+          "disease": {
+            "id": "EFO_0003767",
+            "name": "inflammatory bowel disease"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9902475645407863
+            },
+            {
+              "id": "animal_model",
+              "score": 0.606840456839138
+            },
+            {
+              "id": "clinical",
+              "score": 0.6098054693538472
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "TNF inflammatory bowel disease",
+          "db": "pubmed",
+          "count": 11401,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=TNF+inflammatory+bowel+disease&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "TNF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=TNF%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "autoimmune_inflammation",
+        "literature_rich",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "nod2_crohn_disease",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "NOD2",
+      "target_ensembl_id": "ENSG00000167207",
+      "disease_name": "Crohn disease",
+      "disease_efo_id": "MONDO_0005011",
+      "case_rationale": "Genetically implicated innate-immunity target where association does not directly imply druggability.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.790001,
+        "open_targets_association_rank": 3,
+        "open_targets_matched_disease_id": "EFO_0000384",
+        "open_targets_matched_disease_name": "Crohn's disease",
+        "open_targets_associated_disease_count": 1062,
+        "pubmed_gene_disease_count": 1598,
+        "ncbi_gene_count": 0,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000167207",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000167207",
+            "approvedSymbol": "NOD2",
+            "approvedName": "nucleotide binding oligomerization domain containing 2",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1062,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "token_overlap",
+          "rank": 3,
+          "score": 0.790001,
+          "disease": {
+            "id": "EFO_0000384",
+            "name": "Crohn's disease"
+          },
+          "datatype_scores": [
+            {
+              "id": "rna_expression",
+              "score": 0.13755176419601767
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.8776156542187763
+            },
+            {
+              "id": "literature",
+              "score": 0.6697868538826476
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9070857371094597
+            },
+            {
+              "id": "animal_model",
+              "score": 0.30287112337010963
+            }
+          ],
+          "name_overlap": 0.6667
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "NOD2 Crohn disease",
+          "db": "pubmed",
+          "count": 1598,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=NOD2+Crohn+disease&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "NOD2[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=NOD2%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "autoimmune_inflammation",
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "tyk2_psoriasis",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "TYK2",
+      "target_ensembl_id": "ENSG00000105397",
+      "disease_name": "psoriasis",
+      "disease_efo_id": "EFO_0000676",
+      "case_rationale": "Genetic and pharmacologic immunology case with selectivity and safety concerns.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.731621,
+        "open_targets_association_rank": 3,
+        "open_targets_matched_disease_id": "EFO_0000676",
+        "open_targets_matched_disease_name": "psoriasis",
+        "open_targets_associated_disease_count": 622,
+        "pubmed_gene_disease_count": 260,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000105397",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000105397",
+            "approvedSymbol": "TYK2",
+            "approvedName": "tyrosine kinase 2",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 622,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 3,
+          "score": 0.731621,
+          "disease": {
+            "id": "EFO_0000676",
+            "name": "psoriasis"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.592131520378776
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9144550911783587
+            },
+            {
+              "id": "clinical",
+              "score": 0.961689183777416
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "TYK2 psoriasis",
+          "db": "pubmed",
+          "count": 260,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=TYK2+psoriasis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "TYK2[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=TYK2%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "autoimmune_inflammation",
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "braf_melanoma",
+      "domain": "oncology",
+      "gene_symbol": "BRAF",
+      "target_ensembl_id": "ENSG00000157764",
+      "disease_name": "melanoma",
+      "disease_efo_id": "EFO_0000756",
+      "case_rationale": "Clinically validated oncogenic driver with mutation-specific evidence requirements.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.818553,
+        "open_targets_association_rank": 2,
+        "open_targets_matched_disease_id": "EFO_0000756",
+        "open_targets_matched_disease_name": "melanoma",
+        "open_targets_associated_disease_count": 1559,
+        "pubmed_gene_disease_count": 9090,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000157764",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000157764",
+            "approvedSymbol": "BRAF",
+            "approvedName": "B-Raf proto-oncogene, serine/threonine kinase",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1559,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 2,
+          "score": 0.818553,
+          "disease": {
+            "id": "EFO_0000756",
+            "name": "melanoma"
+          },
+          "datatype_scores": [
+            {
+              "id": "clinical",
+              "score": 0.9761972499883539
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.43437525605146465
+            },
+            {
+              "id": "literature",
+              "score": 0.9970294171484549
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.6991204172533643
+            },
+            {
+              "id": "somatic_mutation",
+              "score": 0.7964371987079912
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "BRAF melanoma",
+          "db": "pubmed",
+          "count": 9090,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=BRAF+melanoma&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "BRAF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=BRAF%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "oncology",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "egfr_lung_adenocarcinoma",
+      "domain": "oncology",
+      "gene_symbol": "EGFR",
+      "target_ensembl_id": "ENSG00000146648",
+      "disease_name": "lung adenocarcinoma",
+      "disease_efo_id": "",
+      "case_rationale": "Precision oncology case requiring subtype and variant awareness.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.763945,
+        "open_targets_association_rank": 3,
+        "open_targets_matched_disease_id": "EFO_0000571",
+        "open_targets_matched_disease_name": "lung adenocarcinoma",
+        "open_targets_associated_disease_count": 2539,
+        "pubmed_gene_disease_count": 9030,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000146648",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000146648",
+            "approvedSymbol": "EGFR",
+            "approvedName": "epidermal growth factor receptor",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 2539,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 3,
+          "score": 0.763945,
+          "disease": {
+            "id": "EFO_0000571",
+            "name": "lung adenocarcinoma"
+          },
+          "datatype_scores": [
+            {
+              "id": "clinical",
+              "score": 0.19038780147746245
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.8274613634158176
+            },
+            {
+              "id": "literature",
+              "score": 0.9952709844591721
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.7193847771737517
+            },
+            {
+              "id": "somatic_mutation",
+              "score": 0.8671499172689117
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "EGFR lung adenocarcinoma",
+          "db": "pubmed",
+          "count": 9030,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=EGFR+lung+adenocarcinoma&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "EGFR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=EGFR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "oncology",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "erbb2_breast_cancer",
+      "domain": "oncology",
+      "gene_symbol": "ERBB2",
+      "target_ensembl_id": "ENSG00000141736",
+      "disease_name": "breast cancer",
+      "disease_efo_id": "EFO_0000305",
+      "case_rationale": "Clinically established target with biomarker-defined patient selection.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.695923,
+        "open_targets_association_rank": 4,
+        "open_targets_matched_disease_id": "EFO_0000305",
+        "open_targets_matched_disease_name": "breast carcinoma",
+        "open_targets_associated_disease_count": 1658,
+        "pubmed_gene_disease_count": 16166,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000141736",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000141736",
+            "approvedSymbol": "ERBB2",
+            "approvedName": "erb-b2 receptor tyrosine kinase 2",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1658,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 4,
+          "score": 0.695923,
+          "disease": {
+            "id": "EFO_0000305",
+            "name": "breast carcinoma"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9296524511485416
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.39637086149020134
+            },
+            {
+              "id": "somatic_mutation",
+              "score": 0.607930797611621
+            },
+            {
+              "id": "clinical",
+              "score": 0.9370963052389439
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "ERBB2 breast cancer",
+          "db": "pubmed",
+          "count": 16166,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ERBB2+breast+cancer&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "ERBB2[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ERBB2%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "oncology",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "alk_lung_cancer",
+      "domain": "oncology",
+      "gene_symbol": "ALK",
+      "target_ensembl_id": "ENSG00000171094",
+      "disease_name": "lung cancer",
+      "disease_efo_id": "EFO_0001071",
+      "case_rationale": "Oncogenic fusion target requiring mechanism, diagnostic, and resistance reasoning.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.609289,
+        "open_targets_association_rank": 6,
+        "open_targets_matched_disease_id": "MONDO_0008903",
+        "open_targets_matched_disease_name": "lung cancer",
+        "open_targets_associated_disease_count": 1283,
+        "pubmed_gene_disease_count": 8086,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000171094",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000171094",
+            "approvedSymbol": "ALK",
+            "approvedName": "ALK receptor tyrosine kinase",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": true
+              }
+            ]
+          },
+          "associated_disease_count": 1283,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 6,
+          "score": 0.609289,
+          "disease": {
+            "id": "MONDO_0008903",
+            "name": "lung cancer"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9668720677284547
+            },
+            {
+              "id": "genetic_association",
+              "score": 0
+            },
+            {
+              "id": "somatic_mutation",
+              "score": 0.6058199267865807
+            },
+            {
+              "id": "clinical",
+              "score": 0.8292932142400521
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "ALK lung cancer",
+          "db": "pubmed",
+          "count": 8086,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ALK+lung+cancer&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "ALK[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ALK%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "oncology",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "parp1_ovarian_cancer",
+      "domain": "oncology",
+      "gene_symbol": "PARP1",
+      "target_ensembl_id": "ENSG00000143799",
+      "disease_name": "ovarian cancer",
+      "disease_efo_id": "EFO_0001075",
+      "case_rationale": "DNA repair synthetic-lethality case with biomarker and toxicity considerations.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.617298,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "MONDO_0008170",
+        "open_targets_matched_disease_name": "ovarian cancer",
+        "open_targets_associated_disease_count": 1128,
+        "pubmed_gene_disease_count": 502,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000143799",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000143799",
+            "approvedSymbol": "PARP1",
+            "approvedName": "poly(ADP-ribose) polymerase 1",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1128,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 1,
+          "score": 0.617298,
+          "disease": {
+            "id": "MONDO_0008170",
+            "name": "ovarian cancer"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9378493470451882
+            },
+            {
+              "id": "clinical",
+              "score": 0.968516676453959
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "PARP1 ovarian cancer",
+          "db": "pubmed",
+          "count": 502,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PARP1+ovarian+cancer&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "PARP1[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=PARP1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "oncology",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "cftr_cystic_fibrosis",
+      "domain": "rare_mendelian",
+      "gene_symbol": "CFTR",
+      "target_ensembl_id": "ENSG00000001626",
+      "disease_name": "cystic fibrosis",
+      "disease_efo_id": "MONDO_0009061",
+      "case_rationale": "Genetically causal target with established modulator therapies and genotype-specific translation.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.913354,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "MONDO_0009061",
+        "open_targets_matched_disease_name": "cystic fibrosis",
+        "open_targets_associated_disease_count": 1329,
+        "pubmed_gene_disease_count": 14303,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000001626",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000001626",
+            "approvedSymbol": "CFTR",
+            "approvedName": "CF transmembrane conductance regulator",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1329,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 1,
+          "score": 0.913354,
+          "disease": {
+            "id": "MONDO_0009061",
+            "name": "cystic fibrosis"
+          },
+          "datatype_scores": [
+            {
+              "id": "clinical",
+              "score": 0.9904941908672886
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.8773170744461322
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.9285669064556789
+            },
+            {
+              "id": "literature",
+              "score": 0.9950080483633249
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9678729716442139
+            },
+            {
+              "id": "animal_model",
+              "score": 0.43591187534835524
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "CFTR cystic fibrosis",
+          "db": "pubmed",
+          "count": 14303,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=CFTR+cystic+fibrosis&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "CFTR[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=CFTR%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched",
+        "rare_mendelian"
+      ]
+    },
+    {
+      "id": "smn1_spinal_muscular_atrophy",
+      "domain": "rare_mendelian",
+      "gene_symbol": "SMN1",
+      "target_ensembl_id": "ENSG00000172062",
+      "disease_name": "spinal muscular atrophy",
+      "disease_efo_id": "MONDO_0001516",
+      "case_rationale": "Monogenic neuromuscular disease requiring gene-dose and therapeutic-modality reasoning.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.728825,
+        "open_targets_association_rank": 6,
+        "open_targets_matched_disease_id": "EFO_0008525",
+        "open_targets_matched_disease_name": "spinal muscular atrophy",
+        "open_targets_associated_disease_count": 1314,
+        "pubmed_gene_disease_count": 1868,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000172062",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000172062",
+            "approvedSymbol": "SMN1",
+            "approvedName": "survival of motor neuron 1, telomeric",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1314,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 6,
+          "score": 0.728825,
+          "disease": {
+            "id": "EFO_0008525",
+            "name": "spinal muscular atrophy"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.19472937050975112
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9129101794256951
+            },
+            {
+              "id": "clinical",
+              "score": 0.8638775899414565
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.607930797611621
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "SMN1 spinal muscular atrophy",
+          "db": "pubmed",
+          "count": 1868,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=SMN1+spinal+muscular+atrophy&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "SMN1[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=SMN1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched",
+        "rare_mendelian"
+      ]
+    },
+    {
+      "id": "acvr1_fibrodysplasia_ossificans_progressiva",
+      "domain": "rare_mendelian",
+      "gene_symbol": "ACVR1",
+      "target_ensembl_id": "ENSG00000115170",
+      "disease_name": "fibrodysplasia ossificans progressiva",
+      "disease_efo_id": "",
+      "case_rationale": "Rare gain-of-function skeletal disease with pathway and safety tradeoffs.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.816447,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "MONDO_0007606",
+        "open_targets_matched_disease_name": "fibrodysplasia ossificans progressiva",
+        "open_targets_associated_disease_count": 521,
+        "pubmed_gene_disease_count": 389,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000115170",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000115170",
+            "approvedSymbol": "ACVR1",
+            "approvedName": "activin A receptor type 1",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 521,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 1,
+          "score": 0.816447,
+          "disease": {
+            "id": "MONDO_0007606",
+            "name": "fibrodysplasia ossificans progressiva"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.8289183642956838
+            },
+            {
+              "id": "animal_model",
+              "score": 0.34949941554692093
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.8956959958086265
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.7899541749647981
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "ACVR1 fibrodysplasia ossificans progressiva",
+          "db": "pubmed",
+          "count": 389,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=ACVR1+fibrodysplasia+ossificans+progressiva&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "ACVR1[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=ACVR1%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "open_targets_matched",
+        "rare_mendelian"
+      ]
+    },
+    {
+      "id": "dmd_duchenne_muscular_dystrophy",
+      "domain": "rare_mendelian",
+      "gene_symbol": "DMD",
+      "target_ensembl_id": "ENSG00000198947",
+      "disease_name": "Duchenne muscular dystrophy",
+      "disease_efo_id": "MONDO_0010679",
+      "case_rationale": "Large-gene rare disease with delivery and outcome-measure constraints.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.865885,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "MONDO_0010679",
+        "open_targets_matched_disease_name": "Duchenne muscular dystrophy",
+        "open_targets_associated_disease_count": 1229,
+        "pubmed_gene_disease_count": 16507,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000198947",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000198947",
+            "approvedSymbol": "DMD",
+            "approvedName": "dystrophin",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1229,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 1,
+          "score": 0.865885,
+          "disease": {
+            "id": "MONDO_0010679",
+            "name": "Duchenne muscular dystrophy"
+          },
+          "datatype_scores": [
+            {
+              "id": "rna_expression",
+              "score": 0.06866670876822943
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.8435001837011329
+            },
+            {
+              "id": "clinical",
+              "score": 0.9600269426046465
+            },
+            {
+              "id": "literature",
+              "score": 0.9306482600665094
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9138341501764172
+            },
+            {
+              "id": "somatic_mutation",
+              "score": 0.6228419891197061
+            },
+            {
+              "id": "animal_model",
+              "score": 0.4630320353011517
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "DMD Duchenne muscular dystrophy",
+          "db": "pubmed",
+          "count": 16507,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=DMD+Duchenne+muscular+dystrophy&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "DMD[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=DMD%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched",
+        "rare_mendelian"
+      ]
+    },
+    {
+      "id": "app_alzheimer_disease",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APP",
+      "target_ensembl_id": "ENSG00000142192",
+      "disease_name": "Alzheimer disease",
+      "disease_efo_id": "EFO_0000249",
+      "case_rationale": "Neurodegenerative target with strong disease relevance but complex causal and safety context.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.804254,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "MONDO_0004975",
+        "open_targets_matched_disease_name": "Alzheimer disease",
+        "open_targets_associated_disease_count": 1245,
+        "pubmed_gene_disease_count": 16321,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000142192",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000142192",
+            "approvedSymbol": "APP",
+            "approvedName": "amyloid beta precursor protein",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1245,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 1,
+          "score": 0.804254,
+          "disease": {
+            "id": "MONDO_0004975",
+            "name": "Alzheimer disease"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9946207576060213
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.607930797611621
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.8667501107806397
+            },
+            {
+              "id": "clinical",
+              "score": 0.9728005513909271
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "APP Alzheimer disease",
+          "db": "pubmed",
+          "count": 16321,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=APP+Alzheimer+disease&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "APP[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=APP%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "neurodegeneration",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "apoe_alzheimer_disease",
+      "domain": "neurodegeneration",
+      "gene_symbol": "APOE",
+      "target_ensembl_id": "ENSG00000130203",
+      "disease_name": "Alzheimer disease",
+      "disease_efo_id": "EFO_0000249",
+      "case_rationale": "Risk genetics case where association strength does not directly define intervention strategy.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.683406,
+        "open_targets_association_rank": 4,
+        "open_targets_matched_disease_id": "MONDO_0004975",
+        "open_targets_matched_disease_name": "Alzheimer disease",
+        "open_targets_associated_disease_count": 1616,
+        "pubmed_gene_disease_count": 14746,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000130203",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000130203",
+            "approvedSymbol": "APOE",
+            "approvedName": "apolipoprotein E",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 1616,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 4,
+          "score": 0.683406,
+          "disease": {
+            "id": "MONDO_0004975",
+            "name": "Alzheimer disease"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9985595161876828
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.2670020417823128
+            },
+            {
+              "id": "rna_expression",
+              "score": 0.017251532679053088
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.8654909135387945
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "APOE Alzheimer disease",
+          "db": "pubmed",
+          "count": 14746,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=APOE+Alzheimer+disease&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "APOE[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=APOE%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "neurodegeneration",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "lrrk2_parkinson_disease",
+      "domain": "neurodegeneration",
+      "gene_symbol": "LRRK2",
+      "target_ensembl_id": "ENSG00000188906",
+      "disease_name": "Parkinson disease",
+      "disease_efo_id": "EFO_0002508",
+      "case_rationale": "Genetic neurodegeneration target with kinase tractability and safety concerns.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.769702,
+        "open_targets_association_rank": 2,
+        "open_targets_matched_disease_id": "MONDO_0005180",
+        "open_targets_matched_disease_name": "Parkinson disease",
+        "open_targets_associated_disease_count": 540,
+        "pubmed_gene_disease_count": 3630,
+        "ncbi_gene_count": 2,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000188906",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000188906",
+            "approvedSymbol": "LRRK2",
+            "approvedName": "leucine rich repeat kinase 2",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 540,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 2,
+          "score": 0.769702,
+          "disease": {
+            "id": "MONDO_0005180",
+            "name": "Parkinson disease"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9972180622059983
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.5554697974314395
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.8220665291281818
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.7835552502549783
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "LRRK2 Parkinson disease",
+          "db": "pubmed",
+          "count": 3630,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=LRRK2+Parkinson+disease&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "LRRK2[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 2,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=LRRK2%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "neurodegeneration",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "pcsk9_familial_hypercholesterolemia",
+      "domain": "cardiometabolic",
+      "gene_symbol": "PCSK9",
+      "target_ensembl_id": "ENSG00000169174",
+      "disease_name": "familial hypercholesterolemia",
+      "disease_efo_id": "",
+      "case_rationale": "Human genetics and clinical validation case with strong translational precedent.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.860403,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "EFO_0004911",
+        "open_targets_matched_disease_name": "familial hypercholesterolemia",
+        "open_targets_associated_disease_count": 788,
+        "pubmed_gene_disease_count": 1622,
+        "ncbi_gene_count": 2,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000169174",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000169174",
+            "approvedSymbol": "PCSK9",
+            "approvedName": "proprotein convertase subtilisin/kexin type 9",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 788,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 1,
+          "score": 0.860403,
+          "disease": {
+            "id": "EFO_0004911",
+            "name": "familial hypercholesterolemia"
+          },
+          "datatype_scores": [
+            {
+              "id": "genetic_literature",
+              "score": 0.8827041563533424
+            },
+            {
+              "id": "clinical",
+              "score": 0.9700450400085591
+            },
+            {
+              "id": "literature",
+              "score": 0.257546076519193
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9023780172009693
+            },
+            {
+              "id": "somatic_mutation",
+              "score": 0.030396539880581056
+            },
+            {
+              "id": "animal_model",
+              "score": 0.5022486985880394
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "PCSK9 familial hypercholesterolemia",
+          "db": "pubmed",
+          "count": 1622,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=PCSK9+familial+hypercholesterolemia&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "PCSK9[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 2,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=PCSK9%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "cardiometabolic",
+        "literature_rich",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "slc5a2_type_2_diabetes",
+      "domain": "cardiometabolic",
+      "gene_symbol": "SLC5A2",
+      "target_ensembl_id": "ENSG00000140675",
+      "disease_name": "type 2 diabetes mellitus",
+      "disease_efo_id": "EFO_0001360",
+      "case_rationale": "Metabolic target with established pharmacology and outcome/safety nuance.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.635194,
+        "open_targets_association_rank": 2,
+        "open_targets_matched_disease_id": "MONDO_0005148",
+        "open_targets_matched_disease_name": "type 2 diabetes mellitus",
+        "open_targets_associated_disease_count": 970,
+        "pubmed_gene_disease_count": 738,
+        "ncbi_gene_count": 0,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000140675",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000140675",
+            "approvedSymbol": "SLC5A2",
+            "approvedName": "solute carrier family 5 member 2",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 970,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_name",
+          "rank": 2,
+          "score": 0.635194,
+          "disease": {
+            "id": "MONDO_0005148",
+            "name": "type 2 diabetes mellitus"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9481524613249462
+            },
+            {
+              "id": "clinical",
+              "score": 0.9974377552980216
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "SLC5A2 type 2 diabetes mellitus",
+          "db": "pubmed",
+          "count": 738,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=SLC5A2+type+2+diabetes+mellitus&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "failure",
+          "query": "SLC5A2[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 0,
+          "error": "HTTP Error 429: Too Many Requests",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=SLC5A2%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "cardiometabolic",
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "f9_hemophilia_b",
+      "domain": "hematology",
+      "gene_symbol": "F9",
+      "target_ensembl_id": "ENSG00000101981",
+      "disease_name": "hemophilia B",
+      "disease_efo_id": "MONDO_0010604",
+      "case_rationale": "Causal coagulation factor disease with replacement and gene-therapy context.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.888019,
+        "open_targets_association_rank": 1,
+        "open_targets_matched_disease_id": "MONDO_0010604",
+        "open_targets_matched_disease_name": "hemophilia B",
+        "open_targets_associated_disease_count": 598,
+        "pubmed_gene_disease_count": 242,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "high"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000101981",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000101981",
+            "approvedSymbol": "F9",
+            "approvedName": "coagulation factor IX",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 598,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 1,
+          "score": 0.888019,
+          "disease": {
+            "id": "MONDO_0010604",
+            "name": "hemophilia B"
+          },
+          "datatype_scores": [
+            {
+              "id": "clinical",
+              "score": 0.9768661552111051
+            },
+            {
+              "id": "genetic_literature",
+              "score": 0.7195915563566126
+            },
+            {
+              "id": "affected_pathway",
+              "score": 0.865457038266544
+            },
+            {
+              "id": "literature",
+              "score": 0.2893674987220538
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.9880099441653922
+            },
+            {
+              "id": "animal_model",
+              "score": 0.3995811599413646
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "F9 hemophilia B",
+          "db": "pubmed",
+          "count": 242,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=F9+hemophilia+B&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "F9[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=F9%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "hematology",
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched"
+      ]
+    },
+    {
+      "id": "vegfa_age_related_macular_degeneration",
+      "domain": "ophthalmology",
+      "gene_symbol": "VEGFA",
+      "target_ensembl_id": "ENSG00000112715",
+      "disease_name": "age-related macular degeneration",
+      "disease_efo_id": "EFO_0001365",
+      "case_rationale": "Clinically validated angiogenesis target with local delivery and safety context.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "sciflow_policy",
+        "scistate_graph",
+        "tooluniverse"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.460005,
+        "open_targets_association_rank": 30,
+        "open_targets_matched_disease_id": "EFO_0001365",
+        "open_targets_matched_disease_name": "age-related macular degeneration",
+        "open_targets_associated_disease_count": 2852,
+        "pubmed_gene_disease_count": 2675,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "open_targets": {
+          "status": "success",
+          "target_ensembl_id": "ENSG00000112715",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "errors": [],
+          "target": {
+            "id": "ENSG00000112715",
+            "approvedSymbol": "VEGFA",
+            "approvedName": "vascular endothelial growth factor A",
+            "biotype": "protein_coding",
+            "tractability": [
+              {
+                "label": "Approved Drug",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Structure with Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Ligand",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "High-Quality Pocket",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Med-Quality Pocket",
+                "modality": "SM",
+                "value": true
+              },
+              {
+                "label": "Druggable Family",
+                "modality": "SM",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "UniProt loc high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "GO CC high conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt loc med conf",
+                "modality": "AB",
+                "value": true
+              },
+              {
+                "label": "UniProt SigP or TMHMM",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "GO CC med conf",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Human Protein Atlas loc",
+                "modality": "AB",
+                "value": false
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Literature",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "UniProt Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Database Ubiquitination",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Half-life Data",
+                "modality": "PR",
+                "value": false
+              },
+              {
+                "label": "Small Molecule Binder",
+                "modality": "PR",
+                "value": true
+              },
+              {
+                "label": "Approved Drug",
+                "modality": "OC",
+                "value": true
+              },
+              {
+                "label": "Advanced Clinical",
+                "modality": "OC",
+                "value": false
+              },
+              {
+                "label": "Phase 1 Clinical",
+                "modality": "OC",
+                "value": false
+              }
+            ]
+          },
+          "associated_disease_count": 2852,
+          "scanned_association_rows": 150
+        },
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 30,
+          "score": 0.460005,
+          "disease": {
+            "id": "EFO_0001365",
+            "name": "age-related macular degeneration"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9619116187791403
+            },
+            {
+              "id": "genetic_association",
+              "score": 0.10885948980294483
+            },
+            {
+              "id": "clinical",
+              "score": 0.6964818108847697
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "VEGFA age-related macular degeneration",
+          "db": "pubmed",
+          "count": 2675,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=VEGFA+age-related+macular+degeneration&retmode=json&retmax=0"
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "VEGFA[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1,
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=VEGFA%5BGene+Name%5D+AND+Homo+sapiens%5BOrganism%5D&retmode=json&retmax=0"
+        }
+      },
+      "benchmark_tags": [
+        "literature_rich",
+        "ontology_labeled",
+        "open_targets_matched",
+        "ophthalmology"
+      ]
+    }
+  ],
+  "expanded_task_count": 20,
+  "caveats": [
+    "This benchmark scores target-disease reasoning quality; it does not prove new biological discovery.",
+    "Open Targets association scores are public ranking heuristics and must not be treated as clinical confidence.",
+    "PubMed counts are evidence-availability signals, not evidence-quality labels.",
+    "Final credibility requires expert or rubric-judge scoring over the exported answer packets."
+  ]
+}

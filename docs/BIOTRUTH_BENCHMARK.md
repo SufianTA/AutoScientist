@@ -133,7 +133,7 @@ python tools/score_biomedical_correctness.py \
   --mode judge \
   --ablations full no_memory no_public_tools no_sciflow \
   --llm-provider gemini \
-  --llm-model gemini-2.5-flash
+  --llm-model gemini-3-flash-preview
 ```
 
 For a local open-source judge/server, start Qwen3-32B through vLLM and use the existing OpenAI-compatible path:

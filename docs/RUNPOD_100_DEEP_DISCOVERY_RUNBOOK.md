@@ -59,10 +59,10 @@ LIMIT=100 \
 MAX_CASES=25 \
 TEMPLATES_PER_CASE=4 \
 LLM_PROVIDER=gemini \
-LLM_MODEL=gemini-2.5-flash \
+LLM_MODEL=gemini-3-flash-preview \
 LLM_API_KEY_ENV_VAR=GEMINI_API_KEY \
 JUDGE_LLM_PROVIDER=gemini \
-JUDGE_LLM_MODEL=gemini-2.5-flash \
+JUDGE_LLM_MODEL=gemini-3-flash-preview \
 JUDGE_LLM_API_KEY_ENV_VAR=GEMINI_API_KEY \
 bash infra/runpod/run_deep_discovery_campaign.sh
 ```
@@ -124,4 +124,3 @@ scp -P <PORT> -i "$env:USERPROFILE\.ssh\runpod_shared_autoscientist" `
 ```
 
 Then stop the pod.
-

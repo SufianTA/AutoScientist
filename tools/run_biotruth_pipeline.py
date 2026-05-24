@@ -333,7 +333,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--score-mode", choices=["export", "heuristic", "judge"], default="heuristic")
     parser.add_argument("--max-score-results", type=int, default=0)
     parser.add_argument("--judge-llm-provider", default="gemini")
-    parser.add_argument("--judge-llm-model", default="gemini-2.5-flash")
+    parser.add_argument("--judge-llm-model", default="gemini-3-flash-preview")
     parser.add_argument("--judge-llm-api-key-env-var", default="")
     parser.add_argument("--judge-llm-base-url", default="")
     parser.add_argument("--judge-llm-max-tokens", type=int, default=1600)

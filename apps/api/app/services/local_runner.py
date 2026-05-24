@@ -384,7 +384,7 @@ def run_interactive() -> None:
     model_default = {
         "openai": "gpt-4.1",
         "anthropic": "claude-sonnet-4-6",
-        "gemini": "gemini-2.5-flash",
+        "gemini": "gemini-3-flash-preview",
         "openai_compatible": "local-model",
         "local_http": "local-http-model",
     }.get(provider, "gpt-4.1")

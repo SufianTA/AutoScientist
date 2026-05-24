@@ -90,7 +90,14 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
     seed_cases = seed_doc.get("seed_cases", [])
     if not seed_cases:
         raise ValueError(f"No seed_cases found in {args.seed_cases}")
-    selected = seed_cases[: max(1, args.max_cases)]
+    requested_case_ids = set(getattr(args, "case_ids", []) or [])
+    if requested_case_ids:
+        selected = [case for case in seed_cases if case.get("id") in requested_case_ids]
+        missing = sorted(requested_case_ids - {case.get("id") for case in selected})
+        if missing:
+            raise ValueError(f"Unknown BioTruth case ids: {', '.join(missing)}")
+    else:
+        selected = seed_cases[: max(1, args.max_cases)]
     cases = [enrich_case(case, args) for case in selected]
     templates = BIOTRUTH_TASK_TEMPLATES[: max(1, args.templates_per_case)]
     return {
@@ -497,6 +504,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--rubric", default=str(DEFAULT_RUBRIC))
     parser.add_argument("--output-manifest", default=str(DEFAULT_OUTPUT))
     parser.add_argument("--max-cases", type=int, default=25)
+    parser.add_argument("--case-ids", nargs="*", default=[])
     parser.add_argument("--templates-per-case", type=int, default=4)
     parser.add_argument("--association-scan-size", type=int, default=150)
     parser.add_argument("--public-timeout-seconds", type=int, default=15)

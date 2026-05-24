@@ -31,7 +31,7 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "mock": "mock-scientist",
         "openai": "gpt-4.1",
         "anthropic": "claude-sonnet-4-6",
-        "gemini": "gemini-2.5-flash",
+        "gemini": "gemini-3-flash-preview",
         "openai_compatible": "local-model",
         "local_http": "local-http-model",
     }
@@ -42,9 +42,9 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "openai_compatible": "OPENAI_COMPATIBLE_API_KEY",
     }
     if provider == "auto":
-        if os.getenv("ANTHROPIC_API_KEY"):
+        if os.getenv("ANTHROPIC_KEY") or os.getenv("ANTHROPIC_API_KEY"):
             provider = "anthropic"
-            api_key_env_var = api_key_env_var or "ANTHROPIC_API_KEY"
+            api_key_env_var = api_key_env_var or ("ANTHROPIC_KEY" if os.getenv("ANTHROPIC_KEY") else "ANTHROPIC_API_KEY")
             model = model or default_models[provider]
         elif os.getenv("OPENAI_API_KEY"):
             provider = "openai"
@@ -116,7 +116,7 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
     qworld_mode = (qworld_step or {}).get("output", {}).get("qworld", {}).get("mode")
     return {
         "anthropic_llm": {
-            "configured": bool(os.getenv("ANTHROPIC_API_KEY")),
+            "configured": bool(os.getenv("ANTHROPIC_KEY") or os.getenv("ANTHROPIC_API_KEY")),
             "executed": any(step.get("state_name") == "LLM_CALL_COMPLETED" for step in steps),
         },
         "qworld": {

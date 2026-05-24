@@ -23,7 +23,7 @@ const presets = [
 const providerDefaults: Record<string, { model: string; key: string }> = {
   openai: { model: "gpt-4.1", key: "OPENAI_API_KEY" },
   anthropic: { model: "claude-sonnet-4-6", key: "ANTHROPIC_API_KEY" },
-  gemini: { model: "gemini-2.5-flash", key: "GEMINI_API_KEY" },
+  gemini: { model: "gemini-3-flash-preview", key: "GEMINI_API_KEY" },
   openai_compatible: { model: "local-model", key: "OPENAI_COMPATIBLE_API_KEY" },
   local_http: { model: "local-http-model", key: "" },
   mock: { model: "mock-scientist", key: "" }

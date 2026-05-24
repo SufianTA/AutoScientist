@@ -35,7 +35,7 @@ SUPPORTED_PROVIDERS = {
     "gemini": {
         "display_name": "Google Gemini",
         "requires_key": True,
-        "default_model": "gemini-2.5-flash",
+        "default_model": "gemini-3-flash-preview",
         "default_api_key_env_var": "GEMINI_API_KEY",
     },
     "openai_compatible": {

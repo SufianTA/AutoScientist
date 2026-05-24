@@ -73,7 +73,7 @@ python tools/run_biotruth_pipeline.py \
   --limit 100 \
   --ablations full no_memory no_public_tools no_sciflow \
   --llm-provider gemini \
-  --llm-model gemini-2.5-flash \
+  --llm-model gemini-3-flash-preview \
   --llm-api-key-env-var GEMINI_API_KEY \
   --strict-real-run \
   --require-expected-integrations \
@@ -81,7 +81,7 @@ python tools/run_biotruth_pipeline.py \
   --neural-epochs 120 \
   --score-mode judge \
   --judge-llm-provider gemini \
-  --judge-llm-model gemini-2.5-flash \
+  --judge-llm-model gemini-3-flash-preview \
   --judge-llm-api-key-env-var GEMINI_API_KEY \
   --judge-llm-max-tokens 8192 \
   --disable-qworld \
@@ -97,4 +97,3 @@ Expected outputs to inspect after the pod run:
 - neural workflow policy package
 - state graph export
 - review package zip with no secret-like matches
-
