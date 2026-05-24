@@ -52,6 +52,7 @@ After the dependency repair:
 - ToolUniverse health check passed.
 - ToolUniverse listed 638 tools.
 - A direct ToolUniverse OpenTargets call succeeded for rheumatoid arthritis (`EFO_0000685`) and returned associated targets.
+- A deterministic mock-provider integration benchmark completed after the repair with 5/5 ToolUniverse calls successful, 7/7 public biomedical calls successful, and local board logging enabled.
 
 However, a 20-task strict validation run did not validate the full autonomous loop because Gemini returned:
 
@@ -59,7 +60,9 @@ However, a 20-task strict validation run did not validate the full autonomous lo
 429 RESOURCE_EXHAUSTED: project has exceeded its monthly spending cap
 ```
 
-That means the repaired validation failed before LLM-driven workflow execution could reach public tools, memory, ToolUniverse, or board logging.
+That means the repaired live validation failed before LLM-driven workflow execution could reach public tools, memory, ToolUniverse, or board logging.
+
+The mock-provider validation is not evidence of scientific reasoning quality, but it is useful engineering evidence that the repaired runtime can execute the ToolUniverse/public-tool/local-board layer when not blocked by LLM quota.
 
 ## Interpretation
 
