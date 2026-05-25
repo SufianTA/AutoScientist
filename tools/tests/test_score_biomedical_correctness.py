@@ -265,3 +265,59 @@ def test_v02_rubric_scores_expected_decision_and_label_breakdowns() -> None:
     assert score["dimension_scores"]["scientific_decision_correctness"] == 5
     assert summary["by_gold_label"]["insufficient_evidence"]["count"] == 1
     assert summary["by_expected_decision"]["abstain"]["count"] == 1
+
+
+def test_score_packet_preserves_abstention_decision_when_policy_is_truncated() -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_2.json"))
+    large_inputs = {f"field_{index}": "x" * 120 for index in range(40)}
+    packet = build_score_packet(
+        {
+            "task": {
+                "id": "egfr_ra",
+                "domain": "autoimmune_inflammation",
+                "gene_symbol": "EGFR",
+                "disease_name": "rheumatoid arthritis",
+                "gold_label": "insufficient_evidence",
+                "expected_decision": "abstain",
+                "public_labels": {
+                    "open_targets_association_score": 0.0,
+                    "pubmed_gene_disease_count": 235,
+                },
+            },
+            "ablation": "full",
+            "run_id": "run_1",
+            "status": "completed",
+            "integrations": {
+                "public_biomedical": {"executed": True, "call_count": 10},
+                "tooluniverse": {"executed": True, "call_count": 3},
+            },
+            "report": {
+                "hypothesis": {
+                    "text": "AutoScientist abstains from supporting EGFR as a target for rheumatoid arthritis.",
+                    "confidence": 0.2,
+                    "status": "abstained",
+                },
+                "evidence": [{"source": "OpenTargets", "text": "EGFR rheumatoid arthritis not matched"}] * 8,
+                "evidence_hierarchy": {"high_tier_evidence_count": 1, "hierarchy_score": 55},
+                "biotruth_critic": {"verdict": "weak_support", "weighted_score": 70},
+                "abstention_policy": {
+                    "decision": "abstain",
+                    "abstention_required": True,
+                    "claim_boundary": "insufficient-evidence response",
+                    "inputs": large_inputs,
+                },
+                "contradiction_analysis": {"contradiction_search_attempted": True, "finding_count": 0},
+            },
+            "replay": {"available": True},
+            "tool_calls": [{"tool_name": "opentargets", "status": "success"}] * 6,
+        },
+        rubric,
+    )
+
+    assert packet["answer"]["abstention_policy"]["truncated"] is True
+    assert packet["answer"]["abstention_policy"]["decision"] == "abstain"
+
+    score = heuristic_score(packet, rubric)
+
+    assert score["dimension_scores"]["scientific_decision_correctness"] == 5
+    assert "incorrect_abstention_behavior" not in score["critical_failures"]

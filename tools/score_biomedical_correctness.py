@@ -85,16 +85,16 @@ def build_score_packet(result: dict[str, Any], rubric: dict[str, Any]) -> dict[s
             "guardrails": compact_list(guardrails, limit=8, max_chars=1200),
             "scientific_strategy": compact(report.get("scientific_strategy", {}), max_chars=1800),
             "claim_graph": compact(report.get("claim_graph", {}), max_chars=1600),
-            "evidence_hierarchy": compact(report.get("evidence_hierarchy", {}), max_chars=1400),
+            "evidence_hierarchy": compact_preserving_scalars(report.get("evidence_hierarchy", {}), max_chars=1400),
             "adaptive_tool_plan": compact(report.get("adaptive_tool_plan", {}), max_chars=1400),
-            "abstention": compact(report.get("abstention", {}), max_chars=1000),
-            "abstention_policy": compact(report.get("abstention_policy", {}), max_chars=1200),
-            "actionability_profile": compact(report.get("actionability_profile", {}), max_chars=1400),
-            "biotruth_critic": compact(
+            "abstention": compact_preserving_scalars(report.get("abstention", {}), max_chars=1000),
+            "abstention_policy": compact_preserving_scalars(report.get("abstention_policy", {}), max_chars=1200),
+            "actionability_profile": compact_preserving_scalars(report.get("actionability_profile", {}), max_chars=1400),
+            "biotruth_critic": compact_preserving_scalars(
                 result.get("biotruth_critic") or report.get("biotruth_critic", {}),
                 max_chars=1800,
             ),
-            "contradiction_analysis": compact(report.get("contradiction_analysis", {}), max_chars=1400),
+            "contradiction_analysis": compact_preserving_scalars(report.get("contradiction_analysis", {}), max_chars=1400),
             "report_evaluation": compact(report.get("report_evaluation", {}), max_chars=1200),
             "tool_calls": compact_tool_calls(tool_calls, limit=20),
         },
@@ -123,6 +123,28 @@ def compact(value: Any, *, max_chars: int) -> Any:
     if len(text) <= max_chars:
         return value
     return {"truncated": True, "text": text[:max_chars]}
+
+
+def compact_preserving_scalars(value: Any, *, max_chars: int) -> Any:
+    text = json.dumps(value, default=str, ensure_ascii=True)
+    if len(text) <= max_chars or not isinstance(value, dict):
+        return value if len(text) <= max_chars else {"truncated": True, "text": text[:max_chars]}
+
+    preserved: dict[str, Any] = {"truncated": True, "text": text[:max_chars]}
+    for key, item in value.items():
+        if item is None or isinstance(item, (str, int, float, bool)):
+            preserved[key] = item
+        elif isinstance(item, list) and all(isinstance(entry, (str, int, float, bool)) for entry in item[:20]):
+            preserved[key] = item[:20]
+        elif isinstance(item, dict):
+            scalar_child = {
+                child_key: child_value
+                for child_key, child_value in item.items()
+                if child_value is None or isinstance(child_value, (str, int, float, bool))
+            }
+            if scalar_child:
+                preserved[key] = scalar_child
+    return preserved
 
 
 def compact_list(items: Any, *, limit: int, max_chars: int) -> list[Any]:
