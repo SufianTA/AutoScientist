@@ -31,6 +31,23 @@ def test_detect_contradictions_flags_negative_and_safety_evidence() -> None:
     assert result["coverage"]["negative_evidence"] is True
 
 
+def test_detect_contradictions_ignores_query_terms_without_substantive_negative_text() -> None:
+    result = detect_contradictions(
+        task={"gene_symbol": "NOD2", "disease_name": "Crohn disease"},
+        evidence=[
+            {
+                "source": "PubMed: NOD2 Crohn disease failed trial not associated",
+                "text": "PubMed returned live literature search results for NOD2 Crohn disease failed trial not associated.",
+                "evidence_type": "literature",
+            }
+        ],
+        tool_calls=[{"tool_name": "pubmed", "input": {"query": "NOD2 Crohn disease failed trial"}}],
+    )
+
+    assert result["finding_count"] == 0
+    assert result["contradiction_search_attempted"] is True
+
+
 def test_detect_contradictions_reports_incomplete_search_when_absent() -> None:
     result = detect_contradictions(
         task={"gene_symbol": "IL6", "disease_name": "rheumatoid arthritis"},

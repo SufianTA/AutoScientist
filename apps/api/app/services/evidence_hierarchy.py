@@ -27,7 +27,8 @@ def classify_evidence_item(item: dict[str, Any]) -> dict[str, Any]:
     """Classify one evidence item into a conservative biomedical evidence tier."""
 
     text = evidence_text(item)
-    tier = infer_tier(text)
+    body = evidence_body_text(item)
+    tier = infer_tier(text, body)
     evidence_kind = infer_evidence_kind(text, tier)
     return {
         "evidence_tier": tier,
@@ -92,8 +93,9 @@ def evidence_text(item: dict[str, Any]) -> str:
     return " ".join(str(part).lower() for part in parts if part)
 
 
-def infer_tier(text: str) -> str:
-    if has_clinical_translational_signal(text):
+def infer_tier(text: str, body: str | None = None) -> str:
+    body_text = body if body is not None else text
+    if has_clinical_translational_signal(text, body_text):
         return "tier_1_clinical_translational"
     if any(term in text for term in ["human", "patient", "gwas", "genetic", "variant", "cohort", "patient-derived"]):
         return "tier_2_human_biology"
@@ -109,7 +111,10 @@ def infer_tier(text: str) -> str:
     return "tier_unknown"
 
 
-def has_clinical_translational_signal(text: str) -> bool:
+def has_clinical_translational_signal(text: str, body: str | None = None) -> bool:
+    body_text = body if body is not None else text
+    if is_pubmed_query_context_only(text, body_text):
+        return False
     strong_terms = [
         "approved drug",
         "approved therapy",
@@ -127,11 +132,60 @@ def has_clinical_translational_signal(text: str) -> bool:
         "clinical trial evidence",
         "translational study",
     ]
-    if any(term in text for term in strong_terms):
+    if any(term in body_text for term in strong_terms):
         return True
-    if "clinical_precedence" in text and any(term in text for term in ["approved", "phase", "trial", "interventional"]):
+    if "clinical_precedence" in body_text and any(term in body_text for term in ["approved", "phase", "trial", "interventional"]):
         return True
     return False
+
+
+def evidence_body_text(item: dict[str, Any]) -> str:
+    score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
+    structured = item.get("structured", {}) if isinstance(item.get("structured"), dict) else {}
+    parts = [
+        item.get("text"),
+        item.get("evidence_type"),
+        score.get("label"),
+        score.get("evidence_type"),
+        score.get("rationale"),
+        structured.get("evidence_type"),
+        structured.get("source_policy"),
+    ]
+    return " ".join(str(part).lower() for part in parts if part)
+
+
+def is_pubmed_query_context_only(text: str, body: str) -> bool:
+    if "pubmed:" not in text:
+        return False
+    if not any(term in text for term in ["clinical precedence", "clinical trial", "phase", "failed trial", "not associated"]):
+        return False
+    placeholder = any(
+        term in body
+        for term in [
+            "returned live literature search results",
+            "literature search returned records",
+            "search returned records",
+            "returned records",
+        ]
+    )
+    if placeholder:
+        return True
+    return not any(
+        term in body
+        for term in [
+            "clinical trial",
+            "randomized",
+            "phase 1",
+            "phase 2",
+            "phase 3",
+            "phase 4",
+            "approved",
+            "approval",
+            "interventional",
+            "trial results",
+            "therapeutic efficacy",
+        ]
+    )
 
 
 def infer_evidence_kind(text: str, tier: str) -> str:

@@ -4,15 +4,19 @@ from typing import Any
 
 
 NEGATIVE_TERMS = {
-    "failed",
-    "failure",
-    "negative",
     "no association",
     "not associated",
     "lack of association",
     "did not improve",
     "no benefit",
-    "worse",
+    "worse outcome",
+    "worsened",
+    "lack of efficacy",
+    "did not meet",
+    "controversial",
+    "misclassification",
+    "mixed results",
+    "inconsistent",
 }
 
 SAFETY_TERMS = {
@@ -40,6 +44,13 @@ RESISTANCE_TERMS = {
     "compensation",
     "redundant pathway",
     "feedback activation",
+}
+
+QUERY_PLACEHOLDER_TERMS = {
+    "returned live literature search results",
+    "literature search returned records",
+    "search returned records",
+    "returned records",
 }
 
 
@@ -90,22 +101,26 @@ def detect_contradictions(
 
 def classify_contradiction_item(item: dict[str, Any]) -> dict[str, Any] | None:
     text = item_text(item)
+    body = item_body_text(item)
     score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
     label = str(score.get("label") or "").lower()
     category = None
     terms = []
-    if label in {"contradiction", "contradicts"} or any(term in text for term in NEGATIVE_TERMS):
+    placeholder_body = is_search_placeholder(body)
+    body_negative_terms = [] if placeholder_body else [term for term in NEGATIVE_TERMS if term in body]
+    body_safety_terms = [] if placeholder_body else [term for term in SAFETY_TERMS if term in body]
+    if label in {"contradiction", "contradicts"} or body_negative_terms:
         category = "negative_evidence"
-        terms.extend([term for term in NEGATIVE_TERMS if term in text])
-    if any(term in text for term in SAFETY_TERMS):
+        terms.extend(body_negative_terms)
+    if body_safety_terms:
         category = category or "safety"
-        terms.extend([term for term in SAFETY_TERMS if term in text])
-    if any(term in text for term in CONTEXT_MISMATCH_TERMS):
+        terms.extend(body_safety_terms)
+    if any(term in body for term in CONTEXT_MISMATCH_TERMS):
         category = category or "context_mismatch"
-        terms.extend([term for term in CONTEXT_MISMATCH_TERMS if term in text])
-    if any(term in text for term in RESISTANCE_TERMS):
+        terms.extend([term for term in CONTEXT_MISMATCH_TERMS if term in body])
+    if any(term in body for term in RESISTANCE_TERMS):
         category = category or "resistance_or_compensation"
-        terms.extend([term for term in RESISTANCE_TERMS if term in text])
+        terms.extend([term for term in RESISTANCE_TERMS if term in body])
     if category is None:
         return None
     return {
@@ -144,6 +159,25 @@ def item_text(item: dict[str, Any]) -> str:
         ]
         if value
     )
+
+
+def item_body_text(item: dict[str, Any]) -> str:
+    score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
+    return " ".join(
+        str(value).lower()
+        for value in [
+            item.get("text"),
+            item.get("evidence_type"),
+            score.get("label"),
+            score.get("evidence_type"),
+            score.get("rationale"),
+        ]
+        if value
+    )
+
+
+def is_search_placeholder(body: str) -> bool:
+    return any(term in body for term in QUERY_PLACEHOLDER_TERMS)
 
 
 def interpret_contradictions(findings: list[dict[str, Any]], searched: bool) -> str:

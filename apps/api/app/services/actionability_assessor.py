@@ -22,6 +22,23 @@ CLINICAL_TERMS = {
     "therapeutic",
 }
 
+POSITIVE_TRANSLATIONAL_TERMS = {
+    "approved",
+    "approval",
+    "approved drug",
+    "approved therapy",
+    "approved indication",
+    "efficacy",
+    "effective",
+    "benefit",
+    "improved",
+    "improves",
+    "response",
+    "responded",
+    "standard of care",
+    "successful",
+}
+
 INTERVENTION_TERMS = {
     "drug",
     "compound",
@@ -66,9 +83,25 @@ NEGATIVE_TERMS = {
     "negative trial",
     "no benefit",
     "did not improve",
+    "did not meet",
+    "lack of efficacy",
+    "lack efficacy",
     "not associated",
     "no association",
     "lack of association",
+    "controversial",
+    "misclassification",
+    "worse outcome",
+    "worsened outcome",
+    "mixed results",
+    "inconsistent",
+}
+
+QUERY_PLACEHOLDER_TERMS = {
+    "returned live literature search results",
+    "literature search returned records",
+    "search returned records",
+    "returned records",
 }
 
 
@@ -95,8 +128,12 @@ def assess_actionability(
         "literature_context_count": 0,
         "safety_signal_count": 0,
         "negative_signal_count": 0,
+        "translation_limitation_count": 0,
+        "disease_specific_positive_intervention_count": 0,
+        "structured_positive_intervention_count": 0,
         "tool_grounding_count": 0,
         "query_only_clinical_context_count": 0,
+        "query_only_counterevidence_context_count": 0,
     }
     gene = normalize_term(task.get("gene_symbol"))
     disease = normalize_term(task.get("disease_name"))
@@ -109,9 +146,10 @@ def assess_actionability(
     contradictions = contradiction_analysis or {}
     high_tier_count = int(hierarchy.get("high_tier_evidence_count") or 0)
     hierarchy_score = float(hierarchy.get("hierarchy_score") or 0.0)
-    contradiction_count = int(contradictions.get("finding_count") or contradictions.get("contradiction_count") or 0)
+    contradiction_count = substantive_negative_contradiction_count(contradictions)
     if contradiction_count:
         profile["negative_signal_count"] += contradiction_count
+        profile["translation_limitation_count"] += contradiction_count
 
     reasons: list[str] = []
     if not evidence:
@@ -126,10 +164,14 @@ def assess_actionability(
         reasons.append("no_high_tier_evidence")
     if profile["negative_signal_count"] > 0:
         reasons.append("negative_or_conflicting_signals_present")
+    if profile["translation_limitation_count"] > 0:
+        reasons.append("clinical_failure_or_translation_limitation_present")
     if profile["safety_signal_count"] > 0:
         reasons.append("safety_signals_require_translation_caution")
     if profile["query_only_clinical_context_count"] > 0:
         reasons.append("clinical_terms_appear_in_query_context")
+    if profile["query_only_counterevidence_context_count"] > 0:
+        reasons.append("counterevidence_terms_appear_in_query_context")
 
     level = actionability_level(profile, high_tier_count, hierarchy_score)
     recommended_decision = recommended_decision_from_profile(profile, level, reasons)
@@ -164,7 +206,20 @@ def classify_actionability_item(item: dict[str, Any], *, gene: str, disease: str
     clinical_signal = body_clinical_signal or evidence_type == "clinical_precedence" or score_type == "clinical_precedence"
     intervention_signal = has_any(body, INTERVENTION_TERMS)
     safety_signal = has_any(combined, SAFETY_TERMS)
-    negative_signal = has_any(combined, NEGATIVE_TERMS)
+    placeholder_body = is_search_placeholder(body)
+    body_negative_signal = has_any(body, NEGATIVE_TERMS) and not placeholder_body
+    query_only_negative = placeholder_body and (has_any(source, NEGATIVE_TERMS) or has_any(body, NEGATIVE_TERMS))
+    negative_signal = body_negative_signal
+    translation_limitation = negative_signal
+    target_level_only = is_target_level_only_context(body)
+    positive_intervention_signal = (
+        intervention_signal
+        and clinical_signal
+        and has_any(body, POSITIVE_TRANSLATIONAL_TERMS)
+        and not negative_signal
+        and not query_only_negative
+        and not target_level_only
+    )
     tool_grounding = any(
         name in source_name
         for name in ["opentargets", "open targets", "tooluniverse", "clinicaltrials.gov", "pubmed", "ncbi"]
@@ -188,17 +243,31 @@ def classify_actionability_item(item: dict[str, Any], *, gene: str, disease: str
         "literature_context_count": int("pubmed" in source_name or "literature" in combined),
         "safety_signal_count": int(safety_signal),
         "negative_signal_count": int(negative_signal),
+        "translation_limitation_count": int(translation_limitation and not query_only_negative),
+        "disease_specific_positive_intervention_count": int(grounded_pair and positive_intervention_signal and not query_only_clinical),
+        "structured_positive_intervention_count": int(
+            grounded_pair
+            and positive_intervention_signal
+            and not query_only_clinical
+            and any(name in source_name for name in ["opentargets", "open targets", "clinicaltrials.gov", "tooluniverse"])
+        ),
         "tool_grounding_count": int(tool_grounding),
         "query_only_clinical_context_count": int(query_only_clinical),
+        "query_only_counterevidence_context_count": int(query_only_negative),
     }
 
 
 def actionability_level(profile: dict[str, int], high_tier_count: int, hierarchy_score: float) -> str:
     if profile["target_disease_grounded_count"] == 0:
         return "insufficient"
-    if profile["negative_signal_count"] > 0 and profile["disease_specific_clinical_count"] == 0:
+    if profile["negative_signal_count"] >= 2:
         return "conflicting"
-    if profile["disease_specific_clinical_count"] > 0 and profile["disease_specific_intervention_count"] > 0:
+    if profile["negative_signal_count"] > 0 and profile["disease_specific_positive_intervention_count"] == 0:
+        return "conflicting"
+    if (
+        profile["disease_specific_positive_intervention_count"] >= 2
+        or profile["structured_positive_intervention_count"] >= 1
+    ) and profile["translation_limitation_count"] == 0:
         return "high"
     if profile["human_or_genetic_count"] > 0 or profile["mechanistic_count"] > 0 or high_tier_count > 0 or hierarchy_score >= 45:
         return "moderate"
@@ -210,11 +279,11 @@ def recommended_decision_from_profile(profile: dict[str, int], level: str, reaso
         return "abstain"
     if level == "conflicting":
         return "conflicting"
-    if "negative_or_conflicting_signals_present" in reasons and profile["disease_specific_clinical_count"] <= 1:
+    if "negative_or_conflicting_signals_present" in reasons and profile["disease_specific_positive_intervention_count"] == 0:
         return "conflicting"
-    if level == "high" and profile["safety_signal_count"] == 0:
-        return "support_allowed"
-    if level == "high":
+    if "clinical_failure_or_translation_limitation_present" in reasons:
+        return "tentative_only"
+    if level == "high" and profile["translation_limitation_count"] == 0 and profile["negative_signal_count"] == 0:
         return "support_allowed"
     return "tentative_only"
 
@@ -258,6 +327,24 @@ def is_query_context_only(*, source: str, body: str, clinical_signal: bool) -> b
         "therapeutic efficacy",
     }
     return not has_any(body, non_query_clinical_markers)
+
+
+def is_search_placeholder(body: str) -> bool:
+    return has_any(body, QUERY_PLACEHOLDER_TERMS)
+
+
+def is_target_level_only_context(body: str) -> bool:
+    return "target-level precedence" in body or "separated from disease-specific efficacy claims" in body
+
+
+def substantive_negative_contradiction_count(contradictions: dict[str, Any]) -> int:
+    findings = contradictions.get("findings")
+    if isinstance(findings, list):
+        return sum(1 for finding in findings if isinstance(finding, dict) and finding.get("category") == "negative_evidence")
+    categories = contradictions.get("categories")
+    if isinstance(categories, list):
+        return int("negative_evidence" in categories)
+    return int(contradictions.get("contradiction_count") or 0)
 
 
 def interpretation(level: str, decision: str, reasons: list[str]) -> str:

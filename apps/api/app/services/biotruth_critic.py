@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 from app.services.evidence_hierarchy import classify_evidence_item
+from app.services.evidence_hierarchy import summarize_evidence_hierarchy
 from app.services.actionability_assessor import assess_actionability
 
 
@@ -22,8 +23,6 @@ DIMENSION_WEIGHTS = {
 CONTRADICTION_TERMS = {
     "contradict",
     "conflict",
-    "failed",
-    "failure",
     "negative trial",
     "no association",
     "not associated",
@@ -33,6 +32,19 @@ CONTRADICTION_TERMS = {
     "adverse",
     "resistance",
     "contraindication",
+    "lack of efficacy",
+    "did not meet",
+    "controversial",
+    "misclassification",
+    "mixed results",
+    "inconsistent",
+}
+
+QUERY_PLACEHOLDER_TERMS = {
+    "returned live literature search results",
+    "literature search returned records",
+    "search returned records",
+    "returned records",
 }
 
 CAUSAL_TERMS = {
@@ -106,10 +118,12 @@ def evaluate_hypothesis(
     tier_counts = evidence_tier_counts(evidence_items)
     contradictions = contradiction_items(evidence_items)
     text = corpus_text(task, hypothesis, evidence_items)
+    hierarchy = summarize_evidence_hierarchy(evidence_items)
     actionability = assess_actionability(
         task=task,
         evidence=evidence_items,
-        evidence_hierarchy={"tier_counts": dict(tier_counts)},
+        evidence_hierarchy=hierarchy,
+        contradiction_analysis={"finding_count": len(contradictions), "contradiction_search_attempted": True},
     )
     scores = {
         "disease_relevance": disease_relevance_score(task, text, labels, evidence_items),
@@ -123,7 +137,7 @@ def evaluate_hypothesis(
     }
     missing = missing_evidence(scores, tier_counts, evidence_items, tool_calls)
     weighted = weighted_score(scores)
-    verdict = critic_verdict(weighted, contradictions, missing, evidence_items, scores)
+    verdict = critic_verdict(weighted, contradictions, missing, evidence_items, scores, actionability)
     abstention_reasons = abstention_reasons_for(verdict, scores, tier_counts, evidence_items, contradictions, missing)
     return {
         "schema": "autosci.biotruth_critic.v0.1",
@@ -178,9 +192,11 @@ def evidence_tier(item: dict[str, Any]) -> str:
 def contradiction_items(evidence: list[dict[str, Any]]) -> list[dict[str, Any]]:
     found = []
     for item in evidence:
-        text = " ".join(str(value).lower() for value in [item.get("source"), item.get("text"), item.get("evidence_type")] if value)
+        text = " ".join(str(value).lower() for value in [item.get("text"), item.get("evidence_type")] if value)
         score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
         label = str(score.get("label") or "").lower()
+        if is_search_placeholder(text) and label not in {"contradiction", "contradicts"}:
+            continue
         if label in {"contradiction", "contradicts"} or any(term in text for term in CONTRADICTION_TERMS):
             found.append(
                 {
@@ -190,6 +206,10 @@ def contradiction_items(evidence: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 }
             )
     return found
+
+
+def is_search_placeholder(text: str) -> bool:
+    return any(term in text for term in QUERY_PLACEHOLDER_TERMS)
 
 
 def disease_relevance_score(
@@ -323,16 +343,23 @@ def critic_verdict(
     missing: list[str],
     evidence: list[dict[str, Any]],
     scores: dict[str, int],
+    actionability: dict[str, Any],
 ) -> str:
     if not evidence or "no_evidence" in missing or scores["disease_relevance"] <= 1:
         return "abstain"
+    actionability_decision = str(actionability.get("recommended_decision") or "")
+    if actionability_decision == "conflicting":
+        return "conflicting"
     if contradictions and weighted < 70:
         return "conflicting"
+    if actionability_decision == "tentative_only" and weighted >= 50:
+        return "weak_support"
     if (
         weighted >= 75
         and "disease_relevance" not in missing
         and "causal_support" not in missing
         and scores.get("translational_support", 0) >= 3
+        and actionability_decision == "support_allowed"
     ):
         return "support"
     if weighted >= 50:

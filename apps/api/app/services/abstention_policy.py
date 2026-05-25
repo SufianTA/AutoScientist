@@ -41,8 +41,10 @@ def evaluate_abstention_policy(
             "no_disease_specific_clinical_precedence",
             "no_disease_specific_intervention_evidence",
             "negative_or_conflicting_signals_present",
+            "clinical_failure_or_translation_limitation_present",
             "safety_signals_require_translation_caution",
             "clinical_terms_appear_in_query_context",
+            "counterevidence_terms_appear_in_query_context",
         }:
             reasons.add(reason)
 
@@ -51,6 +53,8 @@ def evaluate_abstention_policy(
         decision = "abstain"
     elif {"critic_found_conflict", "unresolved_counterevidence"} & reasons:
         decision = "conflicting"
+    elif "clinical_failure_or_translation_limitation_present" in reasons:
+        decision = "tentative_only"
     elif {"weak_only_evidence", "no_high_tier_evidence", "contradiction_search_incomplete"} & reasons:
         decision = "tentative_only"
     if actionability_decision == "abstain":

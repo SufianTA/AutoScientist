@@ -119,7 +119,7 @@ def test_biotruth_critic_flags_conflicting_evidence() -> None:
     )
 
     assert result["contradictions"]
-    assert result["verdict"] in {"conflicting", "weak_support", "support"}
+    assert result["verdict"] == "conflicting"
     assert result["dimension_scores"]["contradiction_handling"] >= 2
 
 
