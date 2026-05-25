@@ -190,6 +190,15 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
     abstention_decision = str(abstention_policy.get("decision") or "").lower()
     contradiction_count = int(contradictions.get("finding_count") or contradictions.get("contradiction_count") or 0)
     contradiction_search_attempted = bool(contradictions.get("contradiction_search_attempted"))
+    contradiction_categories = {
+        str(category).lower()
+        for category in contradictions.get("categories", [])
+        if isinstance(contradictions.get("categories", []), list)
+    }
+    contradiction_coverage = contradictions.get("coverage", {}) if isinstance(contradictions.get("coverage"), dict) else {}
+    has_negative_contradiction = bool(contradiction_coverage.get("negative_evidence")) or bool(
+        contradiction_categories.intersection({"negative_evidence", "clinical_failure", "failed_translation"})
+    )
     expected_decision = str(task.get("expected_decision") or "").lower()
     gold_label = str(task.get("gold_label") or "").lower()
     gene = str(task.get("gene_symbol") or "").lower()
@@ -259,7 +268,11 @@ def heuristic_score(packet: dict[str, Any], rubric: dict[str, Any]) -> dict[str,
         critical_failures.append("missing_public_grounding")
     if critic_verdict == "abstain" and abstention_decision not in {"abstain", "tentative_only"}:
         critical_failures.append("unsupported_causal_claim")
-    if contradiction_count > 0 and abstention_decision not in {"conflicting", "abstain", "tentative_only"}:
+    if (
+        contradiction_count > 0
+        and has_negative_contradiction
+        and abstention_decision not in {"conflicting", "abstain", "tentative_only"}
+    ):
         critical_failures.append("unsupported_causal_claim")
     if hierarchy_score < 25 and any(term in text for term in ["validated", "strongly supports", "therapeutic"]):
         critical_failures.append("unsupported_causal_claim")

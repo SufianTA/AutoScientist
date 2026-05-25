@@ -321,3 +321,55 @@ def test_score_packet_preserves_abstention_decision_when_policy_is_truncated() -
 
     assert score["dimension_scores"]["scientific_decision_correctness"] == 5
     assert "incorrect_abstention_behavior" not in score["critical_failures"]
+
+
+def test_support_allowed_is_not_critical_failure_for_safety_only_limitations() -> None:
+    rubric = load_json(Path("benchmarks/biotruth_rubric_v0_2.json"))
+    packet = build_score_packet(
+        {
+            "task": {
+                "id": "tnf_ra",
+                "domain": "autoimmune_inflammation",
+                "gene_symbol": "TNF",
+                "disease_name": "rheumatoid arthritis",
+                "gold_label": "strong_support",
+                "expected_decision": "support_allowed",
+                "public_labels": {
+                    "open_targets_association_score": 0.64,
+                    "pubmed_gene_disease_count": 13000,
+                },
+            },
+            "ablation": "full",
+            "run_id": "run_1",
+            "status": "completed",
+            "integrations": {
+                "public_biomedical": {"executed": True, "call_count": 10},
+                "tooluniverse": {"executed": True, "call_count": 4},
+            },
+            "report": {
+                "hypothesis": {
+                    "text": "TNF is supported as a rheumatoid arthritis target with explicit safety limitations.",
+                    "confidence": 0.72,
+                },
+                "evidence": [{"source": "OpenTargets", "text": "TNF rheumatoid arthritis target validation"}] * 8,
+                "evidence_hierarchy": {"high_tier_evidence_count": 3, "hierarchy_score": 68},
+                "biotruth_critic": {"verdict": "support", "weighted_score": 90},
+                "abstention_policy": {"decision": "support_allowed"},
+                "contradiction_analysis": {
+                    "contradiction_search_attempted": True,
+                    "finding_count": 4,
+                    "categories": ["safety", "resistance_or_compensation"],
+                    "coverage": {"negative_evidence": False, "safety": True},
+                },
+                "guardrails": ["No safety claim is made."],
+            },
+            "replay": {"available": True},
+            "tool_calls": [{"tool_name": "opentargets", "status": "success"}] * 6,
+        },
+        rubric,
+    )
+
+    score = heuristic_score(packet, rubric)
+
+    assert score["dimension_scores"]["scientific_decision_correctness"] == 5
+    assert "unsupported_causal_claim" not in score["critical_failures"]
