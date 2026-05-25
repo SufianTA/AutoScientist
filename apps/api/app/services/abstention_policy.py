@@ -28,7 +28,12 @@ def evaluate_abstention_policy(
         reasons.add("weak_only_evidence")
     if int(evidence_hierarchy.get("high_tier_evidence_count") or 0) == 0:
         reasons.add("no_high_tier_evidence")
-    if contradiction_analysis.get("finding_count", 0) and critic_score < 75:
+    contradiction_categories = set(contradiction_analysis.get("categories", []) or [])
+    if (
+        contradiction_analysis.get("finding_count", 0)
+        and critic_score < 75
+        and (not contradiction_categories or contradiction_categories & {"negative_evidence", "context_mismatch"})
+    ):
         reasons.add("unresolved_counterevidence")
     if not contradiction_analysis.get("contradiction_search_attempted"):
         reasons.add("contradiction_search_incomplete")
@@ -49,10 +54,17 @@ def evaluate_abstention_policy(
             reasons.add(reason)
 
     decision = "support_allowed"
-    if {"critic_abstained", "no_evidence", "critic_score_below_support_threshold"} & reasons:
+    if "no_evidence" in reasons:
         decision = "abstain"
     elif {"critic_found_conflict", "unresolved_counterevidence"} & reasons:
         decision = "conflicting"
+    elif "critic_abstained" in reasons and actionability_decision not in {"tentative_only", "support_allowed"}:
+        decision = "abstain"
+    elif "critic_score_below_support_threshold" in reasons and actionability_decision not in {
+        "tentative_only",
+        "support_allowed",
+    }:
+        decision = "abstain"
     elif "clinical_failure_or_translation_limitation_present" in reasons:
         decision = "tentative_only"
     elif {"weak_only_evidence", "no_high_tier_evidence", "contradiction_search_incomplete"} & reasons:

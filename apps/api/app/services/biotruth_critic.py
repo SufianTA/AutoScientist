@@ -40,6 +40,21 @@ CONTRADICTION_TERMS = {
     "inconsistent",
 }
 
+NEGATIVE_TRANSLATION_TERMS = {
+    "negative trial",
+    "no association",
+    "not associated",
+    "lack of association",
+    "lack of efficacy",
+    "did not meet",
+    "did not improve",
+    "no benefit",
+    "controversial",
+    "misclassification",
+    "mixed results",
+    "inconsistent",
+}
+
 QUERY_PLACEHOLDER_TERMS = {
     "returned live literature search results",
     "literature search returned records",
@@ -350,7 +365,7 @@ def critic_verdict(
     actionability_decision = str(actionability.get("recommended_decision") or "")
     if actionability_decision == "conflicting":
         return "conflicting"
-    if contradictions and weighted < 70:
+    if has_negative_translation_contradiction(contradictions) and weighted < 70:
         return "conflicting"
     if actionability_decision == "tentative_only" and weighted >= 50:
         return "weak_support"
@@ -365,6 +380,14 @@ def critic_verdict(
     if weighted >= 50:
         return "weak_support"
     return "abstain"
+
+
+def has_negative_translation_contradiction(contradictions: list[dict[str, Any]]) -> bool:
+    for item in contradictions:
+        text = str(item.get("text") or "").lower()
+        if any(term in text for term in NEGATIVE_TRANSLATION_TERMS):
+            return True
+    return False
 
 
 def abstention_reasons_for(
