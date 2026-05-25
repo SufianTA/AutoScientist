@@ -2582,6 +2582,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 ),
                 "allowed_output": abstention_policy["claim_boundary"],
             }
+            self._enforce_abstention_on_hypothesis(state)
         self._record(
             trace,
             "critic_agent",
@@ -2590,6 +2591,50 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {**state.critique, "llm_calls": state.context.get("llm_calls", [])},
         )
         return state
+
+    def _enforce_abstention_on_hypothesis(self, state: ResearchRunState) -> None:
+        abstention_policy = state.context.get("abstention_policy", {})
+        decision = str(abstention_policy.get("decision") or "").lower()
+        if decision not in {"abstain", "conflicting"}:
+            return
+
+        target = self._primary_target(state)
+        disease = self._primary_disease(state)
+        boundary = str(abstention_policy.get("claim_boundary") or "insufficient evidence")
+        reasons = [str(reason) for reason in abstention_policy.get("reasons", []) if reason]
+        reason_text = "; ".join(reasons[:4]) if reasons else "available evidence does not support a bounded claim"
+
+        if decision == "abstain":
+            status = "abstained"
+            title = f"Insufficient evidence for {target} as a {disease} target"
+            hypothesis = (
+                f"AutoScientist abstains from supporting {target} as a therapeutic target for {disease}. "
+                f"The supported conclusion is that the target-disease claim remains insufficiently grounded: "
+                f"{reason_text}. Further work should validate disease relevance before prioritizing mechanism, "
+                "translation, or intervention claims."
+            )
+            confidence = min(float(state.hypothesis_card.get("confidence", 0.0) or 0.0), 0.2)
+        else:
+            status = "conflicting_evidence"
+            title = f"Conflicting evidence review for {target} and {disease}"
+            hypothesis = (
+                f"AutoScientist does not make an unqualified support claim for {target} in {disease}. "
+                f"The evidence is conflicting or materially limited: {reason_text}. Any follow-up should "
+                "resolve the conflicting evidence before target prioritization."
+            )
+            confidence = min(float(state.hypothesis_card.get("confidence", 0.0) or 0.0), 0.45)
+
+        limitations = state.hypothesis_card.setdefault("limitations", [])
+        limitations.append(f"Abstention policy decision `{decision}` enforced: {boundary}.")
+        state.hypothesis_card.update(
+            {
+                "title": title,
+                "hypothesis": hypothesis,
+                "scientific_assessment": boundary,
+                "confidence": round(max(0.0, confidence), 2),
+                "status": status,
+            }
+        )
 
     def _propose_experiments(
         self,
@@ -2684,6 +2729,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 state.report["title"] = report_json["title"]
             if report_json.get("summary"):
                 state.report["summary"] = report_json["summary"]
+        self._enforce_abstention_on_report(state)
         state.report["report_evaluation"] = evaluate_report_against_criteria(
             state.report,
             state.context.get("evaluation_criteria", []),
@@ -2704,3 +2750,27 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             },
         )
         return state
+
+    def _enforce_abstention_on_report(self, state: ResearchRunState) -> None:
+        abstention_policy = state.context.get("abstention_policy", {})
+        decision = str(abstention_policy.get("decision") or "").lower()
+        if decision not in {"abstain", "conflicting"}:
+            return
+
+        self._enforce_abstention_on_hypothesis(state)
+        state.report["title"] = state.hypothesis_card.get("title", state.report.get("title"))
+        state.report["summary"] = state.hypothesis_card.get("hypothesis", state.report.get("summary"))
+        state.report["confidence"] = state.hypothesis_card.get("confidence")
+        state.report["decision"] = decision
+        state.report["claim_boundary"] = abstention_policy.get("claim_boundary")
+        state.report["guardrails"] = list(
+            dict.fromkeys(
+                [
+                    f"Abstention policy decision `{decision}` is enforced.",
+                    str(abstention_policy.get("claim_boundary") or "Do not make an unsupported target-disease claim."),
+                    "No clinical efficacy claim is made.",
+                    "No safety claim is made.",
+                    *[str(item) for item in state.report.get("guardrails", [])],
+                ]
+            )
+        )

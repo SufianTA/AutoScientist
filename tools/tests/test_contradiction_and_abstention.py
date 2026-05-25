@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from agents.app.langgraph_workflow import LangGraphScientificWorkflow
+from agents.app.state import ResearchRunState
 from app.services.abstention_policy import evaluate_abstention_policy
 from app.services.contradiction_detector import build_contradiction_queries, detect_contradictions
 
@@ -187,3 +189,43 @@ def test_abstention_policy_only_downgrades_when_public_support_is_weak_but_not_a
 
     assert result["decision"] == "tentative_only"
     assert "public_target_disease_support_weak" in result["reasons"]
+
+
+def test_workflow_enforces_abstention_on_hypothesis_and_report() -> None:
+    workflow = LangGraphScientificWorkflow()
+    state = ResearchRunState(
+        run_id="run_test",
+        objective_id="obj_test",
+        objective="Evaluate whether EGFR is a credible therapeutic target for rheumatoid arthritis.",
+    )
+    state.context["biomedical_context"] = {
+        "primary_genes": ["EGFR"],
+        "diseases": ["rheumatoid arthritis"],
+    }
+    state.context["abstention_policy"] = {
+        "decision": "abstain",
+        "abstention_required": True,
+        "claim_boundary": "insufficient-evidence response; abstain from target-disease support claim",
+        "reasons": ["public_target_disease_support_absent", "open_targets_target_disease_not_matched"],
+    }
+    state.hypothesis_card = {
+        "title": "EGFR candidate target",
+        "hypothesis": "EGFR is a candidate therapeutic target for rheumatoid arthritis.",
+        "confidence": 0.72,
+        "status": "candidate",
+    }
+    state.report = {
+        "title": "EGFR / rheumatoid arthritis Candidate Hypothesis Report",
+        "summary": "EGFR is a candidate target.",
+        "confidence": 0.72,
+        "guardrails": ["Candidate hypothesis only."],
+    }
+
+    workflow._enforce_abstention_on_report(state)
+
+    assert state.hypothesis_card["status"] == "abstained"
+    assert state.hypothesis_card["confidence"] <= 0.2
+    assert "abstains from supporting EGFR" in state.hypothesis_card["hypothesis"]
+    assert state.report["decision"] == "abstain"
+    assert state.report["confidence"] <= 0.2
+    assert "Abstention policy decision `abstain` is enforced." in state.report["guardrails"]
