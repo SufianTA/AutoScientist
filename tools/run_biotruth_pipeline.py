@@ -256,7 +256,7 @@ def recommended_next_steps(args: argparse.Namespace) -> list[str]:
     if args.mode == "prepare":
         return [
             "Run smoke mode with a real LLM/API key to validate end-to-end execution.",
-            "If smoke passes, run full mode on the H100 pod with all four ablations.",
+            "If smoke passes, run full mode on the H100 pod with full, plain_llm, memory, public-tool, and controller ablations.",
         ]
     if args.mode == "smoke":
         return [
@@ -295,7 +295,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--replicates-per-case", type=int, default=1)
     parser.add_argument("--case-ids", nargs="*", default=[])
     parser.add_argument("--template-ids", nargs="*", default=[])
-    parser.add_argument("--ablations", nargs="*", default=["full", "no_memory", "no_public_tools", "no_sciflow"])
+    parser.add_argument("--ablations", nargs="*", default=["full", "plain_llm", "no_memory", "no_public_tools", "no_sciflow"])
     parser.add_argument("--llm-provider", default="auto")
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--llm-api-key-env-var", default="")

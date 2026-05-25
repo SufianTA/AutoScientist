@@ -26,6 +26,7 @@ def analyze_benchmark_dir(bench_dir: Path) -> dict[str, Any]:
         "result_count": summary.get("result_count"),
         "full_runtime": summarize_full_runtime(full_results),
         "ablation_comparison": compare_ablations(by_ablation),
+        "decision_calibration": decision_calibration(task_results),
         "integration_coverage": integration_coverage(full_results),
         "evidence_profile": evidence_profile(full_results),
         "state_graph": summary.get("state_graph", {}),
@@ -92,6 +93,7 @@ def compare_ablations(by_ablation: dict[str, list[dict[str, Any]]]) -> dict[str,
         comparisons[name] = {
             "runs": len(results),
             "mean_score": score_mean(results),
+            "decision_accuracy": decision_calibration(results)["overall"]["accuracy"],
             "score_delta_full_minus_ablation": round(full - score_mean(results), 2),
             "mean_tool_calls": mean_tool_calls(results),
             "tool_call_delta_full_minus_ablation": round(full_tool_calls - mean_tool_calls(results), 2),
@@ -112,6 +114,76 @@ def compare_ablations(by_ablation: dict[str, list[dict[str, Any]]]) -> dict[str,
             "controller_applied_runs": sum(1 for item in results if controller_impact(item).get("applied")),
         }
     return comparisons
+
+
+def decision_calibration(results: list[dict[str, Any]]) -> dict[str, Any]:
+    by_ablation: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    by_expected: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    records = []
+    mismatches = []
+    for item in results:
+        expected = str(item.get("task", {}).get("expected_decision") or "").strip()
+        if not expected:
+            continue
+        observed = observed_decision(item)
+        actionability = observed_actionability_decision(item)
+        record = {
+            "task_id": item.get("task", {}).get("id"),
+            "run_id": item.get("run_id"),
+            "ablation": item.get("ablation"),
+            "gold_label": item.get("task", {}).get("gold_label"),
+            "expected": expected,
+            "observed": observed,
+            "actionability": actionability,
+            "matched": observed == expected,
+            "artifact_path": item.get("_path") or item.get("artifact_path"),
+        }
+        records.append(record)
+        by_ablation[str(item.get("ablation") or "unknown")].append(record)
+        by_expected[expected].append(record)
+        if not record["matched"]:
+            mismatches.append(record)
+    return {
+        "overall": summarize_decision_records(records),
+        "by_ablation": {key: summarize_decision_records(value) for key, value in sorted(by_ablation.items())},
+        "by_expected_decision": {key: summarize_decision_records(value) for key, value in sorted(by_expected.items())},
+        "mismatches": mismatches[:50],
+    }
+
+
+def summarize_decision_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    if not records:
+        return {"count": 0, "matches": 0, "accuracy": None}
+    matches = sum(1 for item in records if item.get("matched"))
+    return {
+        "count": len(records),
+        "matches": matches,
+        "accuracy": round(matches / len(records), 4),
+        "observed_decisions": dict(sorted(Counter(str(item.get("observed") or "unknown") for item in records).items())),
+    }
+
+
+def observed_decision(item: dict[str, Any]) -> str:
+    report = item.get("report", {}) if isinstance(item.get("report"), dict) else {}
+    abstention = item.get("abstention_policy") or report.get("abstention_policy") or {}
+    if isinstance(abstention, dict) and abstention.get("decision"):
+        return str(abstention.get("decision"))
+    critic = item.get("biotruth_critic") or report.get("biotruth_critic") or {}
+    verdict = str(critic.get("verdict") or "") if isinstance(critic, dict) else ""
+    return {
+        "support": "support_allowed",
+        "weak_support": "tentative_only",
+        "conflicting": "conflicting",
+        "abstain": "abstain",
+    }.get(verdict, "")
+
+
+def observed_actionability_decision(item: dict[str, Any]) -> str:
+    report = item.get("report", {}) if isinstance(item.get("report"), dict) else {}
+    actionability = report.get("actionability_profile") or {}
+    if isinstance(actionability, dict):
+        return str(actionability.get("recommended_decision") or "")
+    return ""
 
 
 def score_mean(results: list[dict[str, Any]]) -> float:
@@ -305,18 +377,37 @@ def render_markdown(analysis: dict[str, Any]) -> str:
     lines.extend(["", "## Integration Coverage", "", "| Integration | Runs | Coverage |", "| --- | ---: | ---: |"])
     for name, item in analysis["integration_coverage"].items():
         lines.append(f"| {name} | {item['executed_runs']}/{item['total_runs']} | {item['coverage_rate']} |")
+    calibration = analysis.get("decision_calibration", {})
+    lines.extend(
+        [
+            "",
+            "## Scientific Decision Calibration",
+            "",
+            f"- Overall accuracy: `{calibration.get('overall', {}).get('accuracy')}`",
+            f"- Evaluable decisions: `{calibration.get('overall', {}).get('count')}`",
+            "",
+            "| Expected decision | Count | Matches | Accuracy | Observed decisions |",
+            "| --- | ---: | ---: | ---: | --- |",
+        ]
+    )
+    for name, item in calibration.get("by_expected_decision", {}).items():
+        lines.append(
+            f"| {name} | {item.get('count')} | {item.get('matches')} | {item.get('accuracy')} | "
+            f"`{json.dumps(item.get('observed_decisions', {}), default=str)}` |"
+        )
     lines.extend(
         [
             "",
             "## Ablation Comparison",
             "",
-            "| Ablation | Runs | Mean score | Score delta | Evidence delta | Tool-call delta | Replay runs | Controller advice | Controller applied |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| Ablation | Runs | Mean score | Decision accuracy | Score delta | Evidence delta | Tool-call delta | Replay runs | Controller advice | Controller applied |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for name, item in analysis["ablation_comparison"].items():
         lines.append(
-            f"| {name} | {item['runs']} | {item['mean_score']} | {item['score_delta_full_minus_ablation']} | "
+            f"| {name} | {item['runs']} | {item['mean_score']} | {item.get('decision_accuracy')} | "
+            f"{item['score_delta_full_minus_ablation']} | "
             f"{item['evidence_delta_full_minus_ablation']} | {item['tool_call_delta_full_minus_ablation']} | "
             f"{item['replay_runs']} | {item['controller_runs']} | {item['controller_applied_runs']} |"
         )

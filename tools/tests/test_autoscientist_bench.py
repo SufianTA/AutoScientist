@@ -4,6 +4,7 @@ from tools.run_autoscientist_bench import (
     apply_ablation,
     benchmark_run_config,
     benchmark_value_score,
+    decision_calibration,
     evaluate_realness_gates,
     extract_strategy_repair,
     expand_tasks,
@@ -123,6 +124,18 @@ def test_ablation_config_disables_public_tools() -> None:
     apply_ablation(config, "no_public_tools")
 
     assert config["real_data_enabled"] is False
+
+
+def test_plain_llm_ablation_disables_runtime_differentiators() -> None:
+    config = benchmark_run_config(_args())
+
+    apply_ablation(config, "plain_llm")
+
+    assert config["real_data_enabled"] is False
+    assert config["persist_memory_enabled"] is False
+    assert config["sciflow_policy_enabled"] is False
+    assert config["qworld_enabled"] is False
+    assert config["strategy_repair_enabled"] is False
 
 
 def test_benchmark_value_score_adds_public_context_checks() -> None:
@@ -305,6 +318,33 @@ def test_strategy_repair_is_exported_and_summarized() -> None:
     assert summary["mean_scientific_quality"] == 82
     assert summary["strategy_repair_runs"] == 1
     assert summary["validation_ready_runs"] == 1
+
+
+def test_decision_calibration_scores_expected_runtime_decisions() -> None:
+    calibration = decision_calibration(
+        [
+            {
+                "ablation": "full",
+                "run_id": "run_1",
+                "task": {"id": "task_1", "expected_decision": "support_allowed"},
+                "abstention_policy": {"decision": "support_allowed"},
+            },
+            {
+                "ablation": "full",
+                "run_id": "run_2",
+                "task": {"id": "task_2", "expected_decision": "tentative_only"},
+                "report": {
+                    "abstention_policy": {"decision": "support_allowed"},
+                    "actionability_profile": {"recommended_decision": "tentative_only"},
+                },
+            },
+        ]
+    )
+
+    assert calibration["evaluable_runs"] == 2
+    assert calibration["matches"] == 1
+    assert calibration["accuracy"] == 0.5
+    assert calibration["mismatches"][0]["actionability"] == "tentative_only"
 
 
 def test_realness_gates_fail_missing_expected_public_tool() -> None:

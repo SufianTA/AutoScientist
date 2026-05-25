@@ -227,6 +227,7 @@ This repair is locally tested and ready for strict-real validation, but not yet 
 The next RunPod canary should check:
 
 - full completion;
+- `plain_llm` baseline comparison;
 - public-tool preflight;
 - ToolUniverse execution preflight;
 - live LLM preflight;

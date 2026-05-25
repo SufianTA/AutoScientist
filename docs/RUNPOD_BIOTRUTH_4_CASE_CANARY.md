@@ -24,6 +24,7 @@ These were selected because they completed cleanly in the interrupted 20-case ga
 - public biomedical execution preflight passes for NCBI Gene, PubMed, ClinicalTrials.gov, Reactome, and openFDA;
 - ToolUniverse execution preflight passes;
 - 16/16 result artifacts complete;
+- `plain_llm` baseline is present so the full system can be compared against a weak no-tools/no-memory/no-controller baseline;
 - full ablation completion rate is 1.0;
 - full mean score is at least 85;
 - full-system critical failure rate is at most 0.05;

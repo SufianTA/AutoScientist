@@ -32,7 +32,7 @@ from tools.run_integration_benchmark import (
 DEFAULT_MANIFEST = Path("benchmarks/autoscientist_bench_v0_1.json")
 OPEN_TARGETS_GRAPHQL_URL = "https://api.platform.opentargets.org/api/v4/graphql"
 NCBI_EUTILS_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-SUPPORTED_ABLATIONS = {"full", "no_memory", "no_public_tools", "no_sciflow"}
+SUPPORTED_ABLATIONS = {"full", "no_memory", "no_public_tools", "no_sciflow", "plain_llm"}
 
 
 def load_manifest(path: str | Path = DEFAULT_MANIFEST) -> dict[str, Any]:
@@ -405,6 +405,12 @@ def apply_ablation(config: dict[str, Any], ablation: str) -> None:
         config["real_data_enabled"] = False
     elif ablation == "no_sciflow":
         config["sciflow_policy_enabled"] = False
+    elif ablation == "plain_llm":
+        config["real_data_enabled"] = False
+        config["persist_memory_enabled"] = False
+        config["sciflow_policy_enabled"] = False
+        config["qworld_enabled"] = False
+        config["strategy_repair_enabled"] = False
 
 
 def benchmark_value_score(
@@ -850,11 +856,15 @@ def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
     impacts = [item.get("value_assessment", {}).get("controller_impact", {}) for item in results]
     repairs = [item.get("strategy_repair", {}) for item in results]
     strategies = [item.get("report", {}).get("scientific_strategy", {}) for item in results]
+    calibration = decision_calibration(results)
     return {
         "runs": len(results),
         "completed": len(completed),
         "mean_score": round(statistics.mean(scores), 2) if scores else 0,
         "mean_scientific_quality": round(statistics.mean(quality_scores), 2) if quality_scores else 0,
+        "decision_accuracy": calibration["accuracy"],
+        "decision_evaluable_runs": calibration["evaluable_runs"],
+        "decision_matches": calibration["matches"],
         "min_score": min(scores) if scores else 0,
         "max_score": max(scores) if scores else 0,
         "mean_confidence": round(
@@ -912,6 +922,59 @@ def summarize_result_group(results: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def decision_calibration(results: list[dict[str, Any]]) -> dict[str, Any]:
+    evaluable = []
+    mismatches = []
+    for item in results:
+        expected = str(item.get("task", {}).get("expected_decision") or "").strip()
+        observed = observed_decision(item)
+        actionability = observed_actionability_decision(item)
+        if not expected:
+            continue
+        matched = observed == expected
+        record = {
+            "task_id": item.get("task", {}).get("id"),
+            "run_id": item.get("run_id"),
+            "expected": expected,
+            "observed": observed,
+            "actionability": actionability,
+            "ablation": item.get("ablation"),
+        }
+        evaluable.append(record)
+        if not matched:
+            mismatches.append(record)
+    matches = len(evaluable) - len(mismatches)
+    return {
+        "evaluable_runs": len(evaluable),
+        "matches": matches,
+        "mismatches": mismatches,
+        "accuracy": round(matches / len(evaluable), 4) if evaluable else None,
+    }
+
+
+def observed_decision(item: dict[str, Any]) -> str:
+    report = item.get("report", {}) if isinstance(item.get("report"), dict) else {}
+    abstention = item.get("abstention_policy") or report.get("abstention_policy") or {}
+    if isinstance(abstention, dict) and abstention.get("decision"):
+        return str(abstention.get("decision"))
+    critic = item.get("biotruth_critic") or report.get("biotruth_critic") or {}
+    verdict = str(critic.get("verdict") or "") if isinstance(critic, dict) else ""
+    return {
+        "support": "support_allowed",
+        "weak_support": "tentative_only",
+        "conflicting": "conflicting",
+        "abstain": "abstain",
+    }.get(verdict, "")
+
+
+def observed_actionability_decision(item: dict[str, Any]) -> str:
+    report = item.get("report", {}) if isinstance(item.get("report"), dict) else {}
+    actionability = report.get("actionability_profile") or {}
+    if isinstance(actionability, dict):
+        return str(actionability.get("recommended_decision") or "")
+    return ""
+
+
 def compare_against_full(summary_by_ablation: dict[str, dict[str, Any]]) -> dict[str, Any]:
     full = summary_by_ablation.get("full")
     if not full:
@@ -926,6 +989,7 @@ def compare_against_full(summary_by_ablation: dict[str, dict[str, Any]]) -> dict
                 full.get("mean_scientific_quality", 0) - item.get("mean_scientific_quality", 0),
                 2,
             ),
+            "decision_accuracy_delta_vs_full": delta_optional(full.get("decision_accuracy"), item.get("decision_accuracy")),
             "controller_runs_delta_vs_full": full["controller_advice_runs"] - item["controller_advice_runs"],
             "controller_applied_runs_delta_vs_full": full["controller_applied_runs"] - item["controller_applied_runs"],
             "strategy_repair_runs_delta_vs_full": full.get("strategy_repair_runs", 0)
@@ -968,11 +1032,17 @@ def top_results(results: list[dict[str, Any]], *, ablation: str) -> list[dict[st
 def recommended_gpu_command() -> str:
     return (
         "python tools/run_biotruth_pipeline.py --mode full --limit 100 "
-        "--ablations full no_memory no_public_tools no_sciflow "
+        "--ablations full plain_llm no_memory no_public_tools no_sciflow "
         "--llm-provider auto --train-neural-policy --neural-epochs 120 --strict-real-run "
         "--require-expected-integrations --min-full-completion-rate 1.0 --min-full-mean-score 85 "
         "--min-neural-holdout-top1 0.5 --min-state-graph-nodes 1 --score-mode judge"
     )
+
+
+def delta_optional(left: Any, right: Any) -> float | None:
+    if left is None or right is None:
+        return None
+    return round(float(left) - float(right), 4)
 
 
 def redact_benchmark_config(config: dict[str, Any]) -> dict[str, Any]:
@@ -995,13 +1065,14 @@ def render_summary_markdown(summary: dict[str, Any]) -> str:
         "",
         "## Ablation Summary",
         "",
-        "| Ablation | Runs | Completed | Mean score | Strict quality | Replay runs | Controller advice | Controller applied | Strategy repairs | Mean evidence | Mean tool calls | Public-tool runs |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Ablation | Runs | Completed | Mean score | Strict quality | Decision accuracy | Replay runs | Controller advice | Controller applied | Strategy repairs | Mean evidence | Mean tool calls | Public-tool runs |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, item in summary["summary_by_ablation"].items():
         lines.append(
             f"| {name} | {item['runs']} | {item['completed']} | {item['mean_score']} | "
             f"{item.get('mean_scientific_quality', 0)} | "
+            f"{item.get('decision_accuracy')} | "
             f"{item['memory_replay_runs']} | {item['controller_advice_runs']} | "
             f"{item['controller_applied_runs']} | {item.get('strategy_repair_runs', 0)} | "
             f"{item['mean_evidence_count']} | "

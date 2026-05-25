@@ -12,14 +12,14 @@ RUN_LOG_DIR="${RUN_LOG_DIR:-outputs/run_logs}"
 REVIEW_PACKAGE_NAME="${REVIEW_PACKAGE_NAME:-autoscientist_biotruth_20_case_gate}"
 
 # This is 20 disease/target cases, one audit-heavy workflow each.
-# The benchmark still runs four ablations, so the expected result count is 80.
+# The benchmark runs full plus baselines, so the expected result count depends on ABLATIONS.
 CASE_IDS="${CASE_IDS:-il6_rheumatoid_arthritis tnf_inflammatory_bowel_disease nod2_crohn_disease tyk2_psoriasis braf_melanoma egfr_lung_adenocarcinoma erbb2_breast_cancer alk_lung_cancer parp1_ovarian_cancer cftr_cystic_fibrosis smn1_spinal_muscular_atrophy acvr1_fibrodysplasia_ossificans_progressiva dmd_duchenne_muscular_dystrophy app_alzheimer_disease apoe_alzheimer_disease lrrk2_parkinson_disease pcsk9_familial_hypercholesterolemia slc5a2_type_2_diabetes f9_hemophilia_b vegfa_age_related_macular_degeneration}"
 TEMPLATE_IDS="${TEMPLATE_IDS:-target_validity_review}"
 LIMIT="${LIMIT:-20}"
 MAX_CASES="${MAX_CASES:-25}"
 TEMPLATES_PER_CASE="${TEMPLATES_PER_CASE:-1}"
 REPLICATES="${REPLICATES:-1}"
-ABLATIONS="${ABLATIONS:-full no_memory no_public_tools no_sciflow}"
+ABLATIONS="${ABLATIONS:-full plain_llm no_memory no_public_tools no_sciflow}"
 
 LLM_PROVIDER="${LLM_PROVIDER:-anthropic}"
 LLM_MODEL="${LLM_MODEL:-claude-sonnet-4-6}"
