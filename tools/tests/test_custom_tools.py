@@ -186,8 +186,9 @@ def test_experiment_recommendation_is_target_disease_specific() -> None:
     )
 
     names = " ".join(item["name"] for item in result.output["experiments"]).lower()
-    assert "anti-tnf" in names
-    assert "response/non-response" in names
+    assert "tnf / inflammatory bowel disease" in names
+    assert "clinical-precedence" in names
+    assert "disease-relevant" in names
 
 
 def test_clinical_status_classifies_established_public_precedence() -> None:

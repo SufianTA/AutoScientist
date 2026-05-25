@@ -59,10 +59,8 @@ def mechanism_phrase(target: str, evidence: list[dict]) -> str:
         return f"{target}-linked LDL receptor and cholesterol-clearance biology"
     if "cftr" in target.lower() or "cystic fibrosis" in combined:
         return f"{target}-linked epithelial ion-transport biology"
-    if "tnf" in target.lower() or "anti-tnf" in combined or "inflammatory bowel" in combined:
-        return f"{target}-linked inflammatory cytokine signaling and immune-cell activation"
-    if "il6" in target.lower() or "il-6" in combined or "rheumatoid arthritis" in combined:
-        return f"{target}-linked IL-6 inflammatory signaling, including receptor-mediated pathway context"
+    if any(term in combined for term in ["cytokine", "inflammatory", "immune", "interleukin"]):
+        return f"{target}-linked inflammatory and immune-cell signaling"
     return f"{target}-linked disease mechanism"
 
 
@@ -171,8 +169,6 @@ class HypothesisCardGeneratorTool(ScientificTool):
                         "trial",
                         "inhibitor",
                         "antibody",
-                        "anti-tnf",
-                        "anti-il",
                         "drug",
                         "modality",
                     ]

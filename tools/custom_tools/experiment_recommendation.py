@@ -19,25 +19,7 @@ class ExperimentRecommendationTool(ScientificTool):
         disease = title.rsplit(" for ", 1)[-1].strip() if " for " in title else "the disease context"
         lowered = f"{title} {hypothesis} {disease}".lower()
         has_safety = bool(hypothesis_card.get("contradictions"))
-        if "tnf" in lowered and ("inflammatory bowel" in lowered or "ibd" in lowered):
-            wet_lab_readout = (
-                "Stratify IBD samples by anti-TNF response/non-response and test TNF-pathway inflammatory "
-                "readouts in patient-derived intestinal organoids or immune-cell co-cultures"
-            )
-            intervention_ranking = (
-                "Audit anti-TNF clinical precedence, resistance mechanisms, infection risk, and patient-selection "
-                "biomarkers before proposing new TNF-directed experiments"
-            )
-        elif "il6" in lowered and "rheumatoid" in lowered:
-            wet_lab_readout = (
-                "Disentangle IL6 versus IL6R pathway contribution in rheumatoid arthritis synovial models using "
-                "cell-type-specific perturbation and STAT3/inflammatory cytokine readouts"
-            )
-            intervention_ranking = (
-                "Compare IL6/IL6R clinical precedence, safety liabilities, and responder biology before ranking "
-                "new IL6-axis intervention hypotheses"
-            )
-        elif "acvr1" in lowered or "bmp" in lowered or "ossification" in lowered:
+        if "acvr1" in lowered or "bmp" in lowered or "ossification" in lowered:
             wet_lab_readout = "Test disease-relevant BMP/activin pathway readouts in appropriate cellular or animal models"
             intervention_ranking = "Rank candidate interventions by target potency, pathway selectivity, exposure, and ADMET liabilities"
         elif "pcsk9" in lowered or "ldlr" in lowered or "cholesterol" in lowered:

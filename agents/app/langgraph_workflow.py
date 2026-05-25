@@ -639,10 +639,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 f"{gene} {disease} safety adverse effect",
                 f"{gene} {disease} failed trial not associated",
             ]
-            if gene.upper() == "TNF" and "bowel" in disease.lower():
-                required_queries.append("anti-TNF inflammatory bowel disease treatment response safety")
-            if gene.upper() in {"IL6", "IL6R"} and "rheumatoid" in disease.lower():
-                required_queries.append("IL6 IL6R rheumatoid arthritis tocilizumab safety response")
             existing = list(context.get("pubmed_queries", []))
             context["pubmed_queries"] = list(dict.fromkeys([*required_queries, *existing]))[:7]
         context["benchmark_task"] = {
