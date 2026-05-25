@@ -68,7 +68,7 @@ def test_abstention_policy_support_allowed_for_strong_clean_case() -> None:
         existing_abstention={"reasons": []},
     )
 
-    assert result["schema"] == "autosci.abstention_policy.v0.2"
+    assert result["schema"] == "autosci.abstention_policy.v0.3"
     assert result["decision"] == "support_allowed"
     assert result["abstention_required"] is False
 
@@ -114,3 +114,76 @@ def test_abstention_policy_marks_unresolved_counterevidence_as_conflicting() -> 
 
     assert result["decision"] == "conflicting"
     assert result["claim_boundary"].startswith("conflicting evidence")
+
+
+def test_abstention_policy_abstains_when_public_target_disease_support_is_absent() -> None:
+    result = evaluate_abstention_policy(
+        critic={"verdict": "weak_support", "weighted_score": 86},
+        evidence_hierarchy={
+            "evidence_count": 38,
+            "high_tier_evidence_count": 16,
+            "weak_only": False,
+            "hierarchy_score": 60.96,
+        },
+        contradiction_analysis={
+            "finding_count": 4,
+            "categories": ["context_mismatch", "safety"],
+            "contradiction_search_attempted": True,
+        },
+        actionability_profile={
+            "level": "high",
+            "recommended_decision": "support_allowed",
+            "profile": {
+                "disease_specific_positive_intervention_count": 2,
+                "structured_positive_intervention_count": 1,
+                "query_only_clinical_context_count": 3,
+                "query_only_counterevidence_context_count": 1,
+            },
+            "reasons": [
+                "clinical_terms_appear_in_query_context",
+                "counterevidence_terms_appear_in_query_context",
+                "safety_signals_require_translation_caution",
+            ],
+        },
+        public_labels={
+            "open_targets_association_status": "not_found",
+            "open_targets_association_score": None,
+            "open_targets_association_rank": None,
+            "pubmed_gene_disease_count": 235,
+            "evidence_availability": "low",
+        },
+    )
+
+    assert result["decision"] == "abstain"
+    assert "public_target_disease_support_absent" in result["reasons"]
+    assert "open_targets_target_disease_not_matched" in result["reasons"]
+
+
+def test_abstention_policy_only_downgrades_when_public_support_is_weak_but_not_absent() -> None:
+    result = evaluate_abstention_policy(
+        critic={"verdict": "support", "weighted_score": 82},
+        evidence_hierarchy={
+            "evidence_count": 12,
+            "high_tier_evidence_count": 4,
+            "weak_only": False,
+            "hierarchy_score": 58,
+        },
+        contradiction_analysis={"finding_count": 0, "contradiction_search_attempted": True},
+        actionability_profile={
+            "level": "high",
+            "recommended_decision": "support_allowed",
+            "profile": {
+                "disease_specific_positive_intervention_count": 1,
+                "structured_positive_intervention_count": 0,
+            },
+            "reasons": [],
+        },
+        public_labels={
+            "open_targets_association_status": "not_found",
+            "evidence_availability": "moderate",
+            "pubmed_gene_disease_count": 1200,
+        },
+    )
+
+    assert result["decision"] == "tentative_only"
+    assert "public_target_disease_support_weak" in result["reasons"]

@@ -146,6 +146,7 @@ def evaluate_case(
         evidence_hierarchy=hierarchy,
         contradiction_analysis=contradictions,
         actionability_profile=actionability,
+        public_labels=task.get("public_labels", {}),
     )
     observed = str(abstention.get("decision") or "")
     return {

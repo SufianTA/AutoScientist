@@ -2551,6 +2551,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             contradiction_analysis=contradiction_analysis,
             actionability_profile=actionability_profile,
             existing_abstention=state.context.get("abstention", {}),
+            public_labels=state.context.get("benchmark_task", {}).get("public_labels", {}),
         )
         state.context["adaptive_tool_plan"] = plan_adaptive_tools(
             task=state.context.get("benchmark_task", {}),

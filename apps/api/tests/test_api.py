@@ -152,7 +152,7 @@ def test_cli_runner_report_exposes_validation_controls() -> None:
     report = result["report"]
     assert report["biotruth_critic"]["schema"] == "autosci.biotruth_critic.v0.1"
     assert report["biotruth_critic"]["dimension_scores"]["disease_relevance"] >= 3
-    assert report["abstention_policy"]["schema"] == "autosci.abstention_policy.v0.2"
+    assert report["abstention_policy"]["schema"] == "autosci.abstention_policy.v0.3"
     assert report["actionability_profile"]["schema"] == "autosci.actionability_profile.v0.1"
     assert report["contradiction_analysis"]["schema"] == "autosci.contradiction_analysis.v0.1"
     assert report["evidence_hierarchy"]["schema"] == "autosci.evidence_hierarchy_summary.v0.1"
