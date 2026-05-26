@@ -118,7 +118,7 @@ def postprocess_outputs(args: argparse.Namespace, bench_dir: Path, summary: dict
         str(case_study_dir / f"{args.case_id}_discovery_case_study.json"),
         str(insight_json),
         str(insight_md),
-        "docs/DEEP_RA_REFRACTORY_CASE_STUDY_RUNBOOK.md",
+        args.runbook_path,
         "docs/CLAIMS_AND_LIMITATIONS.md",
     ]
     if summary.get("summary_path"):
@@ -159,6 +159,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--case-study-output-dir", default="outputs/deep_ra_refractory_case_studies")
     parser.add_argument("--review-output-dir", default="outputs/review_packages")
     parser.add_argument("--review-package-name", default="autoscientist_deep_ra_refractory_review")
+    parser.add_argument("--runbook-path", default="docs/DEEP_RA_REFRACTORY_CASE_STUDY_RUNBOOK.md")
     parser.add_argument("--llm-provider", default="anthropic")
     parser.add_argument("--llm-model", default="claude-sonnet-4-6")
     parser.add_argument("--llm-api-key-env-var", default="ANTHROPIC_KEY")
