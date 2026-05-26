@@ -1,0 +1,239 @@
+{
+  "schema": "autosci.biotruth_manifest.v0.1",
+  "name": "AutoScientist Deep Refractory Rheumatoid Arthritis Case Study",
+  "version": "0.1",
+  "created_at_unix": 1779751200,
+  "purpose": "Evaluate whether AutoScientist can produce an audit-ready, multi-agent, tool-heavy biomedical strategy dossier for refractory rheumatoid arthritis rather than a shallow target summary.",
+  "source_seed_cases": "benchmarks/autoscientist_deep_ra_refractory_case.json",
+  "rubric_path": "benchmarks/biotruth_rubric_v0_2.json",
+  "rubric": {
+    "id": "BioTruth v0.2 Scientific Decision Rubric",
+    "schema": "autosci.biotruth_rubric.v0.2",
+    "version": "0.2",
+    "pass_policy": {
+      "minimum_weighted_score": 75,
+      "minimum_dimension_score": 2,
+      "critical_failures_allowed": 0
+    },
+    "dimension_count": 7
+  },
+  "primary_sources": [
+    {
+      "name": "Open Targets Platform target-disease evidence",
+      "url": "https://platform-docs.opentargets.org/evidence",
+      "role": "Target-disease association, known-drug, genetic, literature, and clinical evidence context."
+    },
+    {
+      "name": "ClinicalTrials.gov API",
+      "url": "https://clinicaltrials.gov/data-api/api",
+      "role": "Clinical study metadata for refractory rheumatoid arthritis intervention and comparator context."
+    },
+    {
+      "name": "PubMed / NCBI E-utilities",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
+      "role": "Literature retrieval, target mechanism evidence, safety evidence, and translational caveats."
+    },
+    {
+      "name": "openFDA adverse event API",
+      "url": "https://open.fda.gov/apis/drug/event/",
+      "role": "Safety-signal retrieval for candidate interventions and target-class therapies."
+    },
+    {
+      "name": "GRADE evidence certainty framing",
+      "url": "https://www.cochrane.org/learn/courses-and-resources/cochrane-methodology/grade-approach/grade-handbook",
+      "role": "High/moderate/low/very-low evidence certainty concepts for calibrated claims."
+    }
+  ],
+  "selection_policy": {
+    "case_count": 1,
+    "expanded_task_policy": "One deep case expanded into four complementary tasks; each task should be run across full and ablation modes.",
+    "domains": [
+      "autoimmune_inflammation",
+      "precision_immunology",
+      "drug_repurposing",
+      "translational_safety"
+    ],
+    "gold_label_policy": [
+      "The system should support established TNF biology in rheumatoid arthritis but not claim TNF is sufficient for refractory disease.",
+      "The system should compare non-TNF mechanisms and patient stratification needs rather than overfitting to the seed target.",
+      "The system should explicitly handle non-response, secondary loss of response, infection/malignancy safety concerns, and trial/real-world evidence limitations.",
+      "The system should propose decision-grade experiments and abstain from any patient-treatment recommendation."
+    ],
+    "rationale": [
+      "This case is intentionally harder than a single target-disease validation benchmark.",
+      "Refractory rheumatoid arthritis requires multi-target reasoning, clinical translation caveats, and patient-subtype thinking.",
+      "The run should demonstrate long-horizon tool use, memory, replay, provenance, and calibrated uncertainty."
+    ],
+    "recommended_ablations": [
+      "full",
+      "plain_llm",
+      "no_public_tools",
+      "no_memory",
+      "no_sciflow"
+    ],
+    "recommended_agent_count": 12,
+    "recommended_strategy_repair_max_queries": 6,
+    "recommended_runtime_minutes": 90
+  },
+  "task_templates": [
+    {
+      "id": "refractory_ra_strategy_dossier",
+      "objective_template": "Build an audit-ready scientific strategy dossier for rheumatoid arthritis patients with inadequate response or loss of response to TNF inhibitors and JAK inhibitors. Use {gene_symbol} as the established inflammatory anchor but compare alternative mechanisms including IL6/IL6R, JAK/STAT, GM-CSF/CSF2, CD20/B-cell depletion, CTLA4 costimulation, TYK2, IL23/Th17 biology, synovial fibroblast pathways, macrophage polarization, and tissue-resident immune mechanisms. Separate established clinical precedence from novel repurposing hypotheses, identify which patient subtypes each mechanism might fit, retrieve public target-disease evidence, clinical-trial or drug-precedence evidence, safety signals, counterevidence, and propose a ranked research strategy with calibrated confidence.",
+      "judge_focus": [
+        "target_disease_validity",
+        "evidence_grounding",
+        "safety_and_translation",
+        "calibration_and_limitations",
+        "auditability"
+      ],
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy",
+        "scistate_graph"
+      ]
+    },
+    {
+      "id": "nonresponder_mechanism_map",
+      "objective_template": "Create a mechanism map for rheumatoid arthritis treatment non-response and secondary loss of response using {gene_symbol} as the reference pathway. Compare cytokine redundancy, B-cell biology, fibroblast-like synoviocyte activation, macrophage and myeloid pathways, JAK/STAT signaling, interferon signatures, Fc receptor biology, tissue hypoxia/metabolism, and pain/inflammation dissociation. For each mechanism, state public evidence strength, clinical or genetic support, counterevidence, safety liabilities, and what data would falsify the mechanism as a useful next hypothesis.",
+      "judge_focus": [
+        "mechanism_plausibility",
+        "counterevidence_and_abstention",
+        "evidence_grounding",
+        "calibration_and_limitations"
+      ],
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy",
+        "scistate_graph"
+      ]
+    },
+    {
+      "id": "repurposing_and_safety_triage",
+      "objective_template": "Identify and triage drug-repurposing or combination-therapy hypotheses for refractory rheumatoid arthritis, anchored on {gene_symbol} biology but explicitly considering non-TNF mechanisms. Retrieve public evidence for candidate interventions or target classes, open safety signals, clinical-trial context, contraindication-style caveats, and translational feasibility. Rank hypotheses by evidence quality, novelty, patient-subtype specificity, safety burden, and falsifiability. Do not recommend patient treatment; produce research hypotheses only.",
+      "judge_focus": [
+        "safety_and_translation",
+        "evidence_grounding",
+        "experiment_quality",
+        "calibration_and_limitations"
+      ],
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy",
+        "scistate_graph"
+      ]
+    },
+    {
+      "id": "decision_grade_experiment_plan",
+      "objective_template": "Design a decision-grade experimental program to test the top refractory rheumatoid arthritis hypotheses from public evidence. The plan must include human-data reanalysis, synovial tissue or single-cell validation, perturbation assays, safety or off-target checks, patient-stratification biomarkers, controls, negative controls, success criteria, failure criteria, and how each experiment would update confidence. Use {gene_symbol} as the reference comparator but require the system to justify any non-TNF hypothesis with evidence and uncertainty.",
+      "judge_focus": [
+        "experiment_quality",
+        "mechanism_plausibility",
+        "safety_and_translation",
+        "auditability"
+      ],
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy",
+        "scistate_graph"
+      ]
+    }
+  ],
+  "seed_cases": [
+    {
+      "id": "tnf_refractory_rheumatoid_arthritis_deep",
+      "domain": "autoimmune_inflammation",
+      "gene_symbol": "TNF",
+      "target_ensembl_id": "ENSG00000232810",
+      "disease_name": "rheumatoid arthritis",
+      "disease_efo_id": "EFO_0000685",
+      "gold_label": "strong_support",
+      "expected_decision": "support_allowed",
+      "expected_evidence": [
+        "clinical_trials",
+        "approved_or_clinical_precedence",
+        "mechanism",
+        "safety_caveats",
+        "nonresponse_or_loss_of_response",
+        "alternative_pathway_comparison",
+        "patient_stratification"
+      ],
+      "case_rationale": "TNF is an established rheumatoid arthritis target, but refractory disease is not solved by restating TNF validity; a credible system must compare alternative mechanisms, safety constraints, and decision-grade validation paths.",
+      "expected_capabilities": [
+        "public_biomedical",
+        "tooluniverse",
+        "sciflow_policy",
+        "scistate_graph"
+      ],
+      "public_labels": {
+        "mode": "live",
+        "open_targets_target_status": "success",
+        "open_targets_association_status": "matched",
+        "open_targets_association_score": 0.642464,
+        "open_targets_association_rank": 2,
+        "open_targets_matched_disease_id": "EFO_0000685",
+        "open_targets_matched_disease_name": "rheumatoid arthritis",
+        "open_targets_associated_disease_count": 4041,
+        "pubmed_gene_disease_count": 13624,
+        "ncbi_gene_count": 1,
+        "evidence_availability": "moderate"
+      },
+      "public_context": {
+        "mode": "live",
+        "matched_association": {
+          "status": "matched",
+          "match_type": "exact_id",
+          "rank": 2,
+          "score": 0.642464,
+          "disease": {
+            "id": "EFO_0000685",
+            "name": "rheumatoid arthritis"
+          },
+          "datatype_scores": [
+            {
+              "id": "literature",
+              "score": 0.9974276299204594
+            },
+            {
+              "id": "animal_model",
+              "score": 0.4126701802054085
+            },
+            {
+              "id": "clinical",
+              "score": 0.9977625615658098
+            }
+          ]
+        },
+        "pubmed_gene_disease": {
+          "status": "success",
+          "query": "TNF rheumatoid arthritis",
+          "db": "pubmed",
+          "count": 13624
+        },
+        "ncbi_gene": {
+          "status": "success",
+          "query": "TNF[Gene Name] AND Homo sapiens[Organism]",
+          "db": "gene",
+          "count": 1
+        }
+      },
+      "benchmark_tags": [
+        "deep_case_study",
+        "refractory_ra",
+        "precision_immunology",
+        "drug_repurposing",
+        "decision:multi_step_support_with_limits",
+        "gold:strong_support",
+        "open_targets_matched"
+      ]
+    }
+  ],
+  "caveats": [
+    "This benchmark tests research triage and hypothesis generation, not clinical decision support.",
+    "The seed target anchors public evidence retrieval, but the objectives require comparison against alternative mechanisms rather than hardcoding target-specific rules.",
+    "Scores are credibility and auditability indicators; expert biomedical review remains required before sharing scientific claims."
+  ]
+}
