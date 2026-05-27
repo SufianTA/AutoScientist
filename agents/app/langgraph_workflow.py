@@ -37,7 +37,12 @@ from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
 from agents.app.state import AgentStateName, ResearchRunState
-from tools.custom_tools.clinical_status import disease_aliases, target_aliases, title_claim_type
+from tools.custom_tools.clinical_status import (
+    classify_clinical_status,
+    disease_aliases,
+    target_aliases,
+    title_claim_type,
+)
 
 
 class LangGraphScientificWorkflow(AgentOrchestrator):
@@ -676,6 +681,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
 
     def _normalize_context(self, context: dict[str, Any], objective: str) -> dict[str, Any]:
         genes = self._string_list(context.get("primary_genes"))
+        variants = list(dict.fromkeys([*self._extract_variant_tokens(objective), *self._string_list(context.get("variants"))]))
         diseases = []
         for disease in self._string_list(context.get("diseases")):
             cleaned = self._clean_disease_phrase(
@@ -701,6 +707,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         pubmed_queries = self._clean_pubmed_queries(self._string_list(context.get("pubmed_queries"))[:4])
         normalized = {
             "primary_genes": genes,
+            "variants": variants[:6],
             "diseases": self._prioritize_diseases(diseases, objective)[:2],
             "candidate_interventions": self._string_list(context.get("candidate_interventions"))[:6],
             "pathways": self._string_list(context.get("pathways"))[:4],
@@ -755,8 +762,18 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 or (alias_disease and alias_disease.lower() in disease_terms)
             ):
                 continue
+            if self._looks_like_variant_token(gene):
+                continue
             cleaned.append(gene)
         return list(dict.fromkeys(cleaned))
+
+    def _looks_like_variant_token(self, value: str) -> bool:
+        token = str(value or "").strip()
+        return bool(re.fullmatch(r"[A-Z]\d{2,5}[A-Z](?:fs|del|ins)?", token, flags=re.I))
+
+    def _extract_variant_tokens(self, objective: str) -> list[str]:
+        variants = re.findall(r"\b[A-Z]\d{2,5}[A-Z](?:fs|del|ins)?\b", objective)
+        return list(dict.fromkeys(variants))[:8]
 
     def _merge_configured_benchmark_context(
         self,
@@ -1309,7 +1326,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         genes = [
             value
             for value in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
-            if value not in stop and not value.startswith("HTTP")
+            if value not in stop and not value.startswith("HTTP") and not self._looks_like_variant_token(value)
         ]
         return list(dict.fromkeys(genes))[:4]
 
@@ -3148,6 +3165,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "allowed_output": abstention_policy["claim_boundary"],
             }
             self._enforce_abstention_on_hypothesis(state)
+        else:
+            self._enforce_critique_on_hypothesis(state)
         self._record(
             trace,
             "critic_agent",
@@ -3156,6 +3175,134 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {**state.critique, "llm_calls": state.context.get("llm_calls", [])},
         )
         return state
+
+    def _enforce_critique_on_hypothesis(self, state: ResearchRunState) -> None:
+        repair = self._critique_repair_candidate(state)
+        if not repair:
+            return
+
+        previous = {
+            "title": state.hypothesis_card.get("title"),
+            "hypothesis": state.hypothesis_card.get("hypothesis"),
+            "confidence": state.hypothesis_card.get("confidence"),
+        }
+        state.hypothesis_card.update(
+            {
+                "title": repair["title"],
+                "hypothesis": repair["hypothesis"],
+                "status": repair["status"],
+                "claim_boundary": repair["claim_boundary"],
+            }
+        )
+        if repair.get("confidence_cap") is not None:
+            current_confidence = float(state.hypothesis_card.get("confidence", 0.0) or 0.0)
+            state.hypothesis_card["confidence"] = round(min(current_confidence, float(repair["confidence_cap"])), 2)
+        limitations = state.hypothesis_card.setdefault("limitations", [])
+        for limitation in repair["limitations"]:
+            if limitation not in limitations:
+                limitations.append(limitation)
+        state.context["critique_enforced_revision"] = {
+            "schema": "autosci.critique_enforced_revision.v0.1",
+            "previous": previous,
+            "repaired": {
+                "title": state.hypothesis_card.get("title"),
+                "hypothesis": state.hypothesis_card.get("hypothesis"),
+                "confidence": state.hypothesis_card.get("confidence"),
+            },
+            "trigger": repair["trigger"],
+            "clinical_status": repair["clinical_status"],
+        }
+        revised_claim_graph = build_claim_graph(state.hypothesis_card, state.evidence)
+        revised_coverage = build_evidence_coverage_matrix(
+            state.context.get("case_profile", {}),
+            state.evidence,
+            revised_claim_graph,
+        )
+        state.context["claim_graph"] = revised_claim_graph
+        state.context["evidence_coverage_matrix"] = revised_coverage
+        state.hypothesis_card["claim_graph"] = revised_claim_graph
+        state.hypothesis_card["evidence_coverage_matrix"] = revised_coverage
+
+    def _critique_repair_candidate(self, state: ResearchRunState) -> dict[str, Any] | None:
+        target = self._primary_target(state)
+        disease = self._primary_disease(state)
+        clinical_status = state.hypothesis_card.get("clinical_status")
+        if not isinstance(clinical_status, dict):
+            clinical_status = classify_clinical_status(target, disease, state.evidence)
+
+        status = str(clinical_status.get("status") or "speculative_or_insufficient")
+        hypothesis = str(state.hypothesis_card.get("hypothesis") or "")
+        critique_text = " ".join(
+            [
+                str(state.critique.get("critique") or ""),
+                str(state.critique.get("recommended_fix") or ""),
+                str(state.critique.get("claim_boundary") or ""),
+            ]
+        ).lower()
+        stale_underclaim = bool(
+            re.search(r"\b(early|insufficiently established|unvalidated|speculative)\b", hypothesis, flags=re.I)
+            and status == "established_or_clinically_precedented"
+        )
+        reviewer_reframe = (
+            str(state.critique.get("severity") or "").lower() == "high"
+            and any(term in critique_text for term in ["framing", "misclassif", "contradict", "overclaim", "understates"])
+        )
+        if not stale_underclaim and not reviewer_reframe:
+            return None
+
+        accepted = []
+        debate = state.hypothesis_card.get("agent_debate", {})
+        if isinstance(debate, dict):
+            adjudication = debate.get("pi_adjudication", {})
+            if isinstance(adjudication, dict):
+                accepted = self._string_list(adjudication.get("accepted_claims"))
+        accepted_text = " ".join(accepted[:3])
+
+        if status == "established_or_clinically_precedented":
+            title = f"{target} clinical-precedence and unresolved mechanism review for {disease}"
+            hypothesis_text = (
+                f"{target} should be treated as an established or clinically precedented target-disease context "
+                f"for {disease}, not as a new target discovery. This dossier is bounded to unresolved mechanism, "
+                "resistance, safety, patient-selection, and validation questions. "
+                f"{accepted_text}".strip()
+            )
+            claim_boundary = "established clinical-precedence context; unresolved mechanism and validation questions only"
+            confidence_cap = None
+        elif status == "genetically_or_publicly_grounded":
+            title = f"{target} target-disease grounding and validation gaps for {disease}"
+            hypothesis_text = (
+                f"{target} is publicly grounded for {disease}, but association evidence must not be treated as "
+                "clinical efficacy, safety, or intervention directionality. Follow-up should resolve causal "
+                f"mechanism, clinical precedence, safety, and patient-selection gaps. {accepted_text}".strip()
+            )
+            claim_boundary = "target-disease grounded; no efficacy or safety claim"
+            confidence_cap = 0.72
+        else:
+            title = f"{target} bounded candidate review for {disease}"
+            hypothesis_text = (
+                f"{target} remains a bounded candidate hypothesis for {disease}. The supported output is an "
+                "evidence-repair and validation plan, not a clinical or therapeutic recommendation."
+            )
+            claim_boundary = "candidate hypothesis only"
+            confidence_cap = 0.55
+
+        return {
+            "title": title,
+            "hypothesis": hypothesis_text,
+            "status": "critique_repaired",
+            "claim_boundary": claim_boundary,
+            "confidence_cap": confidence_cap,
+            "clinical_status": clinical_status,
+            "trigger": {
+                "stale_underclaim": stale_underclaim,
+                "reviewer_reframe": reviewer_reframe,
+                "critique_severity": state.critique.get("severity"),
+            },
+            "limitations": [
+                "Critique-enforced revision rewrote the claim boundary after reviewer contradiction or framing concerns.",
+                str(state.critique.get("claim_boundary") or claim_boundary),
+            ],
+        }
 
     def _enforce_abstention_on_hypothesis(self, state: ResearchRunState) -> None:
         abstention_policy = state.context.get("abstention_policy", {})
@@ -3330,6 +3477,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "experiment_gate_plan": state.context.get("experiment_gate_plan", {}),
             "evidence_hierarchy": state.context.get("evidence_hierarchy", {}),
             "adaptive_tool_plan": state.context.get("adaptive_tool_plan", {}),
+            "critique_enforced_revision": state.context.get("critique_enforced_revision", {}),
             "scientific_strategy": state.context.get("scientific_strategy", {}),
             "abstention": state.context.get("abstention", {}),
             "abstention_policy": state.context.get("abstention_policy", {}),

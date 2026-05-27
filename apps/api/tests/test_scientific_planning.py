@@ -11,6 +11,7 @@ from app.services.scientific_planning import (
 )
 from app.services.scientific_strategy import calibrate_scientific_strategy_with_review
 from agents.app.langgraph_workflow import LangGraphScientificWorkflow
+from agents.app.state import ResearchRunState
 
 
 def test_objective_classifier_routes_therapeutic_safety_to_txagent() -> None:
@@ -97,6 +98,9 @@ def test_workflow_filters_disease_acronyms_from_gene_entities() -> None:
     )
 
     assert "NSCLC" not in context["primary_genes"]
+    assert "C797S" not in context["primary_genes"]
+    assert "T790M" not in context["primary_genes"]
+    assert context["variants"] == ["C797S", "T790M"]
     assert context["diseases"][0] == "non-small cell lung cancer"
 
 
@@ -175,6 +179,9 @@ def test_case_profile_coverage_and_experiment_gate_scoring_for_complex_oncology_
     profile = compile_case_profile(objective, classification, {"primary_genes": ["EGFR"]})
 
     assert profile["schema"] == "autosci.case_profile.v0.1"
+    assert "C797S" in profile["entities"]["variants"]
+    assert "T790M" in profile["entities"]["variants"]
+    assert "C797S" not in profile["entities"]["genes"]
     branch_ids = {branch["id"] for branch in profile["mechanism_branches"]}
     assert {"on_target_variant", "rtk_bypass", "cell_state", "anatomic_pharmacologic"}.issubset(branch_ids)
     assert "ctDNA clone structure and cis/trans phasing" in profile["validation_assays"]
@@ -272,3 +279,62 @@ def test_readiness_calibration_caps_high_severity_reviewer_overclaims() -> None:
         "reviewer_high_severity_concern",
         "evidence_relevance_noise",
     }
+
+
+def test_critic_enforcement_rewrites_stale_established_target_framing() -> None:
+    workflow = LangGraphScientificWorkflow()
+    state = ResearchRunState(
+        run_id="r1",
+        objective_id="o1",
+        objective="Review EGFR resistance mechanisms in non-small cell lung cancer.",
+    )
+    state.context["biomedical_context"] = {
+        "primary_genes": ["EGFR"],
+        "diseases": ["non-small cell lung cancer"],
+    }
+    state.context["case_profile"] = {"evidence_requirements": []}
+    state.evidence = [
+        {
+            "source": "OpenTargets",
+            "text": "EGFR non-small cell lung cancer association.",
+            "structured": {
+                "public_labels": {
+                    "open_targets_association_status": "matched",
+                    "open_targets_association_score": 0.888,
+                    "pubmed_gene_disease_count": 5000,
+                }
+            },
+            "score": {"label": "strong_support", "evidence_type": "target_disease_association"},
+        },
+        {
+            "source": "Drug record",
+            "text": "Approved drug clinical precedence.",
+            "structured": {
+                "evidence_type": "clinical_precedence",
+                "positive_tractability": [{"value": True}],
+            },
+            "score": {"label": "mechanistic_relevance", "evidence_type": "clinical_precedence"},
+        },
+    ]
+    state.hypothesis_card = {
+        "title": "EGFR candidate review",
+        "hypothesis": "EGFR remains an early or insufficiently established hypothesis for non-small cell lung cancer.",
+        "confidence": 0.81,
+        "clinical_status": {
+            "status": "established_or_clinically_precedented",
+            "confidence_floor": 0.72,
+        },
+    }
+    state.critique = {
+        "severity": "high",
+        "critique": "The framing is contradictory and understates established clinical evidence.",
+        "recommended_fix": "Reframe as clinically validated and focus on resistance.",
+        "claim_boundary": "established clinical-precedence context",
+    }
+
+    workflow._enforce_critique_on_hypothesis(state)
+
+    assert "early or insufficiently established" not in state.hypothesis_card["hypothesis"]
+    assert "not as a new target discovery" in state.hypothesis_card["hypothesis"]
+    assert state.context["critique_enforced_revision"]["previous"]["hypothesis"].startswith("EGFR remains")
+    assert state.hypothesis_card["claim_graph"]["claims"]

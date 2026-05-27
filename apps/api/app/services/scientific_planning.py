@@ -100,7 +100,13 @@ def classify_objective(objective: str, biomedical_context: dict[str, Any] | None
     elif ScientificTaskType.DRUG_SAFETY in task_types or ScientificTaskType.THERAPEUTIC_REASONING in task_types:
         domain = "therapeutics"
 
-    genes = list(dict.fromkeys(context.get("primary_genes", []) or _extract_gene_like_tokens(objective)))
+    variants = list(dict.fromkeys(context.get("variants", []) or _extract_variant_tokens(objective)))
+    variant_set = {str(item).upper() for item in variants}
+    genes = [
+        gene
+        for gene in list(dict.fromkeys(context.get("primary_genes", []) or _extract_gene_like_tokens(objective)))
+        if str(gene).upper() not in variant_set and not _looks_like_variant_token(str(gene))
+    ]
     diseases = list(dict.fromkeys(context.get("diseases", []) or _extract_disease_like_phrases(objective)))
     interventions = list(dict.fromkeys(context.get("candidate_interventions", []) or _extract_intervention_terms(objective)))
     risk_level = "high" if ScientificTaskType.DRUG_SAFETY in task_types else "medium"
@@ -112,7 +118,12 @@ def classify_objective(objective: str, biomedical_context: dict[str, Any] | None
         task_types=[task.value for task in task_types],
         primary_task=primary_task,
         domain=domain,
-        entities={"genes": genes[:6], "diseases": diseases[:4], "interventions": interventions[:8]},
+        entities={
+            "genes": genes[:6],
+            "variants": variants[:8],
+            "diseases": diseases[:4],
+            "interventions": interventions[:8],
+        },
         risk_level=risk_level,
         required_capabilities=capabilities,
         rationale=rationale,
@@ -205,9 +216,11 @@ def compile_case_profile(
         "objective": objective,
         "entities": {
             "genes": entities.get("genes", []),
+            "variants": entities.get("variants", []),
             "diseases": entities.get("diseases", []),
             "interventions": entities.get("interventions", []),
             "context_primary_genes": context.get("primary_genes", []),
+            "context_variants": context.get("variants", []),
             "context_diseases": context.get("diseases", []),
         },
         "mechanism_branches": mechanism_branches,
@@ -509,7 +522,19 @@ def evaluate_report_against_criteria(report: dict[str, Any], criteria: list[dict
 
 def _extract_gene_like_tokens(text: str) -> list[str]:
     stop = {"AND", "THE", "USE", "NOT", "FOR", "WITH", "DNA", "RNA", "LLM"}
-    return [match for match in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", text) if match not in stop]
+    return [
+        match
+        for match in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", text)
+        if match not in stop and not _looks_like_variant_token(match)
+    ]
+
+
+def _looks_like_variant_token(value: str) -> bool:
+    return bool(re.fullmatch(r"[A-Z]\d{2,5}[A-Z](?:fs|del|ins)?", str(value or ""), flags=re.I))
+
+
+def _extract_variant_tokens(text: str) -> list[str]:
+    return list(dict.fromkeys(re.findall(r"\b[A-Z]\d{2,5}[A-Z](?:fs|del|ins)?\b", text)))[:8]
 
 
 def _extract_disease_like_phrases(text: str) -> list[str]:

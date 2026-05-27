@@ -127,6 +127,27 @@ def has_target_tractability_precedence(evidence: list[dict[str, Any]]) -> bool:
     return False
 
 
+def has_approved_intervention_context(evidence: list[dict[str, Any]], target: str, disease: str) -> bool:
+    target_terms = target_aliases(target)
+    disease_terms = disease_aliases(disease)
+    for item in evidence:
+        text = " ".join(
+            [
+                str(item.get("source") or ""),
+                str(item.get("text") or ""),
+                str(item.get("structured") or ""),
+            ]
+        ).lower()
+        if not any(term in text for term in ["approved", "approval", "maximum clinical stage"]):
+            continue
+        if not (any(alias in text for alias in target_terms) or "drug" in text or "chembl" in text):
+            continue
+        if disease_terms and not any(alias in text for alias in disease_terms):
+            continue
+        return True
+    return False
+
+
 def clinical_literature_titles(evidence: list[dict[str, Any]], target: str, disease: str) -> list[str]:
     titles = []
     for item in evidence:
@@ -145,7 +166,9 @@ def classify_clinical_status(target: str, disease: str, evidence: list[dict[str,
         association_score = 0.0
     pubmed_count = int(labels.get("pubmed_gene_disease_count") or 0)
     matched = labels.get("open_targets_association_status") == "matched"
-    tractability_precedence = has_target_tractability_precedence(evidence)
+    tractability_precedence = has_target_tractability_precedence(evidence) or has_approved_intervention_context(
+        evidence, target, disease
+    )
     clinical_titles = clinical_literature_titles(evidence, target, disease)
     has_genetic_or_strong_association = matched and (association_score >= 0.35 or pubmed_count >= 100)
 
@@ -181,4 +204,3 @@ def classify_clinical_status(target: str, disease: str, evidence: list[dict[str,
         "clinical_literature_titles": clinical_titles[:5],
         "interpretation": interpretation,
     }
-

@@ -265,6 +265,32 @@ def test_clinical_status_classifies_established_public_precedence() -> None:
     assert status["confidence_floor"] >= 0.72
 
 
+def test_clinical_status_detects_tooluniverse_approved_drug_text() -> None:
+    status = classify_clinical_status(
+        "EGFR",
+        "non-small cell lung cancer",
+        [
+            {
+                "source": "ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name",
+                "text": (
+                    "OSIMERTINIB: Small molecule drug with a maximum clinical stage of Approval, "
+                    "with an approval for non-small cell lung carcinoma."
+                ),
+                "structured": {},
+                "score": {"label": "weak_support", "evidence_type": "drug_record"},
+            },
+            {
+                "source": "PubMed: EGFR non-small cell lung cancer clinical trial",
+                "text": "Clinical trial literature for EGFR non-small cell lung cancer.",
+                "structured": {"articles": [{"title": "EGFR inhibitor clinical trial in non-small cell lung cancer"}]},
+                "score": {"label": "strong_support", "evidence_type": "clinical_precedence_literature"},
+            },
+        ],
+    )
+
+    assert status["status"] == "established_or_clinically_precedented"
+
+
 def test_clinical_status_classifies_grounded_but_not_established() -> None:
     status = classify_clinical_status(
         "APOE",
