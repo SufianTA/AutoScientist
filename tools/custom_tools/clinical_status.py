@@ -73,6 +73,15 @@ def disease_aliases(disease: str) -> set[str]:
     for canonical, values in DISEASE_ALIASES.items():
         if value == canonical or value in values or canonical in value:
             aliases.update(values)
+    if " cancer" in value:
+        aliases.add(value.replace(" cancer", " carcinoma"))
+        aliases.add(value.replace(" cancer", " neoplasm"))
+    if " carcinoma" in value:
+        aliases.add(value.replace(" carcinoma", " cancer"))
+    if " tumour" in value:
+        aliases.add(value.replace(" tumour", " tumor"))
+    if " tumor" in value:
+        aliases.add(value.replace(" tumor", " tumour"))
     return {alias for alias in aliases if alias}
 
 

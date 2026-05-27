@@ -269,6 +269,297 @@ def build_capability_plan(classification: dict[str, Any], case_profile: dict[str
     }
 
 
+def build_claim_retrieval_plan(
+    objective: str,
+    classification: dict[str, Any],
+    case_profile: dict[str, Any] | None = None,
+    biomedical_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Create generic evidence-retrieval claims from typed entities and case requirements."""
+    context = biomedical_context or {}
+    profile = case_profile or {}
+    entities = classification.get("entities", {}) if isinstance(classification.get("entities"), dict) else {}
+    profile_entities = profile.get("entities", {}) if isinstance(profile.get("entities"), dict) else {}
+
+    genes = _unique_strings(
+        [
+            *(entities.get("genes") or []),
+            *(profile_entities.get("genes") or []),
+            *(context.get("primary_genes") or []),
+        ]
+    )[:3]
+    diseases = _unique_strings(
+        [
+            *(entities.get("diseases") or []),
+            *(profile_entities.get("diseases") or []),
+            *(context.get("diseases") or []),
+        ]
+    )[:3]
+    variants = _unique_strings(
+        [
+            *(entities.get("variants") or []),
+            *(profile_entities.get("variants") or []),
+            *(context.get("variants") or []),
+        ]
+    )[:6]
+    interventions = _unique_strings(
+        [
+            *(entities.get("interventions") or []),
+            *(profile_entities.get("interventions") or []),
+            *(context.get("candidate_interventions") or []),
+        ]
+    )[:5]
+
+    target = genes[0] if genes else ""
+    disease = diseases[0] if diseases else ""
+    focus = " ".join(item for item in [target, disease] if item).strip() or objective
+    specs: list[dict[str, Any]] = []
+
+    def add_claim(claim_type: str, claim: str, query_parts: list[str], intent: str, priority: int) -> None:
+        query = " ".join(_unique_strings([part for part in query_parts if part])).strip()
+        if not query:
+            return
+        specs.append(
+            {
+                "id": f"planned_claim_{len(specs) + 1}",
+                "claim_type": claim_type,
+                "claim": claim,
+                "query": query,
+                "source_intent": intent,
+                "priority": priority,
+            }
+        )
+
+    add_claim(
+        "target_disease_grounding",
+        f"External evidence should establish whether {focus} has target-disease grounding.",
+        [target, disease, "association clinical biomarker evidence"],
+        "public_literature_and_knowledge_graph",
+        100,
+    )
+    add_claim(
+        "mechanism",
+        f"Mechanistic evidence should explain the pathway or resistance logic for {focus}.",
+        [target, disease, "mechanism pathway resistance signaling"],
+        "mechanistic_literature",
+        90,
+    )
+    if variants:
+        add_claim(
+            "variant_or_biomarker",
+            f"Variant-level evidence should evaluate {', '.join(variants[:3])} in the case context.",
+            [target, " ".join(variants[:3]), disease, "variant resistance biomarker"],
+            "variant_literature",
+            85,
+        )
+    if interventions:
+        add_claim(
+            "intervention_precedence",
+            f"Retrieved evidence should separate intervention precedence from unresolved research questions.",
+            [interventions[0], disease, target, "clinical trial response resistance"],
+            "clinical_literature_and_trials",
+            80,
+        )
+        add_claim(
+            "safety_translation",
+            f"Safety and translation evidence should constrain any intervention discussion.",
+            [interventions[0], disease, "toxicity adverse safety tolerability"],
+            "safety_literature_and_labels",
+            75,
+        )
+    else:
+        add_claim(
+            "safety_translation",
+            "Safety and translation evidence should constrain therapeutic interpretation.",
+            [focus, "toxicity adverse safety tolerability"],
+            "safety_literature",
+            60,
+        )
+
+    for branch in profile.get("mechanism_branches", [])[:3]:
+        label = str(branch.get("label") or branch.get("id") or "").strip()
+        if not label:
+            continue
+        add_claim(
+            "case_mechanism_branch",
+            f"Case-specific mechanism branch requires evidence: {label}.",
+            [target, disease, label, "evidence validation"],
+            "case_specific_literature",
+            70,
+        )
+
+    add_claim(
+        "counterevidence",
+        f"Contradictory or negative evidence should be checked before advancing {focus}.",
+        [target, disease, "failed trial negative evidence resistance not associated"],
+        "counterevidence_search",
+        65,
+    )
+
+    deduped = []
+    seen_queries: set[str] = set()
+    for spec in sorted(specs, key=lambda item: item["priority"], reverse=True):
+        key = spec["query"].lower()
+        if key in seen_queries:
+            continue
+        spec = dict(spec)
+        spec["id"] = f"planned_claim_{len(deduped) + 1}"
+        deduped.append(spec)
+        seen_queries.add(key)
+        if len(deduped) >= 8:
+            break
+
+    return {
+        "schema": "autosci.claim_retrieval_plan.v0.1",
+        "policy": "entity_and_requirement_driven",
+        "claims": deduped,
+        "entities": {
+            "genes": genes,
+            "diseases": diseases,
+            "variants": variants,
+            "interventions": interventions,
+        },
+    }
+
+
+def map_evidence_to_claims(
+    evidence: list[dict[str, Any]],
+    claim_plan: dict[str, Any] | None,
+    claim_graph: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    planned_claims = (claim_plan or {}).get("claims", []) or []
+    generated_claims = (claim_graph or {}).get("claims", []) or []
+    rows = []
+    for claim in planned_claims:
+        query_tokens = _claim_tokens(" ".join([str(claim.get("query", "")), str(claim.get("claim", ""))]))
+        claim_type = str(claim.get("claim_type") or "")
+        matches = []
+        for index, item in enumerate(evidence):
+            score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
+            label = str(item.get("support_label") or score.get("label") or "").lower()
+            if label in {"irrelevant"}:
+                continue
+            haystack = " ".join(
+                [
+                    str(item.get("source", "")),
+                    str(item.get("text", "")),
+                    json_like(item.get("structured", {})),
+                ]
+            ).lower()
+            matched = sorted(token for token in query_tokens if token in haystack)
+            if _claim_specific_match(claim_type, query_tokens, matched, haystack):
+                matches.append(
+                    {
+                        "evidence_index": index,
+                        "source": item.get("source", "unknown"),
+                        "label": label or "unscored",
+                        "matched_terms": matched[:8],
+                    }
+                )
+        if len(matches) >= 2:
+            status = "covered"
+        elif matches:
+            status = "partial"
+        else:
+            status = "missing"
+        rows.append(
+            {
+                "id": claim.get("id"),
+                "claim_type": claim.get("claim_type"),
+                "claim": claim.get("claim"),
+                "query": claim.get("query"),
+                "support_status": status,
+                "matched_evidence": matches[:8],
+            }
+        )
+
+    covered = sum(1 for row in rows if row["support_status"] == "covered")
+    partial = sum(1 for row in rows if row["support_status"] == "partial")
+    return {
+        "schema": "autosci.claim_evidence_matrix.v0.1",
+        "planned_claim_count": len(planned_claims),
+        "generated_claim_count": len(generated_claims),
+        "coverage_score": round((covered + 0.5 * partial) / len(rows), 3) if rows else 0.0,
+        "covered_count": covered,
+        "partial_count": partial,
+        "missing_count": sum(1 for row in rows if row["support_status"] == "missing"),
+        "claims": rows,
+    }
+
+
+def build_quality_dashboard(
+    evidence: list[dict[str, Any]],
+    tool_outputs: list[dict[str, Any]],
+    claim_matrix: dict[str, Any] | None = None,
+    evidence_coverage: dict[str, Any] | None = None,
+    scientific_strategy: dict[str, Any] | None = None,
+    critique: dict[str, Any] | None = None,
+    experiments: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    labels: dict[str, int] = {}
+    for item in evidence:
+        score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
+        label = str(item.get("support_label") or score.get("label") or "unscored")
+        labels[label] = labels.get(label, 0) + 1
+    relevant = sum(count for label, count in labels.items() if label not in {"irrelevant", "unscored"})
+    tool_status: dict[str, int] = {}
+    for output in tool_outputs:
+        result = output.get("result", {}) if isinstance(output.get("result"), dict) else {}
+        status = str(output.get("status") or result.get("status") or "unknown")
+        tool_status[status] = tool_status.get(status, 0) + 1
+    strong_experiments = sum(1 for exp in experiments or [] if exp.get("gate_quality") == "strong")
+    usable_experiments = sum(1 for exp in experiments or [] if exp.get("gate_quality") in {"strong", "usable"})
+    readiness = (scientific_strategy or {}).get("readiness", {}) if isinstance(scientific_strategy, dict) else {}
+    flags = []
+    total_evidence = len(evidence)
+    if total_evidence and labels.get("irrelevant", 0) / total_evidence > 0.4:
+        flags.append("High irrelevant-evidence fraction; retrieval should be tightened.")
+    if (claim_matrix or {}).get("missing_count", 0):
+        flags.append("One or more planned claims still lack mapped evidence.")
+    if (evidence_coverage or {}).get("missing_count", 0):
+        flags.append("One or more case evidence requirements remain missing.")
+    if str((critique or {}).get("severity") or "").lower() == "high":
+        flags.append("High-severity critique affected final calibration.")
+    if tool_status.get("failure", 0):
+        flags.append("Some tool calls failed and should be inspected in provenance.")
+
+    return {
+        "schema": "autosci.quality_dashboard.v0.1",
+        "evidence": {
+            "total": total_evidence,
+            "labels": labels,
+            "relevance_rate": round(relevant / total_evidence, 3) if total_evidence else 0.0,
+        },
+        "tools": {
+            "total": len(tool_outputs),
+            "statuses": tool_status,
+            "success_rate": round(tool_status.get("success", 0) / len(tool_outputs), 3) if tool_outputs else 0.0,
+        },
+        "claims": {
+            "coverage_score": (claim_matrix or {}).get("coverage_score", 0.0),
+            "covered": (claim_matrix or {}).get("covered_count", 0),
+            "partial": (claim_matrix or {}).get("partial_count", 0),
+            "missing": (claim_matrix or {}).get("missing_count", 0),
+        },
+        "requirements": {
+            "coverage_score": (evidence_coverage or {}).get("coverage_score", 0.0),
+            "covered": (evidence_coverage or {}).get("covered_count", 0),
+            "partial": (evidence_coverage or {}).get("partial_count", 0),
+            "missing": (evidence_coverage or {}).get("missing_count", 0),
+        },
+        "experiments": {
+            "total": len(experiments or []),
+            "usable_or_strong": usable_experiments,
+            "strong": strong_experiments,
+        },
+        "readiness": {
+            "score": readiness.get("score"),
+            "tier": readiness.get("tier"),
+        },
+        "flags": flags,
+    }
+
+
 def build_evidence_coverage_matrix(
     case_profile: dict[str, Any],
     evidence: list[dict[str, Any]],
@@ -559,6 +850,86 @@ def _extract_intervention_terms(text: str) -> list[str]:
 def _split_claims(text: str) -> list[str]:
     parts = re.split(r"(?<=[.!?])\s+|;\s+", text.strip())
     return [part.strip() for part in parts if len(part.strip()) > 20]
+
+
+def _unique_strings(values: list[Any]) -> list[str]:
+    cleaned = []
+    for value in values:
+        text = str(value or "").strip()
+        if not text:
+            continue
+        if text.lower() not in {item.lower() for item in cleaned}:
+            cleaned.append(text)
+    return cleaned
+
+
+def _claim_tokens(text: str) -> list[str]:
+    stop = {
+        "about",
+        "after",
+        "association",
+        "before",
+        "clinical",
+        "context",
+        "disease",
+        "evidence",
+        "external",
+        "grounding",
+        "retrieved",
+        "should",
+        "study",
+        "trial",
+        "with",
+    }
+    tokens = [
+        token
+        for token in re.findall(r"[a-z0-9][a-z0-9-]{2,}", text.lower())
+        if token not in stop and len(token) >= 3
+    ]
+    return list(dict.fromkeys(tokens))[:16]
+
+
+def _claim_specific_match(claim_type: str, query_tokens: list[str], matched: list[str], haystack: str) -> bool:
+    if len(matched) < 2:
+        return False
+    anchors_by_type = {
+        "target_disease_grounding": {"biomarker", "driver", "association", "target", "clinical"},
+        "mechanism": {"mechanism", "pathway", "signaling", "resistance", "activation", "bypass"},
+        "variant_or_biomarker": set(),
+        "intervention_precedence": {"response", "trial", "phase", "approved", "inhibitor", "therapy"},
+        "safety_translation": {"toxicity", "adverse", "safety", "tolerability", "serious"},
+        "case_mechanism_branch": set(),
+        "counterevidence": {"failed", "negative", "null", "not", "insufficient"},
+    }
+    matched_set = set(matched)
+    variant_tokens = {token for token in query_tokens if re.fullmatch(r"[a-z]\d{2,5}[a-z](?:fs|del|ins)?", token)}
+    if claim_type == "variant_or_biomarker":
+        return bool(variant_tokens & matched_set) and len(matched) >= 3
+    if claim_type == "case_mechanism_branch":
+        branch_anchors = {
+            token
+            for token in query_tokens
+            if token
+            not in {
+                "target",
+                "validation",
+                "resistance",
+                "mechanism",
+                "branch",
+                "requires",
+                "case-specific",
+            }
+            and token not in {"cancer", "carcinoma", "lung", "thyroid", "melanoma"}
+        }
+        return bool(branch_anchors & matched_set) and len(matched) >= 3
+    anchors = anchors_by_type.get(claim_type, set())
+    if anchors and not (anchors & matched_set or any(anchor in haystack for anchor in anchors)):
+        return False
+    if claim_type == "safety_translation" and not any(term in haystack for term in anchors_by_type["safety_translation"]):
+        return False
+    if claim_type == "counterevidence" and not any(term in haystack for term in anchors_by_type["counterevidence"]):
+        return False
+    return len(matched) >= max(3, min(5, len(query_tokens) // 2))
 
 
 def _coverage_tokens(req_id: str, label: str, expected_sources: list[str]) -> tuple[list[str], list[str]]:

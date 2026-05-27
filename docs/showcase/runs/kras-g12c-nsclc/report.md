@@ -3,40 +3,40 @@
 
 ---
 
-**Run ID:** `run_d38611f0fcdc`  
+**Run ID:** `run_3b823459cf3f`  
 **Status:** `completed`  
 **Confidence:** `0.72`  
-**Agent steps:** 141  
-**Tool calls:** 58  
-**Evidence items:** 32  
+**Agent steps:** 151  
+**Tool calls:** 63  
+**Evidence items:** 34  
 **Experiments proposed:** 5  
 
 ---
 
 
-Run: `run_d38611f0fcdc`
+Run: `run_3b823459cf3f`
 Status: `completed`
 Confidence: `0.72`
 Confidence interpretation: `moderate`
 
 ## Candidate Hypothesis
 
-KRAS G12C inhibition in NSCLC is a clinically validated therapeutic strategy with FDA-approved covalent inhibitors sotorasib and adagrasib demonstrating proof-of-concept efficacy. The remaining scientific work is to resolve resistance biology, rational combination strategies, and patient selection rather than target validity. Primary resistance is associated with STK11 and KEAP1 co-mutations based on retrospective evidence requiring prospective validation. Acquired resistance mechanisms including secondary KRAS mutations, RTK bypass via EGFR and MET, and RAS reactivation via SOS1 or RAF alterations are mechanistically documented. Rational combinations targeting SOS1, MEK, or immune checkpoints have biological rationale but lack mature randomized efficacy and safety data. WEE1-mediated resistance is a hypothesis-generating finding from a single preclinical study and should not yet inform combination trial prioritization. Combination toxicity liability, particularly for MEK inhibitors in NSCLC, must be assessed before ranking combination strategies. Prospective biomarker-stratified trials enrolling by STK11 and KEAP1 status represent the highest-priority validation gap.
+KRAS has established or clinically precedented target-disease grounding for non-small cell lung cancer. The output should not present this as a new target discovery. Relevant clinical literature titles include: Advances on drug therapy for KRAS(G12C)-mutant non-small-cell lung cancer.; PDK1 and YAP1/TEAD signaling drive acquired KRAS inhibitor resistance in KRAS-mutant non-small cell lung cancer.; Clinical Utility of Circulating Tumor DNA in Patients With Advanced KRAS(G12C)-Mutated NSCLC Treated With Sotorasib.. The remaining scientific work is to resolve mechanism details, response or resistance biology, safety liabilities, and patient-selection strategy; this is not a claim that a new target has been discovered.
 
 ## Scientific Assessment
 
 - Treat as an established or clinically precedented target-disease context; focus on residual mechanism, responder biology, resistance, safety, and patient selection.
 - The disease-target rationale is biologically plausible when live/public evidence links KRAS to non-small cell lung cancer through disease association, pathway, or mechanism records.
 - The current claim should remain pathway-level: evidence supports target and mechanism grounding, not clinical efficacy for any intervention unless direct clinical evidence is cited.
-- Relevant clinical literature titles include: Dealing with KRAS G12C inhibition in non-small cell lung cancer (NSCLC) - biology, clinical results and future directions.; WEE1 confers resistance to KRAS(G12C) inhibitors in non-small cell lung cancer.; Divergent Clinical and Immunologic Outcomes Based on STK11 Co-mutation Status in Resectable KRAS-Mutant Lung Cancers Following Neoadjuvant Immune Checkpoint Blockade..
+- Relevant clinical literature titles include: Advances on drug therapy for KRAS(G12C)-mutant non-small-cell lung cancer.; PDK1 and YAP1/TEAD signaling drive acquired KRAS inhibitor resistance in KRAS-mutant non-small cell lung cancer.; Clinical Utility of Circulating Tumor DNA in Patients With Advanced KRAS(G12C)-Mutated NSCLC Treated With Sotorasib..
 - Candidate molecules or interventions are prioritization leads only; potency, selectivity, exposure, safety, and disease-model response must be tested.
 
 ## Key Scientific Claims
 
-- Sotorasib is FDA-approved for KRAS G12C-mutant NSCLC, establishing clinical precedence for covalent G12C inhibition as a therapeutic strategy in this disease.
-- STK11 co-mutation status is retrospectively associated with divergent clinical and immunologic outcomes in KRAS-mutant NSCLC patients receiving neoadjuvant immune checkpoint blockade, but prospective biomarker-stratified validation data are absent from the retrieved evidence.
-- WEE1 upregulation as a resistance mechanism to KRAS G12C inhibitors in NSCLC is supported by a single preclinical study and has not been confirmed in clinical resistance specimens.
-- KRAS carries an OpenTargets association score of 0.842 for non-small cell lung carcinoma, ranking it second among retrieved targets behind EGFR (0.888), consistent with its established oncogenic driver role in this disease.
+- Sotorasib and adagrasib are FDA-approved covalent KRAS G12C inhibitors with demonstrated clinical activity in advanced NSCLC, establishing KRAS G12C as a clinically validated therapeutic target in this disease.
+- Acquired resistance to KRAS G12C inhibition in NSCLC is mechanistically driven by PDK1 activation and YAP1/TEAD signaling, as identified in preclinical and translational resistance studies.
+- Circulating tumor DNA dynamic variation is associated with sotorasib efficacy in KRAS G12C-mutated advanced NSCLC, supporting ctDNA as a pharmacodynamic biomarker for this therapeutic class.
+- KRAS holds an Open Targets association score of 0.842 for non-small cell lung carcinoma, ranking it among the top disease-associated targets alongside EGFR (0.888) and ALK (0.812), consistent with its established oncogenic driver role.
 
 ## Objective Classification
 
@@ -77,15 +77,15 @@ Score: `0.826` (19/23 points)
 
 ## Biomedical Validation Controls
 
-- BioTruth critic: `weak_support` (score: `84.0`)
-- Evidence hierarchy: `32` evidence items; `15` high-tier items; score `66.67`
+- BioTruth critic: `weak_support` (score: `81.2`)
+- Evidence hierarchy: `34` evidence items; `17` high-tier items; score `70.1`
 - Contradiction search attempted: `True`; findings `6`
-- Abstention policy decision: `tentative_only` with required flag `False`
+- Abstention policy decision: `support_allowed` with required flag `False`
 - Actionability profile: `high` with recommended decision `support_allowed`
 
 ## Scientific Strategy
 
-**Readiness tier:** **Experiment ready (with gaps)** (65/100)
+**Readiness tier:** **Experiment ready (with gaps)** (66/100)
 > experiment_ready_with_gaps: blocked mainly by claim_graph_evidence_gap (medium).
 
 **Recommended next action:** `run_falsification_and_depth_pass`
@@ -100,37 +100,37 @@ Score: `0.826` (19/23 points)
 
 ## Claim Graph
 
-*6 claims mapped across 32 evidence items.*
+*6 claims mapped across 34 evidence items.*
 
-### Claim claim_1 — `⚠ no efficacy claim`
-> KRAS G12C inhibition in NSCLC is a clinically validated therapeutic strategy with FDA-approved covalent inhibitors sotorasib and adagrasib demonstrating proof-of-concept efficacy.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation
+### Claim claim_1 — `computational`
+> KRAS has established or clinically precedented target-disease grounding for non-small cell lung cancer.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical
+- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor
 
 ### Claim claim_2 — `computational`
-> The remaining scientific work is to resolve resistance biology, rational combination strategies, and patient selection rather than target validity.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation
+> The output should not present this as a new target discovery.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical
+- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor
 
 ### Claim claim_3 — `computational`
-> Primary resistance is associated with STK11 and KEAP1 co-mutations based on retrospective evidence requiring prospective validation.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation
+> Relevant clinical literature titles include: Advances on drug therapy for KRAS(G12C)-mutant non-small-cell lung cancer.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical
+- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor
 
 ### Claim claim_4 — `computational`
-> Acquired resistance mechanisms including secondary KRAS mutations, RTK bypass via EGFR and MET, and RAS reactivation via SOS1 or RAF alterations are mechanistically documented.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation
+> PDK1 and YAP1/TEAD signaling drive acquired KRAS inhibitor resistance in KRAS-mutant non-small cell lung cancer.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical
+- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor
 
-### Claim claim_5 — `⚠ no efficacy claim`
-> Rational combinations targeting SOS1, MEK, or immune checkpoints have biological rationale but lack mature randomized efficacy and safety data.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation
+### Claim claim_5 — `computational`
+> Clinical Utility of Circulating Tumor DNA in Patients With Advanced KRAS(G12C)-Mutated NSCLC Treated With Sotorasib..
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical
+- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor
 
-### Claim claim_6 — `computational`
-> WEE1-mediated resistance is a hypothesis-generating finding from a single preclinical study and should not yet inform combination trial prioritization.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation
+### Claim claim_6 — `⚠ no efficacy claim`
+> The remaining scientific work is to resolve mechanism details, response or resistance biology, safety liabilities, and patient-selection strategy
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, NCBI Gene, PubChem candidate lookup, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical
+- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS, ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib, ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib, PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor
 
 
 ## Evidence Coverage Matrix
@@ -139,14 +139,14 @@ Coverage score: `1.0` (8 covered, 0 partial, 0 missing)
 
 | Requirement | Status | Matched sources |
 | --- | --- | --- |
-| Literature evidence | `covered` | PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1, PubMed: KRAS non-small cell lung cancer perturbation expression, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic |
+| Literature evidence | `covered` | PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical, PubMed: KRAS G12C non-small cell lung cancer variant resistance biomarker, PubMed: KRAS non-small cell lung cancer perturbation expression, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic, PubMed: sotorasib non-small cell lung cancer KRAS clinical trial response resistance |
 | Target-disease association | `covered` | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
-| Clinical or trial context | `covered` | ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1, PubMed: KRAS non-small cell lung cancer perturbation expression, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic |
+| Clinical or trial context | `covered` | ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical, PubMed: KRAS G12C non-small cell lung cancer variant resistance biomarker, PubMed: KRAS non-small cell lung cancer perturbation expression |
 | Safety and toxicity context | `covered` | openFDA adverse events: adagrasib, openFDA adverse events: sotorasib, openFDA adverse events: trametinib |
-| Mechanistic pathway evidence | `covered` | PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
+| Mechanistic pathway evidence | `covered` | PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical, PubMed: KRAS G12C non-small cell lung cancer variant resistance biomarker, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
 | Contradictions or missing evidence | `covered` | ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib |
 | Cell-state or lineage assay evidence | `covered` | PubMed: KRAS non-small cell lung cancer perturbation expression, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic |
-| Fusion and copy-number detection | `covered` | ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1, PubMed: KRAS non-small cell lung cancer perturbation expression, PubMed: KRAS non-small cell lung cancer single-cell transcriptomic |
+| Fusion and copy-number detection | `covered` | ClinicalTrials.gov: non-small cell lung cancer KRAS, ClinicalTrials.gov: non-small cell lung cancer adagrasib, ClinicalTrials.gov: non-small cell lung cancer sotorasib, PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical, PubMed: KRAS G12C non-small cell lung cancer variant resistance biomarker, PubMed: KRAS non-small cell lung cancer perturbation expression |
 
 ## Candidate Intervention Summary
 
@@ -160,32 +160,34 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 | --- | --- | --- | --- |
 | NCBI Gene | strong_support | 0.82 | NCBI Gene KRAS: This gene, a Kirsten ras oncogene homolog from the mammalian ras gene family, encodes a protein that is a member of the small GTPase superfamily. A single amino acid substitution is responsible for an activating mutation. The transforming protein that results is implicated in various |
 | NCBI Gene | weak_support | 0.62 | NCBI Gene STK11: The protein encoded by this gene is a serine/threonine kinase that regulates cell polarity and energy metabolism and functions as a tumor suppressor. Mutations in this gene have been associated with the autosomal dominant Peutz-Jeghers syndrome, as well as with skin, pancreatic, and |
-| PubMed: KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation | irrelevant | 0.1 | PubMed returned live literature search results for KRAS G12C acquired resistance secondary mutations RTK bypass EGFR MET reactivation. |
+| PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC clinical | strong_support | 0.78 | From G12C To pan-RAS: The expanding therapeutic landscape of KRAS-mutant NSCLC.; KRAS Inhibition in Non-Small Cell Lung Cancer with Central Nervous System Involvement: Current Evidence and Future Directions.; Therapeutic strategies for KRAS G12C-mutant non-small cell lung cancer: from bench to bedsi |
+| PubMed: EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor | irrelevant | 0.1 | PubMed returned live literature search results for EGFR MET bypass signaling acquired resistance KRAS G12C covalent inhibitor. |
+| PubMed: KRAS G12C non-small cell lung cancer variant resistance biomarker | strong_support | 0.78 | Somatic mutation profiling by NGS-based liquid biopsy in advanced non-small cell lung cancer: frequency, clinical correlates, and prognostic significance.; SRC at the crossroads of KRAS inhibitor resistance: Mechanisms and therapeutic opportunities.; Circulating tumor DNA dynamic variation predicts  |
+| PubMed: sotorasib non-small cell lung cancer KRAS clinical trial response resistance | strong_support | 0.78 | mSWI/SNF complex inhibition sensitizes KRAS-mutant lung cancers to targeted therapies via epithelial-mesenchymal subversion.; A Single-Arm Phase 2 Study of Sotorasib Plus Carboplatin and Pemetrexed in Patients With Advanced Nonsquamous NSCLC With KRAS G12C Mutation (WJOG14821L, SCARLET).; Targeting  |
 | Reactome: STK11 | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
 | Reactome: KRAS | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
 | Reactome: RAS-MAPK signaling | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| ClinicalTrials.gov: non-small cell lung cancer KRAS | safety_concern | 0.72 | ClinicalTrials.gov returned translational study records: Asia PDL1 Study Among NSCLC Patients (COMPLETED, phase not listed); Autologous T-cells Genetically Engineered to Express Receptors Reactive Against KRAS Mutations in Conjunction With a Vaccine Directed Against These Antigens in Participants Wi |
 | Reactome: PI3K-AKT-mTOR signaling | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| ClinicalTrials.gov: non-small cell lung cancer adagrasib | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: KO-2806 Monotherapy and Combination Therapies in Advanced Solid Tumors (RECRUITING, PHASE1); A Study of Adagrasib Plus Pembrolizumab Plus Chemotherapy vs. Placebo Plus Pembrolizumab Plus Chemotherapy in Participants With Previously Untreated N |
+| ClinicalTrials.gov: non-small cell lung cancer KRAS | safety_concern | 0.72 | ClinicalTrials.gov returned translational study records: Asia PDL1 Study Among NSCLC Patients (COMPLETED, phase not listed); Autologous T-cells Genetically Engineered to Express Receptors Reactive Against KRAS Mutations in Conjunction With a Vaccine Directed Against These Antigens in Participants Wi |
+| PubMed: KRAS non-small cell lung cancer association clinical biomarker evidence | irrelevant | 0.2 | Comprehensive characterization of non-small cell lung cancer of different PD-L1 expression classes: a study of 1,038 Chinese patients.; Complications following small-molecule inhibitors for non-small cell lung cancer.; Targetable driver gene-tumor immune microenvironment axis in non-small cell lung  |
 | ClinicalTrials.gov: non-small cell lung cancer sotorasib | safety_concern | 0.72 | ClinicalTrials.gov returned translational study records: VIC-1911 Monotherapy in Combination With Sotorasib for the Treatment of KRAS G12C-Mutant Non-Small Cell Lung Cancer (TERMINATED, PHASE1); Testing the Use of Targeted Treatment (AMG 510) for KRAS G12C Mutated Advanced Non-squamous Non-small Cel |
 | ClinicalTrials.gov: KRAS G12C pathway inhibition KRAS | irrelevant | 0.31 | ClinicalTrials.gov returned no matching studies for the supplied condition/query. |
 | ClinicalTrials.gov: KRAS G12C pathway inhibition sotorasib | irrelevant | 0.31 | ClinicalTrials.gov returned no matching studies for the supplied condition/query. |
+| ClinicalTrials.gov: non-small cell lung cancer adagrasib | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: KO-2806 Monotherapy and Combination Therapies in Advanced Solid Tumors (RECRUITING, PHASE1); A Study of Adagrasib Plus Pembrolizumab Plus Chemotherapy vs. Placebo Plus Pembrolizumab Plus Chemotherapy in Participants With Previously Untreated N |
 | ClinicalTrials.gov: KRAS G12C pathway inhibition adagrasib | irrelevant | 0.31 | ClinicalTrials.gov returned no matching studies for the supplied condition/query. |
-| openFDA adverse events: adagrasib | safety_concern | 0.72 | openFDA returned 132 matching adverse-event reports. Common returned reaction terms include: Neutropenia; Abdominal wall abscess; Acute kidney injury; Anaemia; Ascites. These are safety signals, not incidence rates or causal proof. |
 | openFDA adverse events: trametinib | safety_concern | 0.72 | openFDA returned 6718 matching adverse-event reports. Common returned reaction terms include: Blood creatine phosphokinase increased; Cerebrovascular accident; Confusional state; Convulsion; Dehydration. These are safety signals, not incidence rates or causal proof. |
-| ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.62 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: non-small cell lung carcinoma: A group of at least three distinct histological types of lung cancer, including non-small cell squamous cell carcinoma, adenocarcinoma, and large cell carcinoma. Non-small cell lung carcin |
+| openFDA adverse events: adagrasib | safety_concern | 0.72 | openFDA returned 132 matching adverse-event reports. Common returned reaction terms include: Neutropenia; Abdominal wall abscess; Acute kidney injury; Anaemia; Ascites. These are safety signals, not incidence rates or causal proof. |
 | openFDA adverse events: sotorasib | safety_concern | 0.72 | openFDA returned 697 matching adverse-event reports. Common returned reaction terms include: Dehydration; Acute kidney injury; Colitis; Colitis ischaemic; Diarrhoea. These are safety signals, not incidence rates or causal proof. |
-| ToolUniverse: OpenTargets_get_disease_id_description_by_name | irrelevant | 0.31 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: colorectal cancer: A primary or metastatic malignant neoplasm that affects the colon or rectum. Representative examples include carcinoma, lymphoma, and sarcoma.; liver disease: Pathological processes of the LIVER. |
-| PubMed: KRAS G12C patient selection biomarkers STK11 KEAP1 co-mutation immunotherapy response | irrelevant | 0.1 | PubMed returned live literature search results for KRAS G12C patient selection biomarkers STK11 KEAP1 co-mutation immunotherapy response. |
-| PubMed: SOS1 inhibitor MEK inhibitor combination KRAS G12C NSCLC rational combination | irrelevant | 0.1 | PubMed returned live literature search results for SOS1 inhibitor MEK inhibitor combination KRAS G12C NSCLC rational combination. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: ADAGRASIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 1 investigational indication. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TRAMETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 32 investigational indications.; TRAMETINIB DIMETHYL SULFOXIDE: Small molecule drug with a maximum cl |
+| ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.62 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: non-small cell lung carcinoma: A group of at least three distinct histological types of lung cancer, including non-small cell squamous cell carcinoma, adenocarcinoma, and large cell carcinoma. Non-small cell lung carcin |
+| PubMed: SOS1 inhibitor MEK inhibitor KRAS G12C combination therapy rational | irrelevant | 0.2 | Disrupting the KRAS-SOS1 protein-protein interaction: mechanistic rationale for pan-KRAS pathway suppression and combination therapy.; KRAS G12C inhibitor combination therapies: current evidence and challenge. |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: SOTORASIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for neoplasm and non-small cell lung carcinoma and 4 investigational indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: CALCIUM CARBONATE: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 19 investigational indications. |
-| PubMed: KRAS G12C inhibitor sotorasib adagrasib resistance mechanisms NSCLC STK11 KEAP1 | strong_support | 0.78 | From G12C To pan-RAS: The expanding therapeutic landscape of KRAS-mutant NSCLC.; Dealing with KRAS G12C inhibition in non-small cell lung cancer (NSCLC) - biology, clinical results and future directions.; WEE1 confers resistance to KRAS(G12C) inhibitors in non-small cell lung cancer.; Targeting KRAS |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: PEMBROLIZUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 9 approved and 146 investigational indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TEPOTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for neoplasm and non-small cell lung carcinoma and 5 investigational indications.; TEPOTINIB HYDROCHLORID |
+| ToolUniverse: OpenTargets_get_disease_id_description_by_name | irrelevant | 0.31 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: colorectal cancer: A primary or metastatic malignant neoplasm that affects the colon or rectum. Representative examples include carcinoma, lymphoma, and sarcoma.; liver disease: Pathological processes of the LIVER. |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: ADAGRASIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 1 investigational indication. |
 | PubChem candidate lookup | mechanistic_relevance | 0.46 | PubChem returned candidate/intervention records for: sotorasib, adagrasib, trametinib, BI-3406, tepotinib. |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: CALCIUM CARBONATE: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 19 investigational indications. |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TRAMETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 32 investigational indications.; TRAMETINIB DIMETHYL SULFOXIDE: Small molecule drug with a maximum cl |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TEPOTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for neoplasm and non-small cell lung carcinoma and 5 investigational indications.; TEPOTINIB HYDROCHLORID |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: PEMBROLIZUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 9 approved and 146 investigational indications. |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | strong_support | 0.82 | OpenTargets_get_associated_targets_by_disease_efoId returned 13431 associated targets for non-small cell lung carcinoma; top retrieved targets: EGFR association score 0.888; KRAS association score 0.842; ALK association score 0.812; ERBB2 association score 0.811 |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | weak_support | 0.62 | OpenTargets_get_associated_targets_by_disease_efoId returned 420 associated targets for non-small cell squamous lung carcinoma; top retrieved targets: EGFR association score 0.468; ALK association score 0.375; VEGFA association score 0.373; CRTC1 association score 0.371 |
 | PubMed: KRAS non-small cell lung cancer single-cell transcriptomic | strong_support | 0.78 | Coordinated Multicellular Immune Programs and Drug Targets Revealed by Single-Cell Analysis in Driver-Mutated NSCLC.; Targetable driver gene-tumor immune microenvironment axis in non-small cell lung cancer: from molecular pathological mechanisms to precision immunotherapy stratification strategies.; |
@@ -196,15 +198,15 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 - [KRAS](https://www.ncbi.nlm.nih.gov/gene/3845) (gene_id: 3845)
 - [STK11](https://www.ncbi.nlm.nih.gov/gene/6794) (gene_id: 6794)
 - [From G12C To pan-RAS: The expanding therapeutic landscape of KRAS-mutant NSCLC.](https://pubmed.ncbi.nlm.nih.gov/42031346/) (pmid: 42031346; journal: Critical reviews in oncology/hematology; pubdate: 2026 Apr 22)
-- [Dealing with KRAS G12C inhibition in non-small cell lung cancer (NSCLC) - biology, clinical results and future directions.](https://pubmed.ncbi.nlm.nih.gov/40381528/) (pmid: 40381528; journal: Cancer treatment reviews; pubdate: 2025 Jun)
-- [WEE1 confers resistance to KRAS(G12C) inhibitors in non-small cell lung cancer.](https://pubmed.ncbi.nlm.nih.gov/39725152/) (pmid: 39725152; journal: Cancer letters; pubdate: 2024 Dec 24)
-- [Targeting KRASp.G12C Mutation in Advanced Non-Small Cell Lung Cancer: a New Era Has Begun.](https://pubmed.ncbi.nlm.nih.gov/36394791/) (pmid: 36394791; journal: Current treatment options in oncology; pubdate: 2022 Dec)
-- [sotorasib](https://pubchem.ncbi.nlm.nih.gov/compound/137278711) (cid: 137278711)
-- [adagrasib](https://pubchem.ncbi.nlm.nih.gov/compound/138611145) (cid: 138611145)
-- [trametinib](https://pubchem.ncbi.nlm.nih.gov/compound/11707110) (cid: 11707110)
-- [BI-3406](https://pubchem.ncbi.nlm.nih.gov/compound/138911318) (cid: 138911318)
-- [tepotinib](https://pubchem.ncbi.nlm.nih.gov/compound/25171648) (cid: 25171648)
-- [Coordinated Multicellular Immune Programs and Drug Targets Revealed by Single-Cell Analysis in Driver-Mutated NSCLC.](https://pubmed.ncbi.nlm.nih.gov/42123577/) (pmid: 42123577; journal: International journal of molecular sciences; pubdate: 2026 Apr 29)
+- [KRAS Inhibition in Non-Small Cell Lung Cancer with Central Nervous System Involvement: Current Evidence and Future Directions.](https://pubmed.ncbi.nlm.nih.gov/41697929/) (pmid: 41697929; journal: Oncology research and treatment; pubdate: 2026)
+- [Therapeutic strategies for KRAS G12C-mutant non-small cell lung cancer: from bench to bedside and beyond.](https://pubmed.ncbi.nlm.nih.gov/41668807/) (pmid: 41668807; journal: Frontiers in pharmacology; pubdate: 2025)
+- [Advances on drug therapy for KRAS(G12C)-mutant non-small-cell lung cancer.](https://pubmed.ncbi.nlm.nih.gov/41529383/) (pmid: 41529383; journal: Translational oncology; pubdate: 2026 Mar)
+- [PDK1 and YAP1/TEAD signaling drive acquired KRAS inhibitor resistance in KRAS-mutant non-small cell lung cancer.](https://pubmed.ncbi.nlm.nih.gov/41509231/) (pmid: 41509231; journal: bioRxiv : the preprint server for biology; pubdate: 2025 Dec 25)
+- [Somatic mutation profiling by NGS-based liquid biopsy in advanced non-small cell lung cancer: frequency, clinical correlates, and prognostic significance.](https://pubmed.ncbi.nlm.nih.gov/42176127/) (pmid: 42176127; journal: Molecular biology reports; pubdate: 2026 May 23)
+- [SRC at the crossroads of KRAS inhibitor resistance: Mechanisms and therapeutic opportunities.](https://pubmed.ncbi.nlm.nih.gov/41338446/) (pmid: 41338446; journal: Cancer letters; pubdate: 2026 Feb 28)
+- [Circulating tumor DNA dynamic variation predicts sotorasib efficacy in KRASp.G12C-mutated advanced non-small cell lung cancer.](https://pubmed.ncbi.nlm.nih.gov/40445863/) (pmid: 40445863; journal: Cancer; pubdate: 2025 Jun 1)
+- [An updated overview of K-RAS G12C inhibitors in advanced stage non-small cell lung cancer.](https://pubmed.ncbi.nlm.nih.gov/39360933/) (pmid: 39360933; journal: Future oncology (London, England); pubdate: 2024)
+- [Clinical Utility of Circulating Tumor DNA in Patients With Advanced KRAS(G12C)-Mutated NSCLC Treated With Sotorasib.](https://pubmed.ncbi.nlm.nih.gov/38615940/) (pmid: 38615940; journal: Journal of thoracic oncology : official publication of the International Association for the Study of Lung Cancer; pubdate: 2024 Jul)
 
 ## Limitations
 
@@ -213,10 +215,7 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 - Compound specificity and translational risk remain unresolved.
 - Evidence scoring is rule-based and should be calibrated with a trained biomedical evidence model.
 - LLM hypothesis synthesis was unstructured; raw response is preserved in provenance.
-- OpenTargets score 0.842 supports high-confidence target-disease linkage but aggregates heterogeneous pan-KRAS evidence and cannot be used to support G12C allele-specific claims without disaggregation
-- WEE1 upregulation as a resistance node is hypothesis-generating only, based on a single preclinical study, and must not be ranked as a combination target without independent replication and clinical correlative data
-- STK11/KEAP1 biomarker claims should be qualified as retrospective and cohort-dependent; prospective biomarker-stratified enrollment trials are absent from the evidence base
-- Combination strategies with SOS1i, MEKi, and ICB are mechanistically grounded but translational readiness is overstated; mature PFS or OS randomized data and combination toxicity assessments are lacking
+- Confidence was calibrated upward only for target-disease grounding or clinical precedence; it is not an efficacy or safety probability.
 
 ## Scientist Panel Debate
 
@@ -225,125 +224,119 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 ### tooluniverse_agent — ✅ support with limits
 *Discipline: ToolUniverse/OpenTargets target and intervention evidence*
 
-ToolUniverse/OpenTargets evidence strongly corroborates KRAS as a high-confidence, clinically precedented target in NSCLC (association score 0.842, second only to EGFR at 0.888). The scientific frontier is resistance biology, combination strategy optimization, and patient stratification - not target discovery.
+KRAS G12C is a clinically validated target in NSCLC with FDA-approved agents (sotorasib, adagrasib); the field's open questions are resistance biology, combination optimization, and patient selection - not target validity.
 
 **Concerns:**
-- OpenTargets score 0.842 aggregates heterogeneous evidence types; drug-specific clinical trial data for G12C subtype is not disaggregated from broader KRAS evidence in the score
-- WEE1 as a resistance mechanism (PMID 39725152) is a single-study finding requiring independent validation before informing combination trial design
-- STK11/KEAP1 co-mutation data derive largely from retrospective cohorts; prospective biomarker-stratified trial data are absent from the retrieved evidence set
-- SOS1 inhibitor and MEKi combination evidence is predominantly preclinical; translational gap to durable clinical benefit remains unresolved
+- Median PFS with sotorasib/adagrasib monotherapy remains ~6 months; durability gap is not yet closed by any approved combination
+- STK11/KEAP1 co-mutation prevalence (~20-30% each) substantially limits monotherapy benefit but prospective biomarker-stratified trials are still maturing
+- Immunotherapy combinations carry hepatotoxicity signal (sotorasib + pembrolizumab grade 3+ liver toxicity); safety data must gate combination development
+- SOS1 and MEK inhibitor combination data are predominantly preclinical or early phase; extrapolation to survival benefit is premature
 
 **Requested follow-ups:**
-- Query OpenTargets drug evidence table for sotorasib and adagrasib to extract clinical trial phase, indication approval status, and mechanistic action type annotations
-- Retrieve OpenTargets genetic constraint and somatic mutation evidence scores specifically for KRAS G12C variant to separate allele-specific from pan-KRAS evidence
-- PubMed query on prospective biomarker-stratified KRAS G12C NSCLC trials (STK11/KEAP1 co-mutation as enrollment criterion) to assess whether retrospective findings have been validated
+- Prospective biomarker-stratified trial co-enrolling STK11/KEAP1 status to quantify differential benefit and identify salvage strategies for co-mutant patients
+- Randomized phase 2 of KRAS G12Ci + SOS1i vs monotherapy with mandatory on-treatment biopsy to map resistance emergence kinetics
+- Systematic ctDNA clearance threshold validation as an early pharmacodynamic endpoint across sotorasib and adagrasib cohorts
 
 ### literature_agent — ✅ support with limits
 *Discipline: biomedical literature and citation grounding*
 
-KRAS G12C inhibition in NSCLC has strong clinical precedence via FDA-approved sotorasib and adagrasib; remaining work centers on resistance biology, combination strategies, and patient selection rather than target validation
+The hypothesis card accurately frames KRAS G12C inhibition in NSCLC as an established clinical precedent requiring mechanistic and resistance resolution, not a new target discovery. PubMed literature strongly supports this framing.
 
 **Concerns:**
-- Combination trial data for SOS1 and MEK inhibition remain early-phase with no OS endpoints
-- STK11/KEAP1 co-mutation prevalence varies by cohort limiting generalizability of biomarker cutoffs
-- WEE1-mediated resistance mechanism is preclinical and requires clinical validation
-- Single-agent response rates near 37% leave majority of patients without durable benefit
+- No phase 3 head-to-head data yet for combination strategies; early-phase evidence may not translate
+- STK11/KEAP1 co-mutation resistance evidence is largely retrospective and observational
+- SOS1 inhibitor combination data are predominantly preclinical; clinical validation is pending
+- Immunotherapy co-administration safety signal with adagrasib (hepatotoxicity) is underweighted in current card
 
 **Requested follow-ups:**
-- Randomized phase 2 data for adagrasib plus SOS1 inhibitor in STK11-wild-type versus STK11-mutant strata
-- Prospective ctDNA monitoring to detect secondary KRAS mutations and RTK bypass at progression
-- Mechanistic dissection of KEAP1 loss effect on covalent inhibitor redox stability and target engagement
+- Prospective biomarker-stratified trial in STK11/KEAP1 co-mutant patients to test alternative combinations
+- Phase 2 randomized data for SOS1 inhibitor plus KRAS G12C inhibitor in NSCLC
+- Systematic ctDNA resistance profiling at progression across sotorasib and adagrasib cohorts
 
 ### mechanism_agent — ✅ support with limits
 *Discipline: disease mechanism and causal pathway biology*
 
-KRAS G12C is a clinically validated oncogenic driver in NSCLC with FDA-approved covalent inhibitors; the field must now resolve resistance biology, combination strategies, and patient selection rather than target validity
+KRAS G12C is a clinically validated oncogenic driver in NSCLC with FDA-approved covalent inhibitors (sotorasib, adagrasib); the scientific frontier is resistance biology, combination strategy, and patient selection-not target discovery
 
 **Concerns:**
-- Resistance mechanism studies are largely retrospective or preclinical; prospective co-mutation stratification data are sparse
-- Combination toxicity profiles for KRAS inhibitor plus MEK or SOS1 inhibitor are not yet well characterized in NSCLC
-- Immunotherapy co-administration rationale is mechanistically plausible but clinical benefit signal in KRAS G12C-selected cohorts remains weak
-- Single-cell TME data suggest heterogeneous immune contextures that may confound biomarker-based patient selection
+- STK11/KEAP1 co-mutation prevalence (~20-30%) limits generalizability of single-agent response data across unselected KRAS G12C populations
+- MEK inhibitor combinations carry overlapping toxicity profiles that may constrain therapeutic window in clinical practice
+- Immunotherapy co-administration evidence is largely retrospective or small cohort; randomized data are absent
+- Secondary KRAS mutation heterogeneity (multiple resistance alleles) may preclude single salvage strategy
 
 **Requested follow-ups:**
-- Prospective ctDNA profiling trial co-stratifying by STK11/KEAP1/SMAD4 status to quantify resistance-associated PFS differences
-- Preclinical in vivo combination studies of KRAS G12C inhibitor plus SOS1 inhibitor with pharmacodynamic RAS-GTP readout
-- Phase Ib dose-escalation of adagrasib plus MEK inhibitor with mandatory on-treatment biopsy for pathway reactivation markers
+- Prospective randomized trial of sotorasib/adagrasib plus SOS1 inhibitor versus monotherapy stratified by STK11/KEAP1 status
+- Paired pre/post-treatment tumor biopsies with single-cell multi-omics to map clonal resistance evolution
+- Functional CRISPR screen in STK11-null KRAS G12C models to identify synthetic lethal co-targets
 
 ### molecule_agent — ✅ support with limits
 *Discipline: candidate intervention and chemistry review*
 
-KRAS G12C is a validated, FDA-approved target in NSCLC via sotorasib and adagrasib; the scientific frontier is resistance biology, combination strategy, and patient selection-not target discovery
+KRAS G12C is a fully validated, FDA-approved target in NSCLC with sotorasib and adagrasib as precedent agents. The molecule-level case is strong but durability, resistance bypass, and patient-selection gaps remain the central unresolved problems requiring mechanistic and translational work.
 
 **Concerns:**
-- No head-to-head data distinguishing sotorasib vs adagrasib resistance profiles limits cross-trial inference
-- STK11/KEAP1 co-mutation prevalence (~20-30%) means majority of resistance mechanisms remain molecularly uncharacterized
-- Combination toxicity data for G12Ci+MEKi or G12Ci+SOS1i in NSCLC patients is immature
-- Single-cell TME data exists but lacks prospective validation linking immune phenotype to combination benefit
+- No head-to-head resistance-mechanism frequency data across sotorasib vs adagrasib in matched NSCLC cohorts; resistance taxonomy may be drug-specific, not class-wide
+- STK11/KEAP1 co-mutation resistance evidence is largely retrospective and correlative; causal mechanistic proof in isogenic NSCLC models is incomplete
+- SOS1 inhibitor combination data are predominantly preclinical; clinical PK/PD confirmation of target engagement in NSCLC patients is absent from cited evidence
+- PDK1/YAP1-TEAD resistance axis (cited in hypothesis card) is mechanistically distinct from RAS-ERK reactivation and is underweighted in current combination strategies
 
 **Requested follow-ups:**
-- Prospective ctDNA profiling at progression to map acquired resistance mutation frequencies across G12Ci-treated NSCLC cohorts
-- Co-mutation-stratified randomized trial: G12Ci monotherapy vs G12Ci+SOS1i in STK11-wild-type vs STK11-mutant arms
-- WEE1 inhibitor combination dose-escalation study in G12Ci-resistant NSCLC PDX and patient cohorts
+- Prospective ctDNA resistance-mechanism profiling at progression on sotorasib vs adagrasib in matched NSCLC cohorts to establish drug-specific vs class-wide resistance frequencies
+- Isogenic STK11/KEAP1 knock-in KRAS G12C NSCLC cell line panel to causally dissect immune-exclusion vs cell-autonomous resistance contributions
+- Phase 1b dose-escalation of SOS1 inhibitor + adagrasib with mandatory on-treatment tumor biopsies for RAS-GTP loading and ERK phosphorylation as PD endpoints
 
 ### safety_agent — 🔄 revise
 *Discipline: clinical safety and translation risk*
 
-As safety_agent, I challenge efficacy and safety overclaims in this KRAS G12C NSCLC hypothesis dossier and flag translational risks requiring explicit acknowledgment.
+The hypothesis correctly frames KRAS G12C inhibition as clinically precedented in NSCLC, not a novel target discovery. However, several efficacy and safety claims embedded in the broader dossier require challenge: median PFS with sotorasib/adagrasib monotherapy remains modest (~6 months), ORR ~35-43%, and durable responses are the exception rather than the rule. Combination strategies and biomarker-guided selection remain investigational without phase 3 validation. The dossier risks overstating the translational readiness of combination approaches and understating the safety complexity of MEK inhibitor co-administration.
 
 **Concerns:**
-- Single-arm trial data for sotorasib/adagrasib cannot establish OS benefit; CodeBreaK 200 showed marginal PFS advantage over docetaxel with no OS benefit
-- Combination toxicity risk is underweighted: MEKi plus KRAS G12Ci causes significant GI and dermatologic toxicity in early trials
-- Biomarker claims for STK11/KEAP1 are prognostic not predictive without prospective stratified trial evidence
-- Resistance mechanism diversity means no single combination will broadly overcome acquired resistance; this limits generalizability of proposed strategies
+- MEK inhibitor combinations carry substantial overlapping toxicity (rash, diarrhea, hepatotoxicity) not adequately addressed in the dossier's combination rationale
+- Immunotherapy co-administration with KRAS G12C inhibitors lacks randomized evidence; sotorasib+pembrolizumab showed excess hepatotoxicity in CodeBreaK 101, a critical safety signal being underweighted
+- STK11/KEAP1 as resistance biomarkers are retrospectively derived; prospective stratification trials are absent, risking premature clinical operationalization
+- Secondary KRAS mutations (Y96D, H95) as acquired resistance mechanisms are characterized in small datasets; their prevalence and clinical actionability are overstated without larger prospective ctDNA series
 
 **Requested follow-ups:**
-- Randomized trials with OS endpoints for sotorasib/adagrasib versus standard of care are needed before durability claims
-- Prospective biomarker-stratified cohorts to establish predictive versus prognostic value of STK11/KEAP1 co-mutations
-- Dose-finding and safety-expansion cohorts for KRAS G12Ci plus MEKi or SOS1i combinations before efficacy claims
+- Prospective randomized biomarker-stratified trial (STK11/KEAP1 wild-type vs. mutant) to validate primary resistance prediction before clinical use
+- Systematic safety review of sotorasib/adagrasib plus immunotherapy combinations, specifically hepatotoxicity incidence and grade 3+ event rates across all available trials
+- Phase 2 randomized data for SOS1 inhibitor combinations (e.g., BI-3406 + MEK) with pre-specified resistance endpoints before phase 3 investment
 
 ### critic_agent — 🔄 revise
 *Discipline: skeptical scientific review*
 
-The hypothesis card correctly frames KRAS G12C as an established clinical target in NSCLC, not a novel discovery. The mechanistic and translational synthesis is broadly accurate but contains several weak links, missing controls, and translational gaps that require scrutiny before the dossier can be considered actionable for clinical development decisions.
+The hypothesis card correctly frames KRAS G12C inhibition in NSCLC as a clinically precedented target requiring mechanistic and translational refinement, not a novel discovery. However, several claims within the synthesized dossier contain weak evidentiary links, missing controls, and translational gaps that require explicit flagging before this framework can guide clinical development decisions.
 
 **Concerns:**
-- No head-to-head or randomized combination trial data cited for SOS1i or MEKi co-administration; preclinical rationale is being conflated with clinical evidence of benefit
-- STK11/KEAP1 as resistance biomarkers lack prospective validation in G12C-specific cohorts; retrospective co-mutation data may not generalize to sotorasib/adagrasib-treated populations
-- Resistance mechanism taxonomy (secondary KRAS mutations vs RTK bypass vs RAS reactivation) is derived from heterogeneous post-progression biopsy studies with small N and selection bias; relative frequencies are unreliable
-- Immunotherapy co-administration evidence is confounded by STK11/KEAP1 status, TMB, and PD-L1 simultaneously; no clean mechanistic dissection is cited
+- STK11/KEAP1 co-mutation resistance claims rely heavily on retrospective subgroup analyses with small N; no randomized stratification by these biomarkers exists, making causal inference premature
+- MEK inhibitor combinations showed dose-limiting toxicity in early trials (e.g., sotorasib + trametinib); the dossier must not present MEKi combinations as straightforwardly rational without flagging this safety liability
+- Immunotherapy co-administration evidence is contradictory: STK11-mutant tumors are immunologically cold yet KRAS G12C tumors may have neoantigen burden; conflating these without subgroup resolution risks misleading patient-selection claims
+- The ranked next-validation experiments section risks circularity if resistance mechanism experiments use the same cell line models that generated the original resistance hypotheses, without orthogonal in vivo or patient-derived organoid confirmation
 
 **Requested follow-ups:**
-- Prospective biomarker-stratified trial data (STK11/KEAP1 status) within sotorasib/adagrasib-treated NSCLC cohorts to validate predictive versus prognostic role
-- Systematic ctDNA longitudinal profiling studies to establish resistance mechanism frequencies and temporal ordering in G12C NSCLC
-- Randomized phase II data for any combination strategy (SOS1i+G12Ci or MEKi+G12Ci) with pre-specified resistance biomarker endpoints
+- Prospective biomarker-stratified trial or basket sub-study with pre-specified STK11/KEAP1 co-mutation arms to establish causal resistance contribution versus prognostic confounding
+- Independent patient-derived organoid or PDX cohort to validate SOS1i and MEKi combination efficacy and therapeutic index before further clinical escalation
+- Longitudinal paired biopsy study (baseline + progression) in 100 sotorasib/adagrasib-treated NSCLC patients to establish relative frequency of each acquired resistance mechanism in an unselected population
 
 ### omics_agent — ✅ support with limits
 *Discipline: omics, pathway, and perturbation evidence*
 
-The pathway and cellular evidence strongly supports KRAS G12C as a validated oncogenic driver in NSCLC with approved covalent inhibitors, but mechanistic gaps in resistance biology and patient selection remain the primary unresolved scientific questions.
+The omics and pathway evidence strongly supports the established mechanistic framework for KRAS G12C inhibition in NSCLC, with well-characterized resistance biology and rational combination targets, but several pathway-level gaps remain unresolved.
 
 **Concerns:**
-- Resistance mechanism studies are largely retrospective or preclinical; prospective biomarker-stratified trial data are sparse
-- SOS1 inhibitor and MEK inhibitor combination toxicity profiles in NSCLC patients are not well characterized
-- STK11/KEAP1 co-mutation prevalence varies by cohort and sequencing platform, complicating patient selection generalizability
-- Immune microenvironment data from single-cell studies may not translate directly to combination immunotherapy trial design
+- YAP1/TEAD and PDK1 resistance evidence is largely preclinical; clinical validation is lacking
+- SOS1 inhibitor combination data in NSCLC patients remains sparse and immature
+- STK11/KEAP1 co-mutation resistance is correlative; direct causal pathway mechanism is not fully resolved
+- Immunotherapy combination rationale is mechanistically plausible but clinical benefit signal is inconsistent
 
 **Requested follow-ups:**
-- Prospective ctDNA monitoring trial to track secondary KRAS mutations and RTK bypass emergence under sotorasib or adagrasib
-- Co-mutation stratified randomized trial of KRAS G12C inhibitor plus SOS1 inhibitor versus monotherapy
-- Functional genomic screen in STK11-null KRAS G12C cell lines to identify synthetic lethal vulnerabilities
+- Prospective co-mutation profiling (STK11, KEAP1, SMAD4) in sotorasib/adagrasib trials to establish causal resistance hierarchy
+- Paired pre/post-treatment biopsies with multi-omic profiling to distinguish adaptive versus acquired resistance mechanisms
+- Clinical-grade SOS1 inhibitor combination trial with ctDNA monitoring as primary pharmacodynamic endpoint
 
 ### PI Adjudication
 
-**Final confidence:** `0.72`
+{"accepted_claims":["Sotorasib and adagrasib are FDA-approved covalent KRAS G12C inhibitors in NSCLC; target validity is established","Median PFS ~6 months with monotherapy identifies acquired resistance as the central unresolved translational problem","STK11, KEAP1, and SMAD4 co-mutations are associated with primary resistance in retrospective and observational cohorts","Acquired resistance via secondary KRAS mutations and RTK bypass (EGFR, MET) is documented across published cohorts","ctDNA dynamics show early promise as a pharmacodynamic biomarker per PMID 40445863"],"softened_or_rejected_claims":["'ctDNA clearance thresholds are actionable near-term biomarkers' softened: prospective threshold qualification remains pending","'SOS1i combinations have early clinical evidence' corrected: data are predominantly preclinical with limited phase 1 signal only","'STK11/KEAP1 mechanistically suppress immune surveillance and reduce RAS-pathway dependency' softened: evidence is largely correlative, causal inference not established","Hepatotoxicity signals for sotorasib+pembrolizumab and adagrasib+PD-1 must not be aggregated; profiles differ by agent and partner","PDK1/YAP1-TEAD adaptive res
 
-Strong clinical precedence from FDA approvals and mechanistic convergence across agents supports high base confidence. Confidence is moderated by the retrospective nature of co-mutation biomarker data, absence of prospective stratified trials, single-study status of WEE1 resistance finding, and lack of mature randomized combination data with OS endpoints. The OpenTargets score cannot substitute for allele-specific G12C clinical evidence. Overall confidence reflects a well-grounded but incompletely validated mechanistic and translational framework.
-
-- ⚠ Softened/rejected: OpenTargets score 0.842 supports high-confidence target-disease linkage but aggregates heterogeneous pan-KRAS evidence and cannot be used to support G12C allele-specific claims without disaggregation
-- ⚠ Softened/rejected: WEE1 upregulation as a resistance node is hypothesis-generating only, based on a single preclinical study, and must not be ranked as a combination target without independent replication and clinical correlative data
-- ⚠ Softened/rejected: STK11/KEAP1 biomarker claims should be qualified as retrospective and cohort-dependent; prospective biomarker-stratified enrollment trials are absent from the evidence base
-- ⚠ Softened/rejected: Combination strategies with SOS1i, MEKi, and ICB are mechanistically grounded but translational readiness is overstated; mature PFS or OS randomized data and combination toxicity assessments are lacking
 
 ## Proposed Next Experiments
 
@@ -417,9 +410,9 @@ Strong clinical precedence from FDA approvals and mechanistic convergence across
 
 **Severity:** `medium`
 
-The hypothesis correctly flags WEE1 resistance as single-study preclinical and STK11/KEAP1 as retrospective, but then makes several assertions that outrun the supplied evidence. (1) The claim that adagrasib is FDA-approved is supported by OpenTargets for sotorasib but adagrasib approval status is not directly confirmed in the evidence digest provided. (2) The assertion that acquired resistance mechanisms are 'mechanistically documented' relies on a PubMed live-search summary without primary trial-level citations for each mechanism, making the strength of that documentation unverifiable from the card. (3) Combination toxicity for MEK inhibitors is flagged qualitatively but the openFDA trametinib adverse-event data are listed as 'safety_concern' without quantitative incidence or severity grading that would allow ranking. (4) The STK11/KEAP1 prospective biomarker gap is correctly identified as highest priority, but no power calculation, trial design, or existing prospective cohort data are cited to support feasibility. (5) SOS1 inhibitor combinations are described as having 'biological rationale' without citing specific preclinical efficacy data in KRAS G12C NSCLC models. (6) The evidence digest contains 15 of 32 items scored as 'irrelevant', suggesting the evidence base supporting several sub-claims is thinner than the readiness score of 89 implies.
+The hypothesis card correctly frames KRAS/NSCLC as clinically precedented rather than a new discovery, and FDA-approved agents (sotorasib, adagrasib) confirm target-disease grounding. However, three ClinicalTrials.gov evidence links (KRAS G12C pathway inhibition queries) remain unsupported in the claim graph, creating unresolved evidentiary gaps. STK11 co-mutation evidence is classified as tier_unknown with weak_support, yet is invoked as a patient-selection rationale without mechanistic bridging evidence. The OpenTargets association score of 0.842 for KRAS is presented alongside 13,431 total targets without contextualizing specificity. Safety data from openFDA (adagrasib, sotorasib, trametinib) are flagged as safety_concern but no specific liability thresholds or contraindication claims are made, leaving safety characterization incomplete. Fifteen of 34 evidence items are labeled irrelevant, suggesting evidence curation quality is low.
 
-**Recommended fix:** (1) Explicitly cite adagrasib FDA approval date and indication. (2) Replace the live-search summary for resistance mechanisms with primary clinical genomic studies. (3) Quantify MEK inhibitor toxicity rates from openFDA or published trials before using toxicity as a ranking criterion. (4) Add feasibility data or reference an ongoing biomarker-stratified trial for STK11/KEAP1. (5) Cite specific preclinical studies for SOS1 combination rationale. (6) Reduce readiness score or add explicit uncertainty qualifier given high irrelevant-evidence fraction.
+**Recommended fix:** 1) Resolve or explicitly disclaim the three unsupported ClinicalTrials.gov claim links. 2) Upgrade STK11 evidence tier with direct mechanistic citations linking STK11 loss to KRAS inhibitor response in NSCLC. 3) Contextualize OpenTargets score with disease-specificity rank. 4) Summarize key openFDA safety signals (e.g., hepatotoxicity for sotorasib, QTc for adagrasib) with severity grades. 5) Remove or quarantine the 15 irrelevant evidence items from the scored pool.
 
 ## Guardrails
 

@@ -3,40 +3,40 @@
 
 ---
 
-**Run ID:** `run_ea89127752dd`  
+**Run ID:** `run_421af466077a`  
 **Status:** `completed`  
-**Confidence:** `0.72`  
-**Agent steps:** 145  
-**Tool calls:** 60  
+**Confidence:** `0.81`  
+**Agent steps:** 151  
+**Tool calls:** 63  
 **Evidence items:** 34  
-**Experiments proposed:** 5  
+**Experiments proposed:** 4  
 
 ---
 
 
-Run: `run_ea89127752dd`
+Run: `run_421af466077a`
 Status: `completed`
-Confidence: `0.72`
+Confidence: `0.81`
 Confidence interpretation: `moderate`
 
 ## Candidate Hypothesis
 
-EGFR is a clinically established target in NSCLC; the unresolved scientific work concerns acquired-resistance mechanism dissection after first-line osimertinib. Resistance is mechanistically heterogeneous and provisionally categorized as: (1) on-target alterations including C797S, EGFR amplification, and T790M/C797S cis-vs-trans phasing requiring single-molecule resolution; (2) bypass mechanisms including MET and HER2 amplification and fusion emergence, supported by association data but requiring functional validation in osimertinib-monotherapy cohorts to confirm driver status; (3) lineage plasticity including SCLC transformation and AXL-high EMT, which may have partial reversibility and require transcriptomic and epigenomic assays; (4) pharmacologic resistance contexts including CNS sanctuary and exposure-limited hypotheses, which require PK/PD-linked prospective data before ranking alongside genomic drivers. Resistance mechanism frequency hierarchies from MARIPOSA (PMID 42061572) should be interpreted cautiously as combination-arm data. Ranked next experiments must distinguish driver from bystander alterations using isogenic functional models, paired biopsy with ctDNA concordance assessment, and pre-specified failure gates before clinical translation claims are made.
+EGFR has established or clinically precedented target-disease grounding for non-small cell lung cancer. The output should not present this as a new target discovery. Relevant clinical literature titles include: Durvalumab Plus Chemotherapy in Patients With EGFR-Mutated Advanced NSCLC Whose Disease Progressed on First-Line Osimertinib: ORCHARD.; JIN-A02, a Mutant-Selective Fourth-Generation EGFR Inhibitor, Overcomes C797S-Mediated Resistance and Demonstrates Intracranial Activity in NSCLC.; Profiling of Extracellular Vesicles of Non-Small Cell Lung Cancer Reveals Proteins Associated With Osimertinib Resistance.. The remaining scientific work is to resolve mechanism details, response or resistance biology, safety liabilities, and patient-selection strategy; this is not a claim that a new target has been discovered.
 
 ## Scientific Assessment
 
 - Treat as an established or clinically precedented target-disease context; focus on residual mechanism, responder biology, resistance, safety, and patient selection.
 - The disease-target rationale is biologically plausible when live/public evidence links EGFR to non-small cell lung cancer through disease association, pathway, or mechanism records.
 - The current claim should remain pathway-level: evidence supports target and mechanism grounding, not clinical efficacy for any intervention unless direct clinical evidence is cited.
-- Relevant clinical literature titles include: Case Report: Immune checkpoint inhibitor plus chemotherapy benefited an elderly patient with non-small cell lung cancer following EGFR-TKI resistance.; Immunotherapy for TKI-resistant, EGFR L858R-mutated non-small cell lung cancer: a systematic review and meta-analysis of randomized and single-arm studies.; Amivantamab plus chemotherapy vs. chemotherapy as first-line treatment in Chinese mainland patients with EGFR exon 20 insertion non-small cell lung cancer: Subgroup analysis of the randomized PAPILLON trial..
+- Relevant clinical literature titles include: Durvalumab Plus Chemotherapy in Patients With EGFR-Mutated Advanced NSCLC Whose Disease Progressed on First-Line Osimertinib: ORCHARD.; JIN-A02, a Mutant-Selective Fourth-Generation EGFR Inhibitor, Overcomes C797S-Mediated Resistance and Demonstrates Intracranial Activity in NSCLC.; Profiling of Extracellular Vesicles of Non-Small Cell Lung Cancer Reveals Proteins Associated With Osimertinib Resistance..
 - Candidate molecules or interventions are prioritization leads only; potency, selectivity, exposure, safety, and disease-model response must be tested.
 
 ## Key Scientific Claims
 
-- EGFR has an OpenTargets association score of 0.888 for NSCLC, reflecting the highest-ranked target association among 13,431 candidates retrieved for this disease.
-- Resistance mechanism frequency data reported in MARIPOSA (PMID 42061572) were generated in a combination amivantamab-plus-lazertinib versus osimertinib trial and cannot be attributed to osimertinib monotherapy without arm-specific analysis.
-- MET and HER2 amplification are associated with osimertinib resistance at the genomic level, but no functional validation studies in osimertinib-monotherapy isogenic or PDX models are represented in the retrieved evidence to confirm driver status.
-- The cis-versus-trans phasing of T790M/C797S compound EGFR mutations determines combinatorial TKI sensitivity, but single-molecule resolution data confirming phasing frequencies in first-line osimertinib-resistant clinical specimens are absent from the retrieved evidence.
+- EGFR holds an Open Targets association score of 0.888 for non-small cell lung carcinoma versus 0.468 for squamous NSCLC, indicating that clinical evidence is substantially stronger in non-squamous NSCLC subtypes.
+- The tertiary EGFR mutation C797S is a documented on-target resistance mechanism to osimertinib, and the fourth-generation inhibitor JIN-A02 demonstrates preclinical mutant-selective activity against C797S with intracranial penetration in NSCLC models.
+- The ORCHARD platform trial has evaluated post-osimertinib regimens including durvalumab plus chemotherapy and osimertinib plus datopotamab deruxtecan in EGFR-mutated advanced NSCLC patients who progressed on first-line osimertinib.
+- EGFR-activating mutations drive downstream ERK, AKT, and STAT3 signaling, and triple mutations including L792H and G796R represent additional resistance variants that retain sensitivity to investigational agents such as cudratricusxanthone A in preclinical studies.
 
 ## Objective Classification
 
@@ -84,15 +84,15 @@ Score: `0.852` (23/27 points)
 
 ## Biomedical Validation Controls
 
-- BioTruth critic: `weak_support` (score: `86.0`)
-- Evidence hierarchy: `34` evidence items; `18` high-tier items; score `67.65`
-- Contradiction search attempted: `True`; findings `7`
+- BioTruth critic: `weak_support` (score: `84.0`)
+- Evidence hierarchy: `34` evidence items; `19` high-tier items; score `70.59`
+- Contradiction search attempted: `True`; findings `8`
 - Abstention policy decision: `support_allowed` with required flag `False`
 - Actionability profile: `high` with recommended decision `support_allowed`
 
 ## Scientific Strategy
 
-**Readiness tier:** **Experiment ready (with gaps)** (69/100)
+**Readiness tier:** **Experiment ready (with gaps)** (79/100)
 > experiment_ready_with_gaps: blocked mainly by claim_graph_evidence_gap (medium).
 
 **Recommended next action:** `run_falsification_and_depth_pass`
@@ -100,60 +100,58 @@ Score: `0.852` (23/27 points)
 
 **Evidence gaps identified:**
 
-- 🟡 **claim_graph_evidence_gap** (medium): The claim graph still has unsupported evidence links: PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes.
+- 🟡 **claim_graph_evidence_gap** (medium): The claim graph still has unsupported evidence links: PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR.
   - Recommended tool: `tooluniverse_query_tool`
-- 🟡 **evidence_relevance_noise** (medium): A material fraction of retrieved evidence was judged irrelevant to the claim boundary.
-  - Recommended tool: `pubmed_literature_search_tool`
 
 ## Claim Graph
 
 *6 claims mapped across 34 evidence items.*
 
 ### Claim claim_1 — `computational`
-> EGFR is a clinically established target in NSCLC
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib
-- ⬜ **Gaps / irrelevant:** PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes, PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC
+> EGFR has established or clinically precedented target-disease grounding for non-small cell lung cancer.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib
+- ⬜ **Gaps / irrelevant:** PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR, Reactome: EGFR signaling pathway
 
 ### Claim claim_2 — `computational`
-> the unresolved scientific work concerns acquired-resistance mechanism dissection after first-line osimertinib.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib
-- ⬜ **Gaps / irrelevant:** PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes, PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC
+> The output should not present this as a new target discovery.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib
+- ⬜ **Gaps / irrelevant:** PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR, Reactome: EGFR signaling pathway
 
 ### Claim claim_3 — `computational`
-> Resistance is mechanistically heterogeneous and provisionally categorized as: (1) on-target alterations including C797S, EGFR amplification, and T790M/C797S cis-vs-trans phasing requiring single-molecule resolution
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib
-- ⬜ **Gaps / irrelevant:** PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes, PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC
+> Relevant clinical literature titles include: Durvalumab Plus Chemotherapy in Patients With EGFR-Mutated Advanced NSCLC Whose Disease Progressed on First-Line Osimertinib: ORCHARD.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib
+- ⬜ **Gaps / irrelevant:** PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR, Reactome: EGFR signaling pathway
 
 ### Claim claim_4 — `computational`
-> (2) bypass mechanisms including MET and HER2 amplification and fusion emergence, supported by association data but requiring functional validation in osimertinib-monotherapy cohorts to confirm driver status
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib
-- ⬜ **Gaps / irrelevant:** PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes, PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC
+> JIN-A02, a Mutant-Selective Fourth-Generation EGFR Inhibitor, Overcomes C797S-Mediated Resistance and Demonstrates Intracranial Activity in NSCLC.
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib
+- ⬜ **Gaps / irrelevant:** PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR, Reactome: EGFR signaling pathway
 
 ### Claim claim_5 — `computational`
-> (3) lineage plasticity including SCLC transformation and AXL-high EMT, which may have partial reversibility and require transcriptomic and epigenomic assays
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib
-- ⬜ **Gaps / irrelevant:** PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes, PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC
+> Profiling of Extracellular Vesicles of Non-Small Cell Lung Cancer Reveals Proteins Associated With Osimertinib Resistance..
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib
+- ⬜ **Gaps / irrelevant:** PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR, Reactome: EGFR signaling pathway
 
-### Claim claim_6 — `computational`
-> (4) pharmacologic resistance contexts including CNS sanctuary and exposure-limited hypotheses, which require PK/PD-linked prospective data before ranking alongside genomic drivers.
-- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib
-- ⬜ **Gaps / irrelevant:** PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination, PubMed: EGFR non-small cell lung cancer therapeutic target validation, PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes, PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC
+### Claim claim_6 — `⚠ no efficacy claim`
+> The remaining scientific work is to resolve mechanism details, response or resistance biology, safety liabilities, and patient-selection strategy
+- ✅ **Supporting:** ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib
+- ⬜ **Gaps / irrelevant:** PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling, PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S, Reactome: EGFR, Reactome: EGFR signaling pathway
 
 
 ## Evidence Coverage Matrix
 
-Coverage score: `0.875` (7 covered, 0 partial, 1 missing)
+Coverage score: `1.0` (8 covered, 0 partial, 0 missing)
 
 | Requirement | Status | Matched sources |
 | --- | --- | --- |
-| Literature evidence | `covered` | PubMed: EGFR non-small cell lung cancer failed trial, PubMed: EGFR non-small cell lung cancer mechanism, PubMed: EGFR non-small cell lung cancer not associated, PubMed: osimertinib acquired resistance mechanisms EGFR C797S MET amplification ctDNA NSCLC |
+| Literature evidence | `covered` | PubMed: EGFR mutant NSCLC lineage transformation small cell squamous osimertinib resistance biopsy, PubMed: EGFR non-small cell lung cancer association clinical biomarker evidence, PubMed: EGFR non-small cell lung cancer failed trial, PubMed: EGFR non-small cell lung cancer mechanism pathway resistance signaling, PubMed: EGFR non-small cell lung cancer not associated, PubMed: osimertinib non-small cell lung cancer EGFR clinical trial response resistance |
 | Target-disease association | `covered` | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
-| Clinical or trial context | `covered` | ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib |
-| Safety and toxicity context | `covered` | openFDA adverse events: osimertinib, openFDA adverse events: savolitinib, openFDA adverse events: tepotinib |
-| Mechanistic pathway evidence | `covered` | PubMed: EGFR non-small cell lung cancer mechanism, PubMed: EGFR non-small cell lung cancer not associated, PubMed: osimertinib acquired resistance mechanisms EGFR C797S MET amplification ctDNA NSCLC, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
+| Clinical or trial context | `covered` | ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib |
+| Safety and toxicity context | `covered` | openFDA adverse events: amivantamab, openFDA adverse events: osimertinib, openFDA adverse events: tepotinib |
+| Mechanistic pathway evidence | `covered` | PubMed: EGFR mutant NSCLC lineage transformation small cell squamous osimertinib resistance biopsy, PubMed: EGFR non-small cell lung cancer association clinical biomarker evidence, PubMed: EGFR non-small cell lung cancer mechanism pathway resistance signaling, PubMed: EGFR non-small cell lung cancer not associated, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name |
 | Contradictions or missing evidence | `covered` | ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer EGFR, PubMed: EGFR non-small cell lung cancer failed trial, PubMed: EGFR non-small cell lung cancer not associated |
-| Cell-state or lineage assay evidence | `missing` | none |
-| Fusion and copy-number detection | `covered` | ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: non-small cell lung cancer savolitinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer savolitinib |
+| Cell-state or lineage assay evidence | `covered` | PubMed: EGFR mutant NSCLC lineage transformation small cell squamous osimertinib resistance biopsy |
+| Fusion and copy-number detection | `covered` | ClinicalTrials.gov: non-small cell lung cancer EGFR, ClinicalTrials.gov: non-small cell lung cancer amivantamab, ClinicalTrials.gov: non-small cell lung cancer osimertinib, ClinicalTrials.gov: small cell lung cancer EGFR, ClinicalTrials.gov: small cell lung cancer amivantamab, ClinicalTrials.gov: small cell lung cancer osimertinib |
 
 ## Candidate Intervention Summary
 
@@ -167,53 +165,53 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 | --- | --- | --- | --- |
 | NCBI Gene | strong_support | 0.82 | NCBI Gene EGFR: The protein encoded by this gene is a transmembrane glycoprotein that is a member of the protein kinase superfamily. This protein is a receptor for members of the epidermal growth factor family. EGFR is a cell surface protein that binds to epidermal growth factor, thus inducing recep |
 | NCBI Gene | weak_support | 0.62 | NCBI Gene MET: This gene encodes a member of the receptor tyrosine kinase family of proteins and the product of the proto-oncogene MET. The encoded preproprotein is proteolytically processed to generate alpha and beta subunits that are linked via disulfide bonds to form the mature receptor. Further  |
+| PubMed: osimertinib non-small cell lung cancer EGFR clinical trial response resistance | strong_support | 0.78 | Durvalumab Plus Chemotherapy in Patients With EGFR-Mutated Advanced NSCLC Whose Disease Progressed on First-Line Osimertinib: ORCHARD.; Osimertinib plus datopotamab deruxtecan in patients with EGFR-mutated advanced NSCLC after progression on first-line osimertinib: ORCHARD.; JIN-A02, a Mutant-Select |
+| PubMed: bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling | irrelevant | 0.1 | PubMed returned live literature search results for bypass resistance HER2 RET ALK BRAF osimertinib EGFR mutant lung cancer genomic profiling. |
+| PubMed: fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S | irrelevant | 0.1 | PubMed returned live literature search results for fourth generation EGFR inhibitor BLU-945 BBT-176 clinical trial resistance C797S. |
 | Reactome: EGFR | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
 | Reactome: MET | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
 | Reactome: EGFR signaling pathway | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| PubMed: small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC | irrelevant | 0.1 | PubMed returned live literature search results for small cell squamous transformation AXL EMT osimertinib resistance lineage plasticity NSCLC. |
-| PubMed: osimertinib acquired resistance mechanisms EGFR C797S MET amplification ctDNA NSCLC | strong_support | 0.78 | Long-Term Impact of First-Line Amivantamab Plus Lazertinib Versus Osimertinib on Mechanisms of Acquired Resistance in MARIPOSA: A Brief Report. |
-| ClinicalTrials.gov: non-small cell lung cancer EGFR | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Phase II AZD9291 Open Label Study in NSCLC After Previous EGFR TKI Therapy in EGFR and T790M Mutation Positive Tumours (COMPLETED, PHASE2); Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cance |
 | Reactome: MET-HGF signaling pathway | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| ClinicalTrials.gov: non-small cell lung cancer EGFR | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Phase II AZD9291 Open Label Study in NSCLC After Previous EGFR TKI Therapy in EGFR and T790M Mutation Positive Tumours (COMPLETED, PHASE2); Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cance |
+| PubMed: EGFR mutant NSCLC lineage transformation small cell squamous osimertinib resistance biopsy | mechanistic_relevance | 0.62 | Comprehensive molecular characterization of lung tumors implicates AKT and MYC signaling in adenocarcinoma to squamous cell transdifferentiation.; Paired genomic analysis of squamous cell carcinoma transformed from EGFR-mutated lung adenocarcinoma. |
 | ClinicalTrials.gov: non-small cell lung cancer osimertinib | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Phase II AZD9291 Open Label Study in NSCLC After Previous EGFR TKI Therapy in EGFR and T790M Mutation Positive Tumours (COMPLETED, PHASE2); Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cance |
-| ClinicalTrials.gov: non-small cell lung cancer savolitinib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: AZD9291 in Combination With Ascending Doses of Novel Therapeutics (ACTIVE_NOT_RECRUITING, PHASE1); Lazertinib & Tepotinib for EGFR Mutant NSCLC in MET Overexpressed or Amplified Who Progressed After Lazertinib Treatment (RECRUITING, PHASE2); O |
+| ClinicalTrials.gov: non-small cell lung cancer amivantamab | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cancer With Progression on Previous Third-generation EGFR-TKI (ACTIVE_NOT_RECRUITING, PHASE2); Phase II Trial of Amivantamab Plus Monochemotherap |
 | ClinicalTrials.gov: small cell lung cancer EGFR | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Phase II AZD9291 Open Label Study in NSCLC After Previous EGFR TKI Therapy in EGFR and T790M Mutation Positive Tumours (COMPLETED, PHASE2); Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cance |
 | ClinicalTrials.gov: small cell lung cancer osimertinib | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Phase II AZD9291 Open Label Study in NSCLC After Previous EGFR TKI Therapy in EGFR and T790M Mutation Positive Tumours (COMPLETED, PHASE2); Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cance |
-| ClinicalTrials.gov: small cell lung cancer savolitinib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: AZD9291 in Combination With Ascending Doses of Novel Therapeutics (ACTIVE_NOT_RECRUITING, PHASE1); Lazertinib & Tepotinib for EGFR Mutant NSCLC in MET Overexpressed or Amplified Who Progressed After Lazertinib Treatment (RECRUITING, PHASE2); O |
-| openFDA adverse events: savolitinib | safety_concern | 0.72 | openFDA returned 61 matching adverse-event reports. Common returned reaction terms include: Cellulitis; Device related infection; Drug-induced liver injury; Pleural effusion; Subdural haematoma. These are safety signals, not incidence rates or causal proof. |
-| openFDA adverse events: tepotinib | safety_concern | 0.72 | openFDA returned 219 matching adverse-event reports. Common returned reaction terms include: Death; Disease progression; Lymphoedema; Metastases to liver; Oedema. These are safety signals, not incidence rates or causal proof. |
+| ClinicalTrials.gov: small cell lung cancer amivantamab | strong_support | 0.82 | ClinicalTrials.gov returned translational study records: Amivantamab, Lazertinib and Bevacizumab in Patients With EGFR-mutant Advanced Non-small Cell Lung Cancer With Progression on Previous Third-generation EGFR-TKI (ACTIVE_NOT_RECRUITING, PHASE2); Phase II Trial of Amivantamab Plus Monochemotherap |
 | openFDA adverse events: osimertinib | safety_concern | 0.72 | openFDA returned 7990 matching adverse-event reports. Common returned reaction terms include: Acute pulmonary oedema; Death; Femur fracture; Hyponatraemia; Multiple fractures. These are safety signals, not incidence rates or causal proof. |
+| openFDA adverse events: amivantamab | safety_concern | 0.72 | openFDA returned 1021 matching adverse-event reports. Common returned reaction terms include: Deep vein thrombosis; Dizziness; Fatigue; Hepatic function abnormal; Pneumothorax. These are safety signals, not incidence rates or causal proof. |
+| PubMed: EGFR non-small cell lung cancer mechanism pathway resistance signaling | strong_support | 0.78 | The resistance landscape of EGFR tyrosine kinase inhibitors in advanced non-small cell lung cancer: molecular mechanisms and novel therapeutic strategies.; Cudratricusxanthone A Exhibits Antitumor Activities Against NSCLC Harboring EGFR L792H and G796R Triple Mutations via Regulating EGFR-ERK/AKT/ST |
+| openFDA adverse events: tepotinib | safety_concern | 0.72 | openFDA returned 219 matching adverse-event reports. Common returned reaction terms include: Death; Disease progression; Lymphoedema; Metastases to liver; Oedema. These are safety signals, not incidence rates or causal proof. |
 | ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.62 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: non-small cell lung carcinoma: A group of at least three distinct histological types of lung cancer, including non-small cell squamous cell carcinoma, adenocarcinoma, and large cell carcinoma. Non-small cell lung carcin |
 | ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.62 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: small cell lung carcinoma: Small cell lung cancer (SCLC) is a highly aggressive malignant neoplasm, accounting for 10-15% of lung cancer cases, characterized byrapid growth, and early metastasis. SCLC usually manifests  |
-| PubMed: bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes | irrelevant | 0.1 | PubMed returned live literature search results for bypass resistance osimertinib MET HER2 amplification BRAF RET ALK NSCLC clinical outcomes. |
-| PubMed: EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination | irrelevant | 0.1 | PubMed returned live literature search results for EGFR C797S T790M cis trans clonal phasing fourth generation inhibitor combination. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: SAVOLITINIB: Small molecule drug with a maximum clinical stage of Phase 3 (across all indications), with 9 investigational indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TIGOZERTINIB: Small molecule drug with a maximum clinical stage of Phase 1 2 (across all indications), with 5 investigational indications. |
-| PubChem candidate lookup | mechanistic_relevance | 0.46 | PubChem returned candidate/intervention records for: osimertinib, savolitinib, tepotinib, BLU-945, BBT-176, capmatinib. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned ToolUniverse/OpenTargets evidence: None |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: CAPMATINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for non-small cell lung carcinoma and neoplasm and 5 investigational indications.; CAPMATINIB HYDROCHLOR |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: AMIVANTAMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with an approval for neoplasm and non-small cell lung carcinoma and 4 investigational indications. |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TEPOTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for neoplasm and non-small cell lung carcinoma and 5 investigational indications.; TEPOTINIB HYDROCHLORID |
+| PubMed: EGFR non-small cell lung cancer association clinical biomarker evidence | strong_support | 0.78 | Impact of Variant Allele Frequency (VAF) Levels on Clinical Efficacy of Osimertinib in Patients with Metastatic NSCLC.; Comprehensive characterization of non-small cell lung cancer of different PD-L1 expression classes: a study of 1,038 Chinese patients.; TROP2 expression as a prognostic predictor f |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TIGOZERTINIB: Small molecule drug with a maximum clinical stage of Phase 1 2 (across all indications), with 5 investigational indications. |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: LAZERTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 3 investigational indications.; LAZERTINIB MESYLATE: Small molecule drug with a maximum clinical stag |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: CAPMATINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for non-small cell lung carcinoma and neoplasm and 5 investigational indications.; CAPMATINIB HYDROCHLOR |
+| PubChem candidate lookup | mechanistic_relevance | 0.46 | PubChem returned candidate/intervention records for: osimertinib, tepotinib, BLU-945, lazertinib, capmatinib. |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.62 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: OSIMERTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for non-small cell lung carcinoma and neoplasm and 9 investigational indications.; OSIMERTINIB MESYLATE |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | strong_support | 0.82 | OpenTargets_get_associated_targets_by_disease_efoId returned 13431 associated targets for non-small cell lung carcinoma; top retrieved targets: EGFR association score 0.888; KRAS association score 0.842; ALK association score 0.812; ERBB2 association score 0.811 |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | strong_support | 0.82 | OpenTargets_get_associated_targets_by_disease_efoId returned 420 associated targets for non-small cell squamous lung carcinoma; top retrieved targets: EGFR association score 0.468; ALK association score 0.375; VEGFA association score 0.373; CRTC1 association score 0.371 |
-| PubMed: EGFR non-small cell lung cancer mechanism | strong_support | 0.78 | Antibody-Drug Conjugates Beyond HER2 in Non-Small Cell Lung Cancer (NSCLC): Mechanisms, Emerging Targets, and Future Directions.; POU6F1 Expression Predicts Favorable Prognosis in Lung Adenocarcinoma: Validation Using Patient Cohort and TCGA Data.; Metronomic chemotherapy combined with immunotherapy |
-| PubMed: EGFR non-small cell lung cancer therapeutic target validation | irrelevant | 0.2 | Biomarkers for targeted therapy and treatment decision making.; Emergence of Sprouty role from the signaling interplay of DUSP1 and DUSP4 interactions in NSCLC pathogenesis.; Anticancer Potential of Moringa Oleifera in Lung Cancer: A Mini Review of In vitro and In vivo Evidence.; Multimodal Impact o |
 | PubMed: EGFR non-small cell lung cancer failed trial | strong_support | 0.78 | Immunotherapy for TKI-resistant, EGFR L858R-mutated non-small cell lung cancer: a systematic review and meta-analysis of randomized and single-arm studies.; Advances in the research on radiotherapy for lung cancer: a 2025 review.; Role of EGFR-TKIs in Nonmetastatic Epidermal Growth Factor Receptor-M |
-| PubMed: EGFR non-small cell lung cancer not associated | strong_support | 0.78 | Surgical resection reveals combined small-cell lung carcinoma and adenocarcinoma with dual epidermal growth factor receptor and anaplastic lymphoma kinase alterations following neoadjuvant chemotherapy: A rare case.; Development and In Vitro Evaluation of Gefitinib-Salicylic Acid Nanocrystals for Im |
+| PubMed: EGFR non-small cell lung cancer not associated | strong_support | 0.78 | Crizotinib or vebreltinib response and resistance in advanced non-small cell lung cancer with MET exon 14 skipping.; Comparison of Post-Resistance Treatment Outcomes in EGFR-Mutated NSCLC Patients Following Third-Generation EGFR-TKI Therapy: A Retrospective Cohort Study.; Surgical resection reveals  |
 
 ## Citations and Retrieved Records
 
 - [EGFR](https://www.ncbi.nlm.nih.gov/gene/1956) (gene_id: 1956)
 - [MET](https://www.ncbi.nlm.nih.gov/gene/4233) (gene_id: 4233)
-- [Long-Term Impact of First-Line Amivantamab Plus Lazertinib Versus Osimertinib on Mechanisms of Acquired Resistance in MARIPOSA: A Brief Report.](https://pubmed.ncbi.nlm.nih.gov/42061572/) (pmid: 42061572; journal: Journal of thoracic oncology : official publication of the International Association for the Study of Lung Cancer; pubdate: 2026 Apr 28)
-- [osimertinib](https://pubchem.ncbi.nlm.nih.gov/compound/71496458) (cid: 71496458)
-- [savolitinib](https://pubchem.ncbi.nlm.nih.gov/compound/68289010) (cid: 68289010)
-- [tepotinib](https://pubchem.ncbi.nlm.nih.gov/compound/25171648) (cid: 25171648)
-- [BLU-945](https://pubchem.ncbi.nlm.nih.gov/compound/156538665) (cid: 156538665)
-- [BBT-176](https://pubchem.ncbi.nlm.nih.gov/compound/142497307) (cid: 142497307)
-- [capmatinib](https://pubchem.ncbi.nlm.nih.gov/compound/25145656) (cid: 25145656)
-- [Antibody-Drug Conjugates Beyond HER2 in Non-Small Cell Lung Cancer (NSCLC): Mechanisms, Emerging Targets, and Future Directions.](https://pubmed.ncbi.nlm.nih.gov/42194027/) (pmid: 42194027; journal: Biomolecules; pubdate: 2026 May 2)
-- [POU6F1 Expression Predicts Favorable Prognosis in Lung Adenocarcinoma: Validation Using Patient Cohort and TCGA Data.](https://pubmed.ncbi.nlm.nih.gov/42193061/) (pmid: 42193061; journal: Current issues in molecular biology; pubdate: 2026 Apr 28)
-- [Metronomic chemotherapy combined with immunotherapy in solid tumor: a systematic review.](https://pubmed.ncbi.nlm.nih.gov/42180940/) (pmid: 42180940; journal: Translational cancer research; pubdate: 2026 Apr 30)
+- [Durvalumab Plus Chemotherapy in Patients With EGFR-Mutated Advanced NSCLC Whose Disease Progressed on First-Line Osimertinib: ORCHARD.](https://pubmed.ncbi.nlm.nih.gov/42039685/) (pmid: 42039685; journal: JTO clinical and research reports; pubdate: 2026 Apr)
+- [Osimertinib plus datopotamab deruxtecan in patients with EGFR-mutated advanced NSCLC after progression on first-line osimertinib: ORCHARD.](https://pubmed.ncbi.nlm.nih.gov/41780641/) (pmid: 41780641; journal: Annals of oncology : official journal of the European Society for Medical Oncology; pubdate: 2026 Jun)
+- [JIN-A02, a Mutant-Selective Fourth-Generation EGFR Inhibitor, Overcomes C797S-Mediated Resistance and Demonstrates Intracranial Activity in NSCLC.](https://pubmed.ncbi.nlm.nih.gov/41649868/) (pmid: 41649868; journal: Clinical cancer research : an official journal of the American Association for Cancer Research; pubdate: 2026 May 1)
+- [Profiling of Extracellular Vesicles of Non-Small Cell Lung Cancer Reveals Proteins Associated With Osimertinib Resistance.](https://pubmed.ncbi.nlm.nih.gov/41581122/) (pmid: 41581122; journal: Journal of extracellular vesicles; pubdate: 2026 Jan)
+- [Phase 1/2 trial of brigatinib plus panitumumab in patients with osimertinib-resistant EGFR-mutated non-small cell lung cancer harboring EGFR C797S mutation.](https://pubmed.ncbi.nlm.nih.gov/41558224/) (pmid: 41558224; journal: Cancer treatment and research communications; pubdate: 2026)
+- [Comprehensive molecular characterization of lung tumors implicates AKT and MYC signaling in adenocarcinoma to squamous cell transdifferentiation.](https://pubmed.ncbi.nlm.nih.gov/34656143/) (pmid: 34656143; journal: Journal of hematology & oncology; pubdate: 2021 Oct 16)
+- [Paired genomic analysis of squamous cell carcinoma transformed from EGFR-mutated lung adenocarcinoma.](https://pubmed.ncbi.nlm.nih.gov/31319998/) (pmid: 31319998; journal: Lung cancer (Amsterdam, Netherlands); pubdate: 2019 Aug)
+- [The resistance landscape of EGFR tyrosine kinase inhibitors in advanced non-small cell lung cancer: molecular mechanisms and novel therapeutic strategies.](https://pubmed.ncbi.nlm.nih.gov/42170254/) (pmid: 42170254; journal: Translational lung cancer research; pubdate: 2026 Apr 30)
+- [Cudratricusxanthone A Exhibits Antitumor Activities Against NSCLC Harboring EGFR L792H and G796R Triple Mutations via Regulating EGFR-ERK/AKT/STAT3 Signaling.](https://pubmed.ncbi.nlm.nih.gov/42123865/) (pmid: 42123865; journal: Molecules (Basel, Switzerland); pubdate: 2026 Apr 30)
+- [The Occupational and Environmental Respiratory Exposome as a Potential Modulator of Adaptive Resistance to EGFR and ALK Inhibitors in Non-Small Cell Lung Cancer.](https://pubmed.ncbi.nlm.nih.gov/42122160/) (pmid: 42122160; journal: Cancers; pubdate: 2026 Apr 24)
 
 ## Limitations
 
@@ -222,11 +220,6 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 - Compound specificity and translational risk remain unresolved.
 - Evidence scoring is rule-based and should be calibrated with a trained biomedical evidence model.
 - LLM hypothesis synthesis was unstructured; raw response is preserved in provenance.
-- Confidence was calibrated upward only for target-disease grounding or clinical precedence; it is not an efficacy or safety probability.
-- C797S and MET amplification as 'dominant' resistance mechanisms after osimertinib monotherapy is overclaimed; MARIPOSA data derives from a combination arm where amivantamab exerts MET-directed selection pressure and cannot be directly generalized
-- OpenTargets association scores (EGFR 0.888, KRAS 0.842, ALK 0.812, ERBB2 0.811) reflect disease-level genetic linkage, not post-osimertinib acquired-resistance frequency, and are insufficient alone to rank bypass-resistance experimental priority
-- Characterizing lineage plasticity as categorically non-targetable by EGFR-TKI is an overclaim given emerging epigenetic priming and partial AXL-high EMT reversibility data that have not been systematically excluded
-- CNS sanctuary and exposure-limited resistance are pharmacologic hypotheses requiring PK/PD data and should not be ranked equivalently to genomically validated driver mechanisms without prospective cohort support
 
 ## Scientist Panel Debate
 
@@ -235,125 +228,119 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 ### literature_agent — ✅ support with limits
 *Discipline: biomedical literature and citation grounding*
 
-EGFR is a well-validated, clinically established target in NSCLC; the scientific frontier is acquired-resistance mechanism dissection and rational combination strategy, not target discovery
+EGFR is a fully established therapeutic target in NSCLC; the unresolved scientific work concerns mechanistic stratification of acquired resistance after first-line osimertinib and rational selection of subsequent interventions. Literature supports a ranked experimental agenda rather than any new target claim.
 
 **Concerns:**
-- MARIPOSA data covers amivantamab+lazertinib vs osimertinib but may not generalize to osimertinib monotherapy resistance spectrum
-- Case reports and single-arm studies dominate lineage-plasticity literature; low citation strength for SCLC transformation frequency estimates
-- CNS sanctuary and exposure-limited resistance hypotheses lack prospective pharmacokinetic-linked resistance cohort data
-- Bystander vs driver distinction for co-occurring alterations (e.g., KRAS, PI3K) requires functional validation not yet standard in cited literature
+- Most resistance mechanism frequency data derive from retrospective or single-arm cohorts with heterogeneous biopsy timing, limiting causal inference
+- ctDNA-only profiling cannot resolve cis-versus-trans clone phasing for T790M/C797S without single-molecule or single-cell confirmation, risking misclassification of actionable subclones
+- Lineage transformation prevalence is likely underestimated due to biopsy underperformance; spatial or single-cell assays are rarely paired with matched pre-treatment tissue in published series
+- Fourth-generation inhibitor combination safety data are absent or immature; extrapolating efficacy from C797S cell lines to heterogeneous clinical resistance landscapes is a high-confidence failure mode
 
 **Requested follow-ups:**
-- Retrieve PMID-grounded frequency tables for each resistance mechanism class from prospective osimertinib first-line cohorts with paired biopsies
-- Identify published phase I/II trials of fourth-generation EGFR inhibitors (e.g., BLU-945, BBT-176) with explicit C797S patient selection criteria and safety readouts
-- Search for ctDNA clone-phasing studies distinguishing cis vs trans T790M/C797S with allele-fraction thresholds and clinical outcome correlation
-
-### mechanism_agent — ✅ support with limits
-*Discipline: disease mechanism and causal pathway biology*
-
-EGFR-mutant NSCLC acquired resistance after first-line osimertinib involves mechanistically distinct categories requiring orthogonal experimental approaches to distinguish driver from bystander alterations
-
-**Concerns:**
-- C797S cis-vs-trans phasing data from ctDNA is technically limited by allele dropout and requires orthogonal ddPCR or single-cell confirmation
-- MARIPOSA resistance data (PMID 42061572) is from a combination arm comparison and may not generalize to osimertinib monotherapy resistance landscape
-- Lineage transformation frequency is likely underestimated without systematic re-biopsy protocols; single-site biopsy misses spatial heterogeneity
-- Fourth-generation EGFR inhibitor combinations lack mature safety and efficacy data; no head-to-head trial evidence available yet
-
-**Requested follow-ups:**
-- Paired pre/post-osimertinib biopsy with concurrent ctDNA to assess concordance and spatial heterogeneity of resistance mechanisms
-- Single-molecule phasing (e.g., long-read sequencing or linked-read) to resolve C797S cis-vs-trans configuration relative to T790M
-- Transcriptomic profiling of post-osimertinib biopsies to quantify AXL-high EMT and neuroendocrine lineage shift frequency
+- Require paired pre/post-osimertinib biopsy with concurrent ctDNA for all resistance mechanism frequency claims to separate driver from bystander alterations
+- Mandate single-molecule phasing (e.g., long-read sequencing or ddPCR allele linkage) for any T790M/C797S cis-trans classification before therapeutic stratification
+- Include histologic re-biopsy with IHC/RNA panels (neuroendocrine markers, AXL, p63/p40) as a failure gate before attributing progression solely to kinase-domain resistance
 
 ### tooluniverse_agent — ✅ support with limits
 *Discipline: ToolUniverse/OpenTargets target and intervention evidence*
 
-ToolUniverse/OpenTargets records confirm EGFR as the highest-scored target for NSCLC (0.888) with co-high scores for MET, ERBB2, ALK, and KRAS, providing a ranked bypass-resistance target hierarchy directly from association data.
+OpenTargets and PubMed records confirm EGFR as a top-scored target (0.888) in NSCLC with extensive clinical precedence; the scientific task is resistance mechanism resolution and patient-selection strategy, not target discovery.
 
 **Concerns:**
-- OpenTargets association scores reflect literature/genetic evidence density, not functional resistance causality; C797S and EGFR amplification require orthogonal functional validation
-- Squamous transformation EGFR score drops to 0.468, suggesting lineage-switch resistance may be EGFR-independent and needs separate target prioritization
-- MARIPOSA ctDNA data is arm-comparative but not mechanistically phased for cis/trans C797S+T790M; single-cell or ddPCR phasing data are absent from current evidence digest
-- Bypass targets MET and RET are not in the top retrieved targets list, indicating possible evidence-density gap rather than true low relevance
+- C797S cis/trans phasing data are largely preclinical; clinical clone-phasing cohorts are small and may not generalize
+- Lineage transformation frequency is underestimated without systematic re-biopsy protocols; ctDNA alone insufficient
+- Fourth-generation inhibitor safety profiles (cardiac, skin, GI) not yet characterized in large trials; no head-to-head data
+- Bypass mechanism co-occurrence rates vary widely across studies, limiting single-mechanism targeting strategies
 
 **Requested follow-ups:**
-- Query OpenTargets drug evidence for MET and RET in NSCLC to fill association-score gap for bypass resistance targets
-- Retrieve OpenTargets known drugs for EGFR filtered to resistance-context indications (C797S, fourth-generation inhibitors)
-- Pull OpenTargets somatic variant evidence for EGFR C797S and ERBB2 amplification to distinguish driver vs bystander classification
+- Retrieve OpenTargets drug evidence for MET and ERBB2 in post-osimertinib NSCLC to rank combination partners
+- Query ORCHARD sub-cohort outcomes stratified by resistance mechanism to validate biomarker-selection framework
+- Obtain single-cell or spatial transcriptomic dataset references for AXL-high EMT frequency post-osimertinib
+
+### mechanism_agent — ✅ support with limits
+*Discipline: disease mechanism and causal pathway biology*
+
+EGFR-mutant NSCLC acquired resistance after first-line osimertinib involves heterogeneous on-target, bypass, and lineage-plasticity mechanisms requiring mechanism-stratified research strategies rather than uniform salvage approaches
+
+**Concerns:**
+- Biopsy sampling bias: single-site biopsy misses spatial heterogeneity of co-occurring resistance mechanisms in polyclonal progression
+- ctDNA allele phasing for cis/trans C797S has limited sensitivity at low VAF and may misclassify mixed clonal populations
+- Fourth-generation inhibitor safety data are from small early-phase cohorts; cardiac and skin toxicity profiles not yet characterized at therapeutic doses
+- Lineage transformation frequency may be underestimated due to inadequate re-biopsy rates in routine practice
+
+**Requested follow-ups:**
+- Paired pre/post-osimertinib biopsy with single-cell RNA-seq to distinguish driver resistance clones from bystander alterations using clonal trajectory analysis
+- Prospective ctDNA cis/trans phasing study with orthogonal ddPCR validation and clinical outcome correlation
+- MET FISH plus ERBB2 IHC/FISH on all post-osimertinib progression biopsies as mandatory stratification in combination trial designs
 
 ### molecule_agent — ✅ support with limits
 *Discipline: candidate intervention and chemistry review*
 
-EGFR is a well-validated, clinically precedented target in NSCLC; the scientific work is resolving acquired-resistance mechanisms after first-line osimertinib, not establishing target novelty
+EGFR is a well-validated, clinically precedented target in NSCLC; the scientific work is resolving post-osimertinib resistance mechanisms and rational next-line strategies, not rediscovering the target.
 
 **Concerns:**
-- C797S/T790M cis-trans phasing data from ctDNA are technically demanding and frequently under-reported in trials
-- Lineage transformation frequency after first-line osimertinib is not yet precisely quantified; biopsy ascertainment bias is high
-- Fourth-generation EGFR inhibitors (e.g., BLU-945, BBT-176) have limited published efficacy and safety data; no approved agent exists
-- Combining amivantamab with osimertinib post-progression carries overlapping toxicity signals not fully characterized
+- C797S cis/trans phasing data are largely preclinical or small retrospective series; prospective validation is absent
+- SCLC and squamous transformation frequencies post-osimertinib are underestimated without systematic re-biopsy protocols
+- Fourth-generation inhibitor safety profiles (cardiac, skin, GI) are not yet characterized in adequately powered trials
+- ctDNA alone may miss focal CNS or lineage-switch resistance requiring tissue or CSF sampling
 
 **Requested follow-ups:**
-- Provide allele-phasing data (ddPCR or single-molecule sequencing) for C797S relative to T790M in the resistance biopsy
-- Quantify MET copy number by FISH alongside MET/EGFR ratio to distinguish focal amplification from polysomy
-- Perform IHC/RNA-seq for neuroendocrine markers and AXL on post-progression biopsy to rule out lineage transformation
+- Prospective paired tissue+ctDNA re-biopsy study with allele-phasing assay to quantify C797S cis vs trans frequency
+- Single-cell or spatial transcriptomic profiling of post-osimertinib biopsies to enumerate AXL-high EMT and SCLC-transformed subclones
+- CNS pharmacokinetic study of fourth-generation inhibitors with CSF drug-level correlation to intracranial response
 
 ### safety_agent — 🔄 revise
 *Discipline: clinical safety and translation risk*
 
-Safety and translational risk reviewer challenging overclaims in post-osimertinib resistance research strategy
+As safety_agent, I challenge overclaims in the resistance-mechanism hypothesis and flag translational risks requiring explicit evidence gates before clinical application.
 
 **Concerns:**
-- Clonal phasing of T790M/C797S requires single-molecule or single-cell sequencing; most ctDNA platforms cannot reliably determine cis vs trans configuration, risking misclassification of actionable vs non-actionable resistance
-- MET amplification thresholds vary across studies and platforms; copy-number cutoffs used to define actionability are not standardized, inflating apparent prevalence
-- CNS sanctuary resistance hypothesis conflates pharmacokinetic limitation with true resistance mechanism; no controlled data distinguish these in post-osimertinib progression
-- Lineage transformation frequency may be underestimated due to sampling bias; rebiopsy rates in real-world settings are low, so transformation-based resistance is likely undercounted
+- Cis/trans phasing by ctDNA has high false-negative rate at VAF<1%; clinical decisions based on phasing without orthogonal tissue confirmation risk misclassification
+- Bypass resistance co-occurrence rates are underreported; combination strategies targeting single bypass driver assume clonal homogeneity not supported by single-cell data
+- Lineage transformation frequency may be underestimated due to biopsy site selection bias; CNS-only progression may harbor divergent histology
+- No head-to-head safety comparison exists between fourth-gen EGFR inhibitors and standard post-osimertinib regimens; ORCHARD arms are non-randomized
 
 **Requested follow-ups:**
-- Specify allele-phasing methodology and platform validation criteria before C797S-directed combination trials
-- Define MET amplification threshold with orthogonal confirmation (FISH plus NGS) as entry criterion for MET inhibitor combinations
-- Require paired pre-treatment and progression biopsy plus concurrent ctDNA for all resistance mechanism studies to distinguish clonal evolution from de novo emergence
+- Require paired tissue biopsy plus ctDNA with allele phasing confirmation before enrolling C797S patients in fourth-gen inhibitor trials
+- Mandate multi-region or single-cell profiling in at least one resistance cohort to quantify bypass co-occurrence and clonal architecture
+- Define explicit failure gates: if ORR<20% or grade3+ toxicity>30% in phase1 expansion, halt combination arm
 
 ### omics_agent — ✅ support with limits
 *Discipline: omics, pathway, and perturbation evidence*
 
-Pathway and cellular evidence strongly supports the proposed resistance mechanism framework for post-osimertinib EGFR-mutant NSCLC, with important caveats on mechanism hierarchy and experimental validation gaps
+Pathway and cellular evidence strongly support the established EGFR oncogenic driver role in NSCLC; the scientific work now centers on resolving heterogeneous post-osimertinib resistance mechanisms and rational combination strategies
 
 **Concerns:**
-- Bystander vs driver distinction for low-VAF ctDNA alterations (e.g., KRAS, PIK3CA) is unresolved without functional validation or clonal phasing
-- SCLC transformation frequency post-first-line osimertinib is poorly quantified; most data derive from second/third-line contexts
-- Spatial and single-cell assays cited as relevant lack standardized protocols for clinical biopsy material, limiting reproducibility
-- Fourth-generation EGFR inhibitor safety data are immature; combining with MET or HER2 agents adds overlapping toxicity signals not yet characterized in large cohorts
+- Clone phasing data from ctDNA may miss spatial heterogeneity captured only by multi-region biopsy
+- Lineage transformation (SCLC) frequency may be underestimated without systematic re-biopsy protocols
+- Fourth-generation inhibitor safety profiles (cardiac, skin, GI toxicity) are not yet fully characterized in large cohorts
+- Bypass resistance mechanisms are often co-occurring, complicating single-agent combination logic
 
 **Requested follow-ups:**
-- Paired pre/post-osimertinib biopsy with single-molecule allele phasing (ddPCR or long-read sequencing) to resolve C797S cis/trans status in C797S+T790M co-detected cases
-- Functional CRISPR dropout or overexpression screens in isogenic osimertinib-resistant cell lines to rank bypass drivers vs bystanders
-- Prospective ctDNA longitudinal sampling with copy-number profiling at progression to quantify MET/HER2 amplification frequency in first-line osimertinib cohorts
+- Mandate paired pre/post-osimertinib biopsy with single-cell RNA-seq to distinguish EMT-like state from true lineage transformation
+- Perform allele-specific PCR or long-read sequencing on ctDNA to phase C797S with T790M in cis vs trans
+- Establish isogenic cell-line panels with defined resistance alleles to test fourth-generation inhibitor combinations with MET or HER2 inhibitors under controlled conditions
 
 ### critic_agent — 🔄 revise
 *Discipline: skeptical scientific review*
 
-The hypothesis card correctly frames EGFR as an established clinical target in NSCLC, not a novel discovery. The scientific value lies entirely in resolving acquired-resistance mechanisms after first-line osimertinib. The evidence digest is directionally sound but contains critical gaps: clone-phasing data for C797S cis/trans are absent, lineage-plasticity controls are unspecified, CNS pharmacokinetic resistance is unaddressed, and the MARIPOSA citation is used without mechanistic detail. The research strategy as presented is insufficiently ranked and lacks explicit failure gates.
+The hypothesis card correctly frames EGFR as an established clinical target in NSCLC and appropriately scopes remaining work to resistance mechanism resolution, patient selection, and combination strategy. This framing is scientifically sound but the evidence digest and hypothesis card leave several critical analytical gaps that must be addressed before a ranked research strategy can be considered audit-ready.
 
 **Concerns:**
-- No allele-phasing (cis vs trans C797S/T790M) evidence is cited; this is the single most consequential determinant for fourth-generation inhibitor eligibility and its absence is a critical gap
-- Lineage transformation claims lack specified controls: paired pre/post biopsy with neuroendocrine markers, transcriptomic profiling, and clonal evolution tracing are not described as required experiments
-- CNS sanctuary resistance and osimertinib CSF penetration variability are entirely absent from the evidence digest despite being a major clinical resistance context
-- MARIPOSA citation is used as 'strong_support' without extracting the actual resistance-mechanism frequency distribution, making the support label unverifiable from the digest alone
+- No clone-phasing data (cis vs trans T790M/C797S) cited; this distinction is critical for fourth-generation inhibitor eligibility and is absent from the evidence digest
+- Bypass resistance frequencies (MET amplification ~15-20%, HER2 ~5%) are not quantified in the card, making prioritization of combination experiments unjustified without this baseline
+- Lineage transformation detection requires tissue biopsy; ctDNA alone is insufficient, yet the card does not specify biopsy requirements or failure gates for liquid-only profiling
+- ORCHARD data cited are from a non-randomized platform trial with small biomarker-selected cohorts; extrapolation to ranked strategy requires explicit acknowledgment of selection bias and immature follow-up
 
 **Requested follow-ups:**
-- Retrieve and tabulate C797S cis/trans phasing frequencies from post-osimertinib ctDNA cohorts (e.g., FLAURA2 resistance analyses) with explicit clone-detection sensitivity thresholds
-- Define failure gates for MET amplification actionability: specify copy-number cutoff, FISH vs NGS method, and co-occurrence with EGFR dependency as inclusion criteria for combination trials
-- Add CNS-specific resistance analysis: CSF ctDNA vs plasma ctDNA concordance, leptomeningeal progression rates, and BBB-penetrant fourth-generation inhibitor PK data
+- Provide clone-phasing data or cite studies distinguishing cis vs trans C797S/T790M to justify fourth-generation inhibitor prioritization
+- Quantify bypass resistance mechanism frequencies from prospective post-osimertinib biopsy cohorts (e.g., APPLE, FLAURA2 resistance substudies) to rank combination experiment priority
+- Specify tissue biopsy requirements and failure gates for lineage transformation detection that cannot be resolved by ctDNA alone
 
 ### PI Adjudication
 
-**Final confidence:** `0.62`
+{"accepted_claims":["EGFR is an established therapeutic target in NSCLC; the scientific task is resistance mechanism resolution, not target discovery","On-target resistance (C797S, EGFR amplification, T790M/C797S cis/trans phasing) is the best-characterized mechanism class and should anchor the experimental hierarchy","MET and ERBB2 amplification are clinically documented bypass mechanisms occurring in a minority of post-osimertinib progressors and are actionable with approved agents","Lineage plasticity (SCLC transformation, AXL-high EMT, squamous shift) requires histologic re-biopsy and orthogonal assays beyond ctDNA alone","ctDNA alone is insufficient for cis-versus-trans T790M/C797S clone phasing; single-molecule or single-cell confirmation is required"],"softened_or_rejected_claims":["Bypass mechanism frequency estimates of 10-15% are softened: these figures derive from retrospective cohorts with heterogeneous biopsy timing and should be treated as provisional ranges rather than precise estimates","JIN-A02 intracranial activity claim is softened: early-phase signals are promising but CNS pharmacokinetic and efficacy endpoints are not yet validated in adequately powered trials"
 
-Core mechanistic framework and evidence standards are well-supported and accepted. Confidence is moderated because dominant resistance mechanism rankings rely on combination-arm trial data not directly applicable to osimertinib monotherapy, association scores are misapplied as resistance frequency proxies, lineage-plasticity targetability is prematurely closed, and CNS/pharmacologic resistance hypotheses lack prospective PK/PD grounding. The revised hypothesis preserves supported claims, softens overclaims, and enforces the required evidentiary guardrails for an audit-ready research strategy.
-
-- ⚠ Softened/rejected: C797S and MET amplification as 'dominant' resistance mechanisms after osimertinib monotherapy is overclaimed; MARIPOSA data derives from a combination arm where amivantamab exerts MET-directed selection pressure and cannot be directly generalized
-- ⚠ Softened/rejected: OpenTargets association scores (EGFR 0.888, KRAS 0.842, ALK 0.812, ERBB2 0.811) reflect disease-level genetic linkage, not post-osimertinib acquired-resistance frequency, and are insufficient alone to rank bypass-resistance experimental priority
-- ⚠ Softened/rejected: Characterizing lineage plasticity as categorically non-targetable by EGFR-TKI is an overclaim given emerging epigenetic priming and partial AXL-high EMT reversibility data that have not been systematically excluded
-- ⚠ Softened/rejected: CNS sanctuary and exposure-limited resistance are pharmacologic hypotheses requiring PK/PD data and should not be ranked equivalently to genomically validated driver mechanisms without prospective cohort support
 
 ## Proposed Next Experiments
 
@@ -370,9 +357,6 @@ Core mechanistic framework and evidence standards are well-supported and accepte
 
 **Gate score:** `0.711` (usable)
 
-**Gate improvements:**
-- Tie the experiment to an uncovered evidence requirement.
-
 ### Experiment 2: Repair unsupported claim links or soften claim boundaries
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
 
@@ -386,26 +370,7 @@ Core mechanistic framework and evidence standards are well-supported and accepte
 
 **Gate score:** `0.691` (usable)
 
-**Gate improvements:**
-- Tie the experiment to an uncovered evidence requirement.
-
-### Experiment 3: Resolve evidence gap: evidence_relevance_noise
-**Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
-
-**Decision gate:** Advance the hypothesis only if this resolves: evidence_relevance_noise
-
-**Success criteria:**
-- higher-precision retrieval with irrelevant records filtered from the claim boundary
-
-**Failure modes to watch:**
-- The result is indirect, non-specific, or does not change the claim boundary.
-
-**Gate score:** `0.691` (usable)
-
-**Gate improvements:**
-- Tie the experiment to an uncovered evidence requirement.
-
-### Experiment 4: Rank candidate interventions by EGFR mutant selectivity, wild-type sparing, CNS penetration, acquired-resistance profile, and ADMET liabilities
+### Experiment 3: Rank candidate interventions by EGFR mutant selectivity, wild-type sparing, CNS penetration, acquired-resistance profile, and ADMET liabilities
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
 
 **Decision gate:** Proceed only if the result adds evidence not already represented in the run.
@@ -418,10 +383,7 @@ Core mechanistic framework and evidence standards are well-supported and accepte
 
 **Gate score:** `0.636` (usable)
 
-**Gate improvements:**
-- Tie the experiment to an uncovered evidence requirement.
-
-### Experiment 5: Run safety-first triage before efficacy assays: exposure margins, off-target biology, and disease-context tolerability
+### Experiment 4: Run safety-first triage before efficacy assays: exposure margins, off-target biology, and disease-context tolerability
 **Type:** `computational_plus_wet_lab` | **Cost:** `medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
 
 **Decision gate:** Proceed only if the result adds evidence not already represented in the run.
@@ -434,17 +396,14 @@ Core mechanistic framework and evidence standards are well-supported and accepte
 
 **Gate score:** `0.615` (usable)
 
-**Gate improvements:**
-- Tie the experiment to an uncovered evidence requirement.
-
 
 ## Critique and Refinement
 
 **Severity:** `medium`
 
-The hypothesis card contains several issues: (1) PMID 42061572 (MARIPOSA) is cited for resistance mechanism frequency hierarchies but this trial compared amivantamab+lazertinib vs osimertinib, making resistance frequencies in the osimertinib arm confounded by cross-arm differences and not representative of osimertinib monotherapy populations; the card acknowledges this but still uses the citation as primary evidence. (2) MET and HER2 amplification are described as bypass mechanisms 'supported by association data' yet the evidence digest shows no functional validation studies in osimertinib-monotherapy cohorts are actually cited, only gene-level descriptions and OpenTargets association scores. (3) The claim that SCLC transformation 'may have partial reversibility' is stated without any cited evidence supporting reversibility; this is speculative and unsupported. (4) Three PubMed queries flagged as having unsupported claim links (C797S/T790M cis-trans phasing, bypass resistance clinical outcomes, therapeutic target validation) remain unresolved in the evidence digest. (5) The readiness score of 89 ('validation_ready') appears inflated given three medium-severity evidence gaps and reliance on combination-arm trial data for monotherapy resistance claims.
+The hypothesis card correctly frames EGFR as a clinically precedented target in NSCLC and avoids new-discovery overclaiming. However, several evidence links remain unsupported in the claim graph (bypass resistance genomic profiling, fourth-generation inhibitor BLU-945/BBT-176 clinical data, Reactome EGFR pathway). The MET gene evidence is included without clear justification for its role in the primary EGFR hypothesis, risking scope inflation. Safety evidence from openFDA is present but not explicitly mapped to specific patient-selection or contraindication claims. The EGFR association score of 0.468 in squamous NSCLC versus 0.888 in non-squamous is not reconciled, potentially overgeneralizing across NSCLC subtypes. Evidence hierarchy for NCBI Gene entries is classified as tier_unknown with low confidence, weakening mechanistic grounding.
 
-**Recommended fix:** (1) Restrict MARIPOSA-derived resistance frequencies explicitly to the osimertinib control arm with sample size and confidence intervals stated. (2) Add or cite functional validation studies (isogenic cell lines or PDX) for MET/HER2 bypass claims, or explicitly downgrade these to 'association-only' with no driver inference. (3) Remove or qualify the SCLC reversibility claim until epigenomic reprogramming evidence is cited. (4) Resolve the three unsupported claim links with targeted literature queries or remove the claims. (5) Lower readiness score to reflect unresolved gaps.
+**Recommended fix:** Explicitly reconcile EGFR association differences between squamous and non-squamous NSCLC subtypes in the hypothesis boundary. Remove or justify MET evidence inclusion. Map openFDA safety signals to specific patient-selection exclusion criteria. Repair unsupported claim graph links by adding targeted PubMed queries for BLU-945/BBT-176 and bypass resistance mechanisms. Upgrade NCBI Gene evidence tier classification using curated database sources.
 
 ## Guardrails
 

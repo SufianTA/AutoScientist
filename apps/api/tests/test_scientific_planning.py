@@ -1,11 +1,14 @@
 from app.services.scientific_planning import (
     build_abstention_assessment,
     build_claim_graph,
+    build_claim_retrieval_plan,
     build_evidence_coverage_matrix,
+    build_quality_dashboard,
     classify_objective,
     compile_case_profile,
     evaluate_report_against_criteria,
     fallback_evaluation_criteria,
+    map_evidence_to_claims,
     score_experiment_gates,
     type_evidence_items,
 )
@@ -82,6 +85,22 @@ def test_workflow_cleans_llm_task_fragments_from_disease_entities() -> None:
 
     assert context["diseases"][0] == "non-small cell lung cancer"
     assert all("produce" not in disease for disease in context["diseases"])
+
+
+def test_workflow_splits_composite_cancer_disease_entities() -> None:
+    workflow = LangGraphScientificWorkflow()
+
+    context = workflow._normalize_context(
+        {
+            "primary_genes": ["RET"],
+            "diseases": ["papillary thyroid cancer and RET-mutant medullary thyroid cancer"],
+            "candidate_interventions": ["selpercatinib"],
+            "pubmed_queries": [],
+        },
+        "Review RET in papillary thyroid cancer and RET-mutant medullary thyroid cancer.",
+    )
+
+    assert context["diseases"] == ["papillary thyroid cancer", "medullary thyroid cancer"]
 
 
 def test_workflow_filters_disease_acronyms_from_gene_entities() -> None:
@@ -221,6 +240,75 @@ def test_case_profile_coverage_and_experiment_gate_scoring_for_complex_oncology_
     assert gated[0]["gate_quality"] in {"usable", "strong"}
 
 
+def test_claim_retrieval_plan_and_matrix_are_entity_driven_not_case_constants() -> None:
+    objective = (
+        "Analyze ALK fusion lung adenocarcinoma resistance after alectinib with compound mutations, "
+        "bypass signaling, safety caveats, and validation experiments."
+    )
+    context = {
+        "primary_genes": ["ALK"],
+        "diseases": ["lung adenocarcinoma"],
+        "candidate_interventions": ["alectinib"],
+        "variants": ["G1202R"],
+    }
+    classification = classify_objective(objective, context).model_dump()
+    profile = compile_case_profile(objective, classification, context)
+    plan = build_claim_retrieval_plan(objective, classification, profile, context)
+
+    assert plan["schema"] == "autosci.claim_retrieval_plan.v0.1"
+    assert any("ALK" in claim["query"] for claim in plan["claims"])
+    assert any(claim["claim_type"] == "variant_or_biomarker" for claim in plan["claims"])
+    assert not any("EGFR" in claim["query"] for claim in plan["claims"])
+
+    evidence = type_evidence_items(
+        [
+            {
+                "source": "PubMed: ALK G1202R lung adenocarcinoma variant resistance biomarker",
+                "text": "ALK G1202R is discussed as a resistance mutation in lung adenocarcinoma literature.",
+                "score": {"label": "strong_support"},
+                "structured": {},
+            },
+            {
+                "source": "ClinicalTrials.gov: alectinib lung adenocarcinoma ALK",
+                "text": "Clinical trial records provide clinical context for alectinib in ALK positive disease.",
+                "score": {"label": "weak_support"},
+                "structured": {},
+            },
+        ]
+    )
+    matrix = map_evidence_to_claims(evidence, plan, {})
+
+    assert matrix["planned_claim_count"] == len(plan["claims"])
+    assert matrix["coverage_score"] > 0
+    assert any(row["support_status"] in {"covered", "partial"} for row in matrix["claims"])
+
+
+def test_quality_dashboard_summarizes_relevance_tools_claims_and_flags() -> None:
+    evidence = [
+        {"source": "PubMed: ALK", "text": "relevant", "score": {"label": "strong_support"}},
+        {"source": "PubMed: broad", "text": "off topic", "score": {"label": "irrelevant"}},
+    ]
+    dashboard = build_quality_dashboard(
+        evidence=evidence,
+        tool_outputs=[
+            {"tool_name": "pubmed_literature_search_tool", "result": {"status": "success"}},
+            {"tool_name": "clinical_trials_search_tool", "result": {"status": "failure"}},
+        ],
+        claim_matrix={"coverage_score": 0.5, "covered_count": 0, "partial_count": 1, "missing_count": 1},
+        evidence_coverage={"coverage_score": 0.25, "covered_count": 0, "partial_count": 1, "missing_count": 2},
+        scientific_strategy={"readiness": {"score": 55, "tier": "experiment_ready_with_gaps"}},
+        critique={"severity": "high"},
+        experiments=[{"gate_quality": "strong"}, {"gate_quality": "weak"}],
+    )
+
+    assert dashboard["schema"] == "autosci.quality_dashboard.v0.1"
+    assert dashboard["evidence"]["relevance_rate"] == 0.5
+    assert dashboard["tools"]["success_rate"] == 0.5
+    assert dashboard["claims"]["missing"] == 1
+    assert dashboard["experiments"]["strong"] == 1
+    assert dashboard["flags"]
+
+
 def test_evidence_coverage_matrix_does_not_count_irrelevant_broad_matches() -> None:
     profile = {
         "evidence_requirements": [
@@ -338,3 +426,44 @@ def test_critic_enforcement_rewrites_stale_established_target_framing() -> None:
     assert "not as a new target discovery" in state.hypothesis_card["hypothesis"]
     assert state.context["critique_enforced_revision"]["previous"]["hypothesis"].startswith("EGFR remains")
     assert state.hypothesis_card["claim_graph"]["claims"]
+
+    state.report = {
+        "title": "Stale report",
+        "summary": "EGFR remains an early or insufficiently established hypothesis for non-small cell lung cancer.",
+        "confidence": 0.81,
+    }
+    workflow._enforce_critique_lock_on_report(state)
+
+    assert "early or insufficiently established" not in state.report["summary"]
+    assert state.report["critique_repair_lock"]["applied"] is True
+
+
+def test_llm_irrelevant_pubmed_label_gets_conservative_relevance_floor() -> None:
+    workflow = LangGraphScientificWorkflow()
+    state = ResearchRunState(
+        run_id="r1",
+        objective_id="o1",
+        objective="Review RET fusion papillary thyroid cancer resistance.",
+    )
+    state.context["biomedical_context"] = {
+        "primary_genes": ["RET"],
+        "diseases": ["papillary thyroid cancer"],
+    }
+    item = {
+        "source": "PubMed: RET papillary thyroid cancer mechanism pathway resistance signaling",
+        "text": (
+            "RET Signaling Pathway in Human Cancer: Oncogenic Mechanisms, Selective Inhibitors, "
+            "and Emerging Resistance Strategies.; Molecular pathogenesis and therapeutic advances "
+            "in RET fusion-positive papillary thyroid carcinoma."
+        ),
+        "structured": {"articles": [{"title": "RET fusion-positive papillary thyroid carcinoma resistance mechanisms"}]},
+    }
+
+    repaired = workflow._apply_relevance_floor(
+        item,
+        {"label": "irrelevant", "score": 0.2, "warnings": []},
+        state,
+    )
+
+    assert repaired["label"] in {"mechanistic_relevance", "weak_support", "strong_support"}
+    assert repaired["score"] >= 0.52

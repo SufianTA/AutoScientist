@@ -48,6 +48,7 @@ def load_case(path: Path) -> dict[str, Any]:
     hyp_post = next((p.get("content", {}) for p in board_posts if p.get("post_type") == "hypothesis"), {})
     positions = hyp_post.get("agent_debate", {}).get("scientist_positions", []) or []
     readiness = report.get("scientific_strategy", {}).get("readiness", {}) or {}
+    quality = report.get("quality_dashboard", {}) or {}
     return {
         "slug": slug,
         "title": CASE_TITLES.get(slug, slug.replace("-", " ").title()),
@@ -61,6 +62,7 @@ def load_case(path: Path) -> dict[str, Any]:
         "steps": steps,
         "positions": positions,
         "readiness": readiness,
+        "quality": quality,
     }
 
 
@@ -138,6 +140,7 @@ def render_case_page(case: dict[str, Any]) -> str:
     tool_sources = count(case["tools"], "tool_source")
     vote_counts = Counter(str(p.get("vote") or "review") for p in case["positions"])
     readiness = case["readiness"]
+    quality = case["quality"]
     run_id = payload.get("run_id")
     confidence = payload.get("final_confidence")
     success = tool_status.get("success", 0)
@@ -213,12 +216,29 @@ def render_case_page(case: dict[str, Any]) -> str:
     claim_rows = [
         [
             idx + 1,
-            item.get("claim"),
-            item.get("claim_type"),
-            item.get("support_status"),
+            item.get("text") or item.get("claim"),
+            item.get("claim_boundary") or item.get("claim_type"),
+            item.get("support_status") or f"{len(item.get('supporting_evidence_sources') or [])} support",
             ", ".join(str(v) for v in (item.get("evidence_gaps") or [])),
         ]
         for idx, item in enumerate(report.get("claim_graph", {}).get("claims", []) or [])
+    ]
+    claim_matrix_rows = [
+        [
+            row.get("id"),
+            row.get("claim_type"),
+            row.get("support_status"),
+            text(row.get("query"), 220),
+            ", ".join(str(v.get("source")) for v in (row.get("matched_evidence") or [])[:4]),
+        ]
+        for row in (report.get("claim_evidence_matrix", {}).get("claims", []) or [])
+    ]
+    quality_rows = [
+        ["Evidence relevance", quality.get("evidence", {}).get("relevance_rate"), text(quality.get("evidence", {}).get("labels"), 260)],
+        ["Tool success", quality.get("tools", {}).get("success_rate"), text(quality.get("tools", {}).get("statuses"), 260)],
+        ["Planned claim coverage", quality.get("claims", {}).get("coverage_score"), f"missing {quality.get('claims', {}).get('missing')}"],
+        ["Requirement coverage", quality.get("requirements", {}).get("coverage_score"), f"missing {quality.get('requirements', {}).get('missing')}"],
+        ["Experiment gates", quality.get("experiments", {}).get("usable_or_strong"), f"strong {quality.get('experiments', {}).get('strong')}"],
     ]
 
     return html_doc(
@@ -249,12 +269,14 @@ def render_case_page(case: dict[str, Any]) -> str:
     {metric_card("Debate", len(case["positions"]), ", ".join(f"{k}:{v}" for k, v in vote_counts.items()))}
     {metric_card("Experiments", len(case["experiments"]))}
     {metric_card("Claims", len(report.get("claim_graph", {}).get("claims", []) or []))}
+    {metric_card("Quality flags", len(quality.get("flags", []) or []))}
   </section>
   <section class="section two">
     <div class="card">
       <h2>Run Calibration</h2>
       {bar("Tool success", f"{success}/{tool_total}", pct(success, tool_total), ", ".join(f"{k}:{v}" for k, v in tool_status.items()))}
       {bar("Coverage", report.get("evidence_coverage_matrix", {}).get("coverage_score", 0), pct(float(report.get("evidence_coverage_matrix", {}).get("coverage_score", 0)), 1), "case evidence requirements")}
+      {bar("Claim evidence", report.get("claim_evidence_matrix", {}).get("coverage_score", 0), pct(float(report.get("claim_evidence_matrix", {}).get("coverage_score", 0)), 1), "planned claim retrieval")}
       {bar("Confidence", confidence, pct(float(confidence or 0), 1), "final bounded confidence")}
       <p>{esc(text(readiness.get("rationale"), 420))}</p>
       <ul>{''.join(f"<li>{esc(note)}</li>" for note in readiness.get("calibration_notes", []) or [])}</ul>
@@ -266,9 +288,11 @@ def render_case_page(case: dict[str, Any]) -> str:
       <p>Actionability: {esc(report.get("actionability_profile", {}).get("recommended_decision"))} / {esc(report.get("actionability_profile", {}).get("level"))}.</p>
     </div>
   </section>
+  <section class="section"><h2>Quality Dashboard</h2>{render_table(["Signal", "Value", "Detail"], quality_rows)}<ul>{''.join(f"<li>{esc(flag)}</li>" for flag in quality.get("flags", []) or [])}</ul></section>
   <section class="section"><h2>Scientist Debate</h2>{render_table(["Agent", "Discipline", "Vote", "Position", "Concerns"], debate_rows)}</section>
   <section class="section"><h2>Evidence Items</h2>{render_table(["#", "Label", "Score", "Source", "Evidence text"], evidence_rows)}</section>
   <section class="section"><h2>Claim Graph</h2>{render_table(["#", "Claim", "Type", "Support", "Gaps"], claim_rows)}</section>
+  <section class="section"><h2>Planned Claim Evidence</h2>{render_table(["ID", "Type", "Status", "Retrieval query", "Matched evidence"], claim_matrix_rows)}</section>
   <section class="section"><h2>Evidence Coverage Matrix</h2>{render_table(["ID", "Requirement", "Status", "Matched sources"], coverage_rows)}</section>
   <section class="section"><h2>Experiment Gates</h2>{render_table(["#", "Name", "Type", "Cost", "Feasibility", "Information gain", "Impact", "Gate quality", "Decision gate"], experiment_rows)}</section>
   <section class="section"><h2>Tool Calls</h2>{render_table(["#", "Tool", "Source", "Status", "Latency ms", "Input", "Output"], tool_rows)}</section>

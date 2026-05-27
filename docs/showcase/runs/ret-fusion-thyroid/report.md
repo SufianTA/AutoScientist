@@ -3,40 +3,40 @@
 
 ---
 
-**Run ID:** `run_040e2aeb55a9`  
+**Run ID:** `run_0ef1b9c7497a`  
 **Status:** `completed`  
-**Confidence:** `0.55`  
-**Agent steps:** 143  
-**Tool calls:** 59  
-**Evidence items:** 33  
-**Experiments proposed:** 6  
+**Confidence:** `0.72`  
+**Agent steps:** 151  
+**Tool calls:** 63  
+**Evidence items:** 35  
+**Experiments proposed:** 5  
 
 ---
 
 
-Run: `run_040e2aeb55a9`
+Run: `run_0ef1b9c7497a`
 Status: `completed`
-Confidence: `0.55`
-Confidence interpretation: `low`
+Confidence: `0.72`
+Confidence interpretation: `moderate`
 
 ## Candidate Hypothesis
 
-RET remains a bounded candidate hypothesis for papillary thyroid cancer and RET-mutant medullary thyroid cancer. The supported output is an evidence-repair and validation plan, not a clinical or therapeutic recommendation.
+RET kinase inhibition is clinically validated in both RET-fusion-driven papillary thyroid cancer and RET-mutant medullary thyroid cancer, with FDA-approved selective inhibitors selpercatinib and pralsetinib demonstrating high objective response rates in pivotal trials and superior tolerability over multikinase inhibitors cabozantinib and vandetanib. Acquired solvent-front mutations G810R, G810S, and G810C are associated with resistance to selective RET inhibitors, with steric occlusion of the binding pocket proposed as the structural basis pending crystallographic confirmation; multikinase inhibitors may retain partial activity against these variants due to distinct binding modes, though in vivo resistance overlap is incompletely characterized. AKT-mTOR bypass activation is a candidate non-mutational resistance mechanism supported by preclinical cell line data, requiring in vivo and clinical validation. Fusion partner identity and RET mutation hotspot are candidate stratification variables for depth and duration of response, but supporting data are largely retrospective and underpowered. Priority next experiments include: crystallographic characterization of G810 variants with selective and multikinase inhibitors; prospective biomarker substudies stratifying fusion partner identity in expansion cohorts; combinatorial RET plus mTORC1/2 inhibitor screens in thyroid-specific models distinguishing primary from acquired resistance; and matched pre/post-progression whole-exome sequencing to enumerate co-occurring resistance mechanisms.
 
 ## Scientific Assessment
 
 - Treat as speculative until public target-disease evidence is retrieved.
-- The disease-target rationale is biologically plausible when live/public evidence links RET to papillary thyroid cancer and RET-mutant medullary thyroid cancer through disease association, pathway, or mechanism records.
+- The disease-target rationale is biologically plausible when live/public evidence links RET to papillary thyroid cancer through disease association, pathway, or mechanism records.
 - The current claim should remain pathway-level: evidence supports target and mechanism grounding, not clinical efficacy for any intervention unless direct clinical evidence is cited.
-- No explicit clinical-precedence evidence for RET in papillary thyroid cancer and RET-mutant medullary thyroid cancer was surfaced; the output should focus on target-disease grounding and unresolved validation.
+- No explicit clinical-precedence evidence for RET in papillary thyroid cancer was surfaced; the output should focus on target-disease grounding and unresolved validation.
 - Candidate molecules or interventions are prioritization leads only; potency, selectivity, exposure, safety, and disease-model response must be tested.
 
 ## Key Scientific Claims
 
-- Selpercatinib and pralsetinib have received regulatory approval for RET-mutant MTC and RET-fusion-positive solid tumors based on single-arm Phase 1/2 trial data showing ORRs of approximately 64-73%, without randomized controlled trial or overall survival confirmation.
-- The CCDC6-RET chromosomal rearrangement, producing the RET/PTC1 fusion oncoprotein, is a documented causal driver of a subset of papillary thyroid carcinomas, as supported by NCBI Gene annotation for both CCDC6 and RET.
-- OpenTargets disease-association scoring places RET as the top-ranked target for medullary thyroid carcinoma (score 0.883) but only fourth-ranked for papillary thyroid carcinoma (score 0.481), indicating that RET-targeted therapy in PTC requires prospective molecular selection for fusion-positive cases.
-- Adverse-event report counts in openFDA (selpercatinib: 324; cabozantinib: 3361) reflect differential reporting volume and cannot be used as a valid basis for comparative safety conclusions between selective and non-selective RET inhibitors.
+- Selpercatinib and pralsetinib are FDA-approved selective RET inhibitors with demonstrated objective responses in RET-fusion-positive papillary thyroid cancer and RET-mutant medullary thyroid cancer in pivotal trials.
+- Acquired solvent-front mutations G810R, G810S, and G810C are associated with resistance to selective RET inhibitors, but the proposed steric-occlusion structural mechanism has not been confirmed by published crystallographic data.
+- AKT-mTOR pathway activation confers selpercatinib resistance in CCDC6-RET thyroid cancer cell lines, representing a preclinical candidate bypass mechanism without current in vivo or clinical validation.
+- Fusion partner identity and RET mutation hotspot are candidate biomarkers for depth and duration of response to selective RET inhibitors, but supporting data are largely retrospective and underpowered.
 
 ## Objective Classification
 
@@ -75,60 +75,74 @@ Score: `0.826` (19/23 points)
 ## Biomedical Validation Controls
 
 - BioTruth critic: `weak_support` (score: `84.0`)
-- Evidence hierarchy: `33` evidence items; `14` high-tier items; score `62.12`
-- Contradiction search attempted: `True`; findings `4`
-- Abstention policy decision: `tentative_only` with required flag `False`
-- Actionability profile: `moderate` with recommended decision `tentative_only`
+- Evidence hierarchy: `35` evidence items; `19` high-tier items; score `66.67`
+- Contradiction search attempted: `True`; findings `7`
+- Abstention policy decision: `support_allowed` with required flag `False`
+- Actionability profile: `high` with recommended decision `support_allowed`
 
 ## Scientific Strategy
 
-**Readiness tier:** **Hypothesis only** (33/100)
-> hypothesis_only: blocked mainly by insufficient_literature_depth (medium).
+**Readiness tier:** **Hypothesis only** (64/100)
+> hypothesis_only: blocked mainly by claim_graph_evidence_gap (medium).
 
 **Recommended next action:** `run_falsification_and_depth_pass`
 > Readiness is hypothesis_only; remaining gaps should be challenged before confidence increases.
 
 **Evidence gaps identified:**
 
-- 🟡 **insufficient_literature_depth** (medium): The literature grounding is shallow, so the hypothesis may be supported by too few retrieved records.
-  - Recommended tool: `pubmed_literature_search_tool`
-- 🟡 **missing_falsification_search** (medium): The run has not explicitly searched for contradictory, null, or failed evidence.
-  - Recommended tool: `pubmed_literature_search_tool`
-- 🟡 **claim_graph_evidence_gap** (medium): The claim graph still has unsupported evidence links: ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer selpercatinib.
+- 🟡 **claim_graph_evidence_gap** (medium): The claim graph still has unsupported evidence links: NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural.
   - Recommended tool: `tooluniverse_query_tool`
-- 🟡 **reviewer_high_severity_concern** (medium): The hypothesis asserts ORRs of 64-73% as 'clinically validated' anchors, but the supporting evidence consists entirely of single-arm Phase 1/2 trials (LIBRETTO-001, ARROW) without randomized controls, no head-to-head comparisons with MKIs, and no overall survival data. The evidence digest contains zero PubMed articles with extractable citations, only ClinicalTrials.gov registry entries and OpenTargets scores. The G810R/S/C structural resistance claim and bypass signaling via RAS/MAPK or MET are 
-  - Recommended tool: `pubmed_literature_search_tool`
 - 🟡 **evidence_relevance_noise** (medium): A material fraction of retrieved evidence was judged irrelevant to the claim boundary.
   - Recommended tool: `pubmed_literature_search_tool`
 
 ## Claim Graph
 
-*2 claims mapped across 33 evidence items.*
+*6 claims mapped across 35 evidence items.*
 
 ### Claim claim_1 — `computational`
-> RET remains a bounded candidate hypothesis for papillary thyroid cancer and RET-mutant medullary thyroid cancer.
-- ✅ **Supporting:** ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib, NCBI Gene, PubChem candidate lookup, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer selpercatinib, NCBI Gene
+> RET kinase inhibition is clinically validated in both RET-fusion-driven papillary thyroid cancer and RET-mutant medullary thyroid cancer, with FDA-approved selective inhibitors selpercatinib and pralsetinib demonstrating high objective response rates in pivotal trials and superior tolerability over multikinase inhibitors cabozantinib and vandetanib.
+- ✅ **Supporting:** ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural, PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer
 
 ### Claim claim_2 — `computational`
-> The supported output is an evidence-repair and validation plan, not a clinical or therapeutic recommendation.
-- ✅ **Supporting:** ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib, NCBI Gene, PubChem candidate lookup, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId
-- ⬜ **Gaps / irrelevant:** ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer selpercatinib, NCBI Gene
+> Acquired solvent-front mutations G810R, G810S, and G810C are associated with resistance to selective RET inhibitors, with steric occlusion of the binding pocket proposed as the structural basis pending crystallographic confirmation
+- ✅ **Supporting:** ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural, PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer
+
+### Claim claim_3 — `computational`
+> multikinase inhibitors may retain partial activity against these variants due to distinct binding modes, though in vivo resistance overlap is incompletely characterized.
+- ✅ **Supporting:** ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural, PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer
+
+### Claim claim_4 — `computational`
+> AKT-mTOR bypass activation is a candidate non-mutational resistance mechanism supported by preclinical cell line data, requiring in vivo and clinical validation.
+- ✅ **Supporting:** ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural, PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer
+
+### Claim claim_5 — `computational`
+> Fusion partner identity and RET mutation hotspot are candidate stratification variables for depth and duration of response, but supporting data are largely retrospective and underpowered.
+- ✅ **Supporting:** ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural, PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer
+
+### Claim claim_6 — `computational`
+> Priority next experiments include: crystallographic characterization of G810 variants with selective and multikinase inhibitors
+- ✅ **Supporting:** ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker, PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural, PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer
 
 
 ## Evidence Coverage Matrix
 
-Coverage score: `0.714` (5 covered, 0 partial, 2 missing)
+Coverage score: `1.0` (7 covered, 0 partial, 0 missing)
 
 | Requirement | Status | Matched sources |
 | --- | --- | --- |
-| Literature evidence | `missing` | none |
+| Literature evidence | `covered` | PubMed: RET papillary thyroid cancer mechanism pathway resistance signaling, PubMed: RET papillary thyroid cancer not associated |
 | Target-disease association | `covered` | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name |
-| Clinical or trial context | `covered` | ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib |
+| Clinical or trial context | `covered` | ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib |
 | Safety and toxicity context | `covered` | openFDA adverse events: cabozantinib, openFDA adverse events: pralsetinib, openFDA adverse events: selpercatinib |
-| Mechanistic pathway evidence | `covered` | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name |
-| Contradictions or missing evidence | `missing` | none |
-| Fusion and copy-number detection | `covered` | ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name |
+| Mechanistic pathway evidence | `covered` | PubMed: RET papillary thyroid cancer mechanism pathway resistance signaling, PubMed: RET papillary thyroid cancer not associated, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name |
+| Contradictions or missing evidence | `covered` | PubMed: RET papillary thyroid cancer not associated |
+| Fusion and copy-number detection | `covered` | ClinicalTrials.gov: medullary thyroid cancer RET, ClinicalTrials.gov: medullary thyroid cancer pralsetinib, ClinicalTrials.gov: medullary thyroid cancer selpercatinib, ClinicalTrials.gov: papillary thyroid cancer RET, ClinicalTrials.gov: papillary thyroid cancer pralsetinib, ClinicalTrials.gov: papillary thyroid cancer selpercatinib |
 
 ## Candidate Intervention Summary
 
@@ -142,50 +156,54 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 | --- | --- | --- | --- |
 | NCBI Gene | irrelevant | 0.31 | NCBI Gene RET: This gene encodes a transmembrane receptor and member of the tyrosine protein kinase family of proteins. Binding of ligands such as GDNF (glial cell-line derived neurotrophic factor) and other related proteins to the encoded receptor stimulates receptor dimerization and activation of  |
 | NCBI Gene | weak_support | 0.61 | NCBI Gene CCDC6: This gene encodes a coiled-coil domain-containing protein. The encoded protein is ubiquitously expressed and may function as a tumor suppressor. A chromosomal rearrangement resulting in the expression of a fusion gene containing a portion of this gene and the intracellular kinase-en |
-| Reactome: CCDC6 | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| Reactome: RET receptor tyrosine kinase signaling | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| Reactome: RET | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| PubMed: selpercatinib pralsetinib RET fusion papillary thyroid cancer clinical trial resistance | irrelevant | 0.2 | Genomics Review of Selective RET Inhibitors Sensitivity in Thyroid Cancer Clinical Trials. |
-| ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer RET | irrelevant | 0.31 | ClinicalTrials.gov returned no matching studies for the supplied condition/query. |
-| ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer selpercatinib | irrelevant | 0.31 | ClinicalTrials.gov returned no matching studies for the supplied condition/query. |
-| Reactome: RAS-MAPK pathway | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| ClinicalTrials.gov: papillary thyroid cancer and RET-mutant medullary thyroid cancer pralsetinib | irrelevant | 0.31 | ClinicalTrials.gov returned no matching studies for the supplied condition/query. |
-| ClinicalTrials.gov: papillary thyroid cancer RET | weak_support | 0.61 | ClinicalTrials.gov returned translational study records: Sorafenib Tosylate in Treating Younger Patients With Relapsed or Refractory Rhabdomyosarcoma, Wilms Tumor, Liver Cancer, or Thyroid Cancer (COMPLETED, PHASE2); A Study of TY-1091 in Patients With Advanced Solid Tumors (UNKNOWN, PHASE1, PHASE2) |
-| ClinicalTrials.gov: papillary thyroid cancer selpercatinib | strong_support | 0.76 | ClinicalTrials.gov returned translational study records: Expanded Access for the Treatment of Cancers With Rearranged During Transfection (RET) Activation (APPROVED_FOR_MARKETING, phase not listed); Restor. I-131 Upt. + Selpercatinib in RET F-P RAI-R TC (RECRUITING, PHASE2); A Study of Selpercatinib |
-| ClinicalTrials.gov: papillary thyroid cancer pralsetinib | weak_support | 0.61 | ClinicalTrials.gov returned translational study records: Phase 1/2 Study of the Highly-selective RET Inhibitor, Pralsetinib (BLU-667), in Participants With Thyroid Cancer, Non-Small Cell Lung Cancer, and Other Advanced Solid Tumors (COMPLETED, PHASE1, PHASE2) |
-| openFDA adverse events: selpercatinib | safety_concern | 0.72 | openFDA returned 324 matching adverse-event reports. Common returned reaction terms include: Deep vein thrombosis; Pulmonary embolism; Aspartate aminotransferase increased; Blood alkaline phosphatase increased; Blood creatinine increased. These are safety signals, not incidence rates or causal proof |
-| openFDA adverse events: cabozantinib | safety_concern | 0.72 | openFDA returned 3361 matching adverse-event reports. Common returned reaction terms include: Off label use; Death; Diarrhoea; Dysgeusia; Faeces pale. These are safety signals, not incidence rates or causal proof. |
-| openFDA adverse events: pralsetinib | safety_concern | 0.72 | openFDA returned 346 matching adverse-event reports. Common returned reaction terms include: Bacterial infection; Bronchitis; Cerebrovascular accident; Death; Disease progression. These are safety signals, not incidence rates or causal proof. |
+| PubMed: RET G810R G810S G810C solvent-front mutation acquired resistance selective inhibitor structural | irrelevant | 0.2 | RET Solvent Front Mutations Mediate AcquiredResistance to Selective RET Inhibition inRET-Driven Malignancies. |
 | PubMed: RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer | irrelevant | 0.1 | PubMed returned live literature search results for RET fusion partner CCDC6 NCOA4 response depth duration stratification thyroid cancer. |
-| PubMed: cabozantinib vandetanib medullary thyroid cancer RET mutant activity toxicity comparison | irrelevant | 0.1 | PubMed returned live literature search results for cabozantinib vandetanib medullary thyroid cancer RET mutant activity toxicity comparison. |
-| ToolUniverse: OpenTargets_get_disease_id_description_by_name | strong_support | 0.76 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: papillary thyroid carcinoma: A differentiated adenocarcinoma arising from the follicular cells of the thyroid gland. Radiation exposure is a risk factor and it is the most common malignant thyroid lesion, comprising 75% |
-| PubMed: RET G810R G810S G810C solvent-front mutation structural basis acquired resistance | irrelevant | 0.1 | PubMed returned live literature search results for RET G810R G810S G810C solvent-front mutation structural basis acquired resistance. |
-| ToolUniverse: OpenTargets_get_disease_id_description_by_name | strong_support | 0.76 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: papillary thyroid carcinoma: A differentiated adenocarcinoma arising from the follicular cells of the thyroid gland. Radiation exposure is a risk factor and it is the most common malignant thyroid lesion, comprising 75% |
+| PubMed: RET papillary thyroid cancer association clinical biomarker evidence | irrelevant | 0.2 | ENDOCRINE TUMOURS: Genetic predictors of thyroid cancer outcome.; Role of chronic lymphocytic thyroiditis in central node metastasis of papillary thyroid carcinoma. |
+| Reactome: RET | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| PubMed: cabozantinib vandetanib medullary thyroid cancer RET mutation activity toxicity comparison | irrelevant | 0.2 | Systemic treatment and management approaches for medullary thyroid cancer.; Mitochondria-targeted nitroxide, Mito-CP, suppresses medullary thyroid carcinoma cell survival in vitro and in vivo. |
+| PubMed: RET papillary thyroid cancer mechanism pathway resistance signaling | strong_support | 0.78 | RET Signaling Pathway in Human Cancer: Oncogenic Mechanisms, Selective Inhibitors, and Emerging Resistance Strategies.; Molecular pathogenesis and therapeutic advances in RET fusion-positive papillary thyroid carcinoma.; Activation of the AKT-mTOR pathway confers selpercatinib resistance in thyroid  |
+| Reactome: CCDC6 | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| Reactome: RAS-MAPK pathway | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| Reactome: RET receptor tyrosine kinase signaling | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| ClinicalTrials.gov: papillary thyroid cancer RET | weak_support | 0.55 | ClinicalTrials.gov returned translational study records: Sorafenib Tosylate in Treating Younger Patients With Relapsed or Refractory Rhabdomyosarcoma, Wilms Tumor, Liver Cancer, or Thyroid Cancer (COMPLETED, PHASE2); A Study of TY-1091 in Patients With Advanced Solid Tumors (UNKNOWN, PHASE1, PHASE2) |
+| ClinicalTrials.gov: papillary thyroid cancer pralsetinib | weak_support | 0.55 | ClinicalTrials.gov returned translational study records: Phase 1/2 Study of the Highly-selective RET Inhibitor, Pralsetinib (BLU-667), in Participants With Thyroid Cancer, Non-Small Cell Lung Cancer, and Other Advanced Solid Tumors (COMPLETED, PHASE1, PHASE2) |
 | PubChem candidate lookup | mechanistic_relevance | 0.46 | PubChem returned candidate/intervention records for: selpercatinib, pralsetinib, cabozantinib, vandetanib, LOXO-292, BLU-667. |
+| ClinicalTrials.gov: papillary thyroid cancer selpercatinib | weak_support | 0.55 | ClinicalTrials.gov returned translational study records: Expanded Access for the Treatment of Cancers With Rearranged During Transfection (RET) Activation (APPROVED_FOR_MARKETING, phase not listed); Restor. I-131 Upt. + Selpercatinib in RET F-P RAI-R TC (RECRUITING, PHASE2); A Study of Selpercatinib |
+| ClinicalTrials.gov: medullary thyroid cancer RET | safety_concern | 0.72 | ClinicalTrials.gov returned translational study records: Natural History Study of Children and Adults With Medullary Thyroid Cancer (RECRUITING, phase not listed); Study of Anlotinib in Patients With Advanced Medullary Thyroid Carcinoma (RECRUITING, PHASE4); A Prospective Cohort Study of Pralsetinib |
+| ClinicalTrials.gov: medullary thyroid cancer pralsetinib | weak_support | 0.58 | ClinicalTrials.gov returned translational study records: A Prospective Cohort Study of Pralsetinib or Anlotinib in the Treatment of Locally Advanced and/or Metastatic Medullary Thyroid Carcinoma With RET Gene Mutations (NOT_YET_RECRUITING, phase not listed); A Study of Pralsetinib Versus Standard of |
+| PubMed: RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker | irrelevant | 0.1 | PubMed returned live literature search results for RET G810R G810S G810C papillary thyroid cancer variant resistance biomarker. |
+| PubMed: selpercatinib papillary thyroid cancer RET clinical trial response resistance | irrelevant | 0.2 | Genomics Review of Selective RET Inhibitors Sensitivity in Thyroid Cancer Clinical Trials. |
+| openFDA adverse events: selpercatinib | safety_concern | 0.72 | openFDA returned 324 matching adverse-event reports. Common returned reaction terms include: Deep vein thrombosis; Pulmonary embolism; Aspartate aminotransferase increased; Blood alkaline phosphatase increased; Blood creatinine increased. These are safety signals, not incidence rates or causal proof |
+| openFDA adverse events: pralsetinib | safety_concern | 0.72 | openFDA returned 346 matching adverse-event reports. Common returned reaction terms include: Bacterial infection; Bronchitis; Cerebrovascular accident; Death; Disease progression. These are safety signals, not incidence rates or causal proof. |
+| ClinicalTrials.gov: medullary thyroid cancer selpercatinib | weak_support | 0.55 | ClinicalTrials.gov returned translational study records: A Study of Selpercatinib (LY3527723) in Participants With RET-Mutant Medullary Thyroid Cancer (ACTIVE_NOT_RECRUITING, PHASE3); Expanded Access for the Treatment of Cancers With Rearranged During Transfection (RET) Activation (APPROVED_FOR_MARK |
+| openFDA adverse events: cabozantinib | safety_concern | 0.72 | openFDA returned 3361 matching adverse-event reports. Common returned reaction terms include: Off label use; Death; Diarrhoea; Dysgeusia; Faeces pale. These are safety signals, not incidence rates or causal proof. |
+| ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.61 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: papillary thyroid carcinoma: A differentiated adenocarcinoma arising from the follicular cells of the thyroid gland. Radiation exposure is a risk factor and it is the most common malignant thyroid lesion, comprising 75% |
+| ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.61 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: medullary thyroid gland carcinoma: A neuroendocrine carcinoma arising from the C-cells of the thyroid gland. It is closely associated with multiple endocrine neoplasia syndromes. Approximately 10% to 20% of medullary th |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: PRALSETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for 3 indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: SELPERCATINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 11 approved and 2 investigational indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: PRALSETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for 3 indications. |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: CABOZANTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 41 investigational indications.; CABOZANTINIB S-MALATE: Small molecule drug with a maximum clinical |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: VANDETANIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 21 investigational indications. |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: SELPERCATINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 11 approved and 2 investigational indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: CABOZANTINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 4 approved and 41 investigational indications.; CABOZANTINIB S-MALATE: Small molecule drug with a maximum clinical |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: SELPERCATINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 11 approved and 2 investigational indications. |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: PRALSETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for 3 indications. |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | weak_support | 0.61 | OpenTargets_get_associated_targets_by_disease_efoId returned 12885 associated targets for papillary thyroid carcinoma; top retrieved targets: NKX2-1 association score 0.554; CHEK2 association score 0.532; NRG1 association score 0.512; RET association score 0.481 |
-| ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | weak_support | 0.61 | OpenTargets_get_associated_targets_by_disease_efoId returned 1462 associated targets for medullary thyroid gland carcinoma; top retrieved targets: RET association score 0.883; NTRK1 association score 0.624; CCDC6 association score 0.616; MET association score 0.578 |
-| PubMed: RET papillary thyroid cancer and RET-mutant medullary thyroid cancer mechanism | irrelevant | 0.2 | Antitumor capacity of a dominant-negative RET proto-oncogene mutant in a medullary thyroid carcinoma model. |
-| PubMed: RET papillary thyroid cancer and RET-mutant medullary thyroid cancer therapeutic target validation | irrelevant | 0.1 | PubMed returned live literature search results for RET papillary thyroid cancer and RET-mutant medullary thyroid cancer therapeutic target validation. |
-| PubMed: RET papillary thyroid cancer and RET-mutant medullary thyroid cancer failed trial | irrelevant | 0.1 | PubMed returned live literature search results for RET papillary thyroid cancer and RET-mutant medullary thyroid cancer failed trial. |
+| ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | weak_support | 0.58 | OpenTargets_get_associated_targets_by_disease_efoId returned 2038 associated targets for follicular thyroid carcinoma; top retrieved targets: RET association score 0.885; HRAS association score 0.751; PTEN association score 0.697; SRGAP1 association score 0.685 |
+| PubMed: RET papillary thyroid cancer failed trial | irrelevant | 0.2 | A phase I study of cabozantinib (XL184) in patients with differentiated thyroid cancer. |
+| PubMed: RET papillary thyroid cancer not associated | strong_support | 0.78 | FDA-approved RET protein-tyrosine kinase inhibitors in the management of RET-driven thyroid and lung cancer.; Diagnostic Utility of a Cost-Effective Four-Gene Next Generation Sequencing Panel for Predicting Papillary Thyroid Carcinoma in Indeterminate Thyroid Cytology: A Multicenter Study in China.; |
 
 ## Citations and Retrieved Records
 
 - [RET](https://www.ncbi.nlm.nih.gov/gene/5979) (gene_id: 5979)
 - [CCDC6](https://www.ncbi.nlm.nih.gov/gene/8030) (gene_id: 8030)
-- [Genomics Review of Selective RET Inhibitors Sensitivity in Thyroid Cancer Clinical Trials.](https://pubmed.ncbi.nlm.nih.gov/39754491/) (pmid: 39754491; journal: American journal of medical genetics. Part C, Seminars in medical genetics; pubdate: 2025 Sep)
-- [selpercatinib](https://pubchem.ncbi.nlm.nih.gov/compound/134436906) (cid: 134436906)
-- [pralsetinib](https://pubchem.ncbi.nlm.nih.gov/compound/129073603) (cid: 129073603)
-- [cabozantinib](https://pubchem.ncbi.nlm.nih.gov/compound/25102847) (cid: 25102847)
-- [vandetanib](https://pubchem.ncbi.nlm.nih.gov/compound/3081361) (cid: 3081361)
-- [LOXO-292](https://pubchem.ncbi.nlm.nih.gov/compound/134436906) (cid: 134436906)
-- [BLU-667](https://pubchem.ncbi.nlm.nih.gov/compound/129073603) (cid: 129073603)
-- [Antitumor capacity of a dominant-negative RET proto-oncogene mutant in a medullary thyroid carcinoma model.](https://pubmed.ncbi.nlm.nih.gov/12869215/) (pmid: 12869215; journal: Human gene therapy; pubdate: 2003 Jul 1)
+- [RET Solvent Front Mutations Mediate AcquiredResistance to Selective RET Inhibition inRET-Driven Malignancies.](https://pubmed.ncbi.nlm.nih.gov/31988000/) (pmid: 31988000; journal: Journal of thoracic oncology : official publication of the International Association for the Study of Lung Cancer; pubdate: 2020 Apr)
+- [ENDOCRINE TUMOURS: Genetic predictors of thyroid cancer outcome.](https://pubmed.ncbi.nlm.nih.gov/26510840/) (pmid: 26510840; journal: European journal of endocrinology; pubdate: 2016 Apr)
+- [Role of chronic lymphocytic thyroiditis in central node metastasis of papillary thyroid carcinoma.](https://pubmed.ncbi.nlm.nih.gov/22547555/) (pmid: 22547555; journal: Otolaryngology--head and neck surgery : official journal of American Academy of Otolaryngology-Head and Neck Surgery; pubdate: 2012 Sep)
+- [Systemic treatment and management approaches for medullary thyroid cancer.](https://pubmed.ncbi.nlm.nih.gov/27664392/) (pmid: 27664392; journal: Cancer treatment reviews; pubdate: 2016 Nov)
+- [Mitochondria-targeted nitroxide, Mito-CP, suppresses medullary thyroid carcinoma cell survival in vitro and in vivo.](https://pubmed.ncbi.nlm.nih.gov/23509102/) (pmid: 23509102; journal: The Journal of clinical endocrinology and metabolism; pubdate: 2013 Apr)
+- [RET Signaling Pathway in Human Cancer: Oncogenic Mechanisms, Selective Inhibitors, and Emerging Resistance Strategies.](https://pubmed.ncbi.nlm.nih.gov/41977363/) (pmid: 41977363; journal: International journal of molecular sciences; pubdate: 2026 Mar 31)
+- [Molecular pathogenesis and therapeutic advances in RET fusion-positive papillary thyroid carcinoma.](https://pubmed.ncbi.nlm.nih.gov/41713135/) (pmid: 41713135; journal: Pathology, research and practice; pubdate: 2026 May)
+- [Activation of the AKT-mTOR pathway confers selpercatinib resistance in thyroid cancer cells harboring the CCDC6-RET fusion gene.](https://pubmed.ncbi.nlm.nih.gov/40688508/) (pmid: 40688508; journal: Biochemistry and biophysics reports; pubdate: 2025 Sep)
+- [Radioactive Iodine-Refractory Differentiated Thyroid Cancer and Redifferentiation Therapy.](https://pubmed.ncbi.nlm.nih.gov/31565873/) (pmid: 31565873; journal: Endocrinology and metabolism (Seoul, Korea); pubdate: 2019 Sep)
+- [Destabilizing RET in targeted treatment of thyroid cancers.](https://pubmed.ncbi.nlm.nih.gov/26574568/) (pmid: 26574568; journal: Endocrine connections; pubdate: 2016 Jan)
 
 ## Limitations
 
@@ -194,12 +212,10 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 - Compound specificity and translational risk remain unresolved.
 - Evidence scoring is rule-based and should be calibrated with a trained biomedical evidence model.
 - LLM hypothesis synthesis was unstructured; raw response is preserved in provenance.
-- Fusion partner identity (CCDC6 vs KIF5B vs NCOA4) and MTC hotspot (C634 vs M918T) are candidate - not confirmed - predictors of response depth and duration; prospective stratification data are absent
-- LOXO-260/BLU-701 plus SHP2/MEK inhibitor combinations are a prioritized hypothesis, not a validated strategy; no published combinatorial efficacy data in RET-fusion thyroid models exist
-- openFDA AE report counts (324 vs 3361) suggest differential tolerability signal but cannot be interpreted as causal without controlling for market exposure, indication mix, and reporting bias
-- Bypass resistance via RAS/MAPK or MET amplification is mechanistically plausible but not prospectively validated as a distinct resistance class in thyroid-specific cohorts
-- Critique-enforced revision rewrote the claim boundary after reviewer contradiction or framing concerns.
-- Selpercatinib and pralsetinib have regulatory approval in RET-mutant MTC and RET-fusion-positive solid tumors based on single-arm trials showing ORR ~64-73%; randomized efficacy confirmation, OS benefit, and mechanistic resistance validation are all pending and should not be presented as established.
+- G810R/S/C steric clash mechanism is computationally and biochemically inferred; crystallographic or cryo-EM confirmation has not been surfaced and this claim must be qualified accordingly
+- Fusion-partner-specific response duration correlations are based on retrospective subgroup analyses with limited statistical power and cannot be stated as established predictors
+- AKT-mTOR bypass described as 'documented' resistance mechanism overstates evidence; in vivo and clinical validation in thyroid models is absent from surfaced evidence
+- ORR figures of 60-70% are not uniformly applicable across PTC and MTC subtypes, prior treatment lines, and fusion partner compositions and must be contextualized per trial population
 
 ## Scientist Panel Debate
 
@@ -208,151 +224,142 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 ### tooluniverse_agent — ✅ support with limits
 *Discipline: ToolUniverse/OpenTargets target and intervention evidence*
 
-RET kinase inhibition is strongly validated in RET-mutant MTC and RET-fusion PTC, with selective inhibitors selpercatinib and pralsetinib representing clinical-precedence anchors; resistance biology and combination strategies remain active gaps
+RET kinase inhibition is strongly validated in both RET-fusion-driven papillary thyroid cancer (PTC) and RET-mutant medullary thyroid cancer (MTC), with selective inhibitors selpercatinib and pralsetinib representing high-confidence clinical precedents; the hypothesis card understates existing evidence
 
 **Concerns:**
-- RET-PTC association score 0.481 is moderate; fusion prevalence ~10-20% of PTC means most patients are not candidates without prospective molecular screening
-- openFDA signals for selpercatinib include DVT and hepatotoxicity; pralsetinib signals include cerebrovascular events - causal attribution unconfirmed but warrants monitoring
-- G810 solvent-front mutations confer resistance to both selective inhibitors; no approved next-generation RET inhibitor targeting these variants exists yet
-- Bypass resistance via RAS/MAPK or MET amplification is mechanistically distinct from solvent-front mutations and requires orthogonal combination strategies not yet validated in prospective trials
+- OpenTargets RET association score for PTC (0.481) is moderate, not top-ranked, suggesting heterogeneous driver landscape
+- G810 structural basis claims require crystallographic confirmation beyond computational modeling
+- Fusion-partner-specific response data are retrospective and underpowered for definitive stratification
+- Multikinase inhibitor resistance overlap with selective inhibitors is incompletely characterized in vivo
 
 **Requested follow-ups:**
-- Prospective fusion-partner stratification trial comparing CCDC6 vs KIF5B vs NCOA4 fusions for depth and duration of selpercatinib response
-- Structural co-crystallography of G810R/S/C with next-generation RET inhibitors to guide compound optimization
-- Combinatorial screen of selpercatinib plus MEK or SHP2 inhibitors in RET-fusion models to address bypass resistance
-
-### mechanism_agent — 🔄 revise
-*Discipline: disease mechanism and causal pathway biology*
-
-{"position":"RET kinase inhibition is mechanistically well-grounded and clinically validated in both RET-fusion-driven papillary thyroid cancer and RET-mutant medullary thyroid cancer; selective inhibitors selpercatinib and pralsetinib represent a major advance over multikinase inhibitors, but acquired resistance via solvent-front mutations and bypass signaling remains an unresolved vulnerability requiring next-generation strategies","key_claims":["RET fusions (CCDC6-RET, NCOA4-RET) constitutively activate RAS-MAPK and PI3K-AKT, making RET the dominant oncogenic driver in fusion-positive PTC; RET M918T and C634 mutations similarly drive MTC through constitutive kinase activation","Selpercatinib and pralsetinib achieve ORRs of ~64-71% in RET-fusion PTC and ~69-73% in RET-mutant MTC with intracranial activity, far exceeding cabozantinib/vandetanib (~28-45% ORR) due to selectivity and CNS penetration","Solvent-front mutations G810R/S/C sterically occlude the inhibitor binding pocket by introducing bulky or altered side chains at the gatekeeper-adjacent solvent-front position, conferring resistance to both selpercatinib and pralsetinib but not necessarily to structurally distinct next-
-
-**Concerns:**
-- Unstructured LLM response; raw text preserved in provenance.
+- Crystallography of G810R/S/C with cabozantinib to confirm retained binding versus selpercatinib clash
+- Prospective biomarker sub-study stratifying CCDC6 vs NCOA4 fusion partners for depth-of-response in LIBRETTO expansion cohorts
+- Combinatorial screen of RET inhibitor plus mTORC1/2 inhibitor in CCDC6-RET cell lines to distinguish primary from acquired AKT-mTOR bypass
 
 ### literature_agent — ✅ support with limits
 *Discipline: biomedical literature and citation grounding*
 
-RET kinase inhibition is clinically validated in RET-fusion PTC and RET-mutant MTC, with selective inhibitors selpercatinib and pralsetinib demonstrating superior efficacy and tolerability over multikinase inhibitors, but acquired solvent-front resistance mutations and bypass signaling remain critical unresolved challenges requiring next-generation combination strategies.
+RET kinase inhibition is strongly clinically validated in both RET-fusion-driven papillary thyroid cancer and RET-mutant medullary thyroid cancer, with selective inhibitors selpercatinib and pralsetinib demonstrating superior efficacy and tolerability over multikinase inhibitors, but acquired solvent-front resistance mutations and bypass pathway activation remain critical unresolved vulnerabilities requiring next-generation combination strategies
 
 **Concerns:**
-- OpenTargets RET association score for PTC is only 0.481, substantially lower than for MTC (0.883), suggesting fusion-driven PTC may be a smaller molecular subset requiring prospective enrichment
-- openFDA adverse event counts are not incidence rates; selpercatinib hepatotoxicity (AST/ALP elevation) and thromboembolism signals require prospective quantification
-- Head-to-head randomized comparison of selective vs multikinase inhibitors in RET-altered thyroid cancer is absent; cross-trial comparisons are confounded
-- Fusion partner-specific and mutation hotspot-specific response data are derived from subgroup analyses with limited sample sizes, reducing stratification confidence
+- G810 structural basis claims require crystallographic or cryo-EM citation confirmation not yet surfaced in this digest
+- Fusion-partner-specific response duration data are largely retrospective or subgroup analyses with limited statistical power
+- Combination strategy experiments targeting bypass resistance lack published in vivo validation data in thyroid-specific models
+- OpenTargets RET association score for PTC is 0.481, lower than expected given clinical evidence, suggesting annotation gaps
 
 **Requested follow-ups:**
-- Prospective biomarker-stratified trial enrolling RET-fusion PTC by partner identity (CCDC6 vs NCOA4) to quantify partner-dependent response depth and duration
-- Structural and biochemical profiling of G810R/S/C mutants against next-generation RET inhibitors LOXO-260 and BLU-701 to confirm binding mode restoration
-- In vitro and PDX combination screens pairing selective RET inhibition with SHP2, MEK, or mTOR inhibitors to distinguish primary bypass from acquired resistance mechanisms
+- Retrieve PMID-level evidence for G810R/S/C structural basis from crystallography or molecular dynamics studies
+- Identify clinical or preclinical data stratifying response by specific fusion partner identity beyond CCDC6 and NCOA4
+- Obtain published combination data for RET inhibitor plus mTOR inhibitor or SHP2 inhibitor in thyroid cancer models
 
-### molecule_agent — ✅ support with limits
-*Discipline: candidate intervention and chemistry review*
+### mechanism_agent — ✅ support with limits
+*Discipline: disease mechanism and causal pathway biology*
 
-RET kinase inhibition is well-validated in RET-fusion PTC and RET-mutant MTC, with selective inhibitors selpercatinib and pralsetinib providing strong clinical precedence; however, acquired resistance via solvent-front mutations and bypass signaling remain critical unresolved gaps requiring next-generation strategies
+RET kinase inhibition is mechanistically well-grounded and clinically validated in both RET-fusion-driven PTC and RET-mutant MTC, with selective inhibitors selpercatinib and pralsetinib demonstrating superior on-target activity over multikinase inhibitors, but acquired resistance via solvent-front mutations and bypass pathway activation remain critical unresolved liabilities requiring combination strategies
 
 **Concerns:**
-- No direct structural crystallography data for G810R/S/C resistance mutations was surfaced from tools; structural basis claims rely on published literature inference
-- OpenTargets PTC association score 0.481 is moderate, reflecting fusion heterogeneity and BRAF co-dominance in PTC
-- Bypass resistance mechanisms (RAS, MET, FGFR activation) are not captured in current evidence digest
-- Fusion partner-specific response data not directly retrieved; stratification claims require prospective validation
+- G810R/S/C structural basis claims rely on computational modeling and in vitro data; co-crystal structures with mutant RET and selective inhibitors need independent validation
+- Fusion partner as predictor of response duration lacks prospective clinical data; current evidence is largely retrospective or correlative
+- Multikinase inhibitor activity against G810 mutants is inferred from binding mode differences; direct comparative resistance profiling in isogenic cell lines is limited
+- AKT-mTOR bypass mechanism demonstrated in cell lines only; patient-derived organoid or in vivo validation is absent
 
 **Requested follow-ups:**
-- Retrieve PubChem/ChEMBL structural data for next-generation RET inhibitors active against G810 solvent-front mutations (e.g., BLU-701)
-- Query ClinicalTrials.gov for combination trials pairing RET inhibitors with MEK or SHP2 inhibitors to address bypass resistance
-- Obtain fusion-partner-stratified response rate data from LIBRETTO-001 and ARROW trial subgroup analyses
+- Co-crystal structures of selpercatinib and pralsetinib bound to G810R/S/C RET to confirm steric clash mechanism and guide next-generation inhibitor design
+- Prospective biomarker substudy in LIBRETTO-001 and ARROW correlating fusion partner identity and mutation hotspot with PFS and depth of response
+- Isogenic RET-fusion thyroid cancer cell line panel testing selpercatinib plus mTORC1 inhibitor (everolimus) to distinguish primary from acquired AKT-mTOR bypass resistance
 
 ### safety_agent — ✅ support with limits
 *Discipline: clinical safety and translation risk*
 
-Selective RET inhibitors selpercatinib and pralsetinib have strong clinical precedence in RET-altered thyroid cancers, but translational risks around resistance, toxicity, and patient stratification remain undercharacterized and must not be overstated.
+The clinical evidence for selective RET inhibitors (selpercatinib, pralsetinib) in RET-fusion PTC and RET-mutant MTC is substantive and FDA-validated, but several translational risks-resistance mechanisms, fusion-partner heterogeneity, and combination-strategy gaps-remain insufficiently resolved to support broad efficacy claims without explicit caveats.
 
 **Concerns:**
-- G810 resistance mutation prevalence and clinical timing are not well quantified in prospective datasets
-- Fusion-partner-specific response differences lack randomized or large prospective validation
-- openFDA hepatotoxicity and thromboembolic signals for selpercatinib require pharmacovigilance scrutiny before broad use
-- MKI-to-selective-inhibitor sequencing strategies have no prospective safety or efficacy data
+- AKT-mTOR bypass resistance (PMID 40688508) is demonstrated only in cell lines; in vivo clonal selection dynamics and clinical prevalence of this mechanism are unvalidated
+- Fusion-partner-specific response prediction lacks prospective cohort data; retrospective series are underpowered and histologically heterogeneous
+- G810 mutation structural basis is inferred from modeling and biochemical assays-crystallographic co-structure data with next-generation RET inhibitors are not yet publicly available for all variants
+- ClinicalTrials evidence shows ongoing MTC natural history and phase 4 anlotinib studies, indicating the field has not yet converged on a post-selective-RET-inhibitor standard of care
 
 **Requested follow-ups:**
-- Prospective ctDNA monitoring for G810 solvent-front mutations to define timing and frequency of acquired resistance
-- Fusion-partner-stratified response analysis in existing LIBRETTO-001 and ARROW datasets
-- Head-to-head toxicity comparison of selpercatinib vs cabozantinib in MTC in a randomized cohort
+- Prospective ctDNA monitoring for G810R/S/C emergence kinetics and AKT-mTOR activation biomarkers in selpercatinib-treated PTC/MTC cohorts to establish clinical resistance frequency
+- Isogenic cell-line and PDX experiments comparing primary vs. acquired resistance to distinguish bypass (AKT-mTOR) from gatekeeper (G810) mechanisms before combination trials are designed
+- Structural biology (cryo-EM or X-ray) of G810 variant RET with next-generation inhibitors to validate binding-mode hypotheses used to justify combination or successor compound selection
+
+### molecule_agent — ✅ support with limits
+*Discipline: candidate intervention and chemistry review*
+
+Selective RET inhibitors selpercatinib and pralsetinib have strong clinical precedence in RET-fusion PTC and RET-mutant MTC, with distinct resistance profiles and clear advantages over multikinase inhibitors; hypothesis is well-grounded but requires refinement on fusion-partner stratification and combination resistance strategies.
+
+**Concerns:**
+- OpenTargets RET-PTC association score 0.481 is moderate, reflecting molecular heterogeneity; BRAF V600E dominates PTC driver landscape
+- G810 structural basis claims require crystallographic confirmation beyond homology modeling
+- Fusion-partner-specific response data are largely retrospective and underpowered for stratification conclusions
+- Combination strategies targeting bypass resistance lack prospective clinical validation
+
+**Requested follow-ups:**
+- Crystallography of G810R/S/C RET with next-generation inhibitors to confirm steric clash and guide scaffold redesign
+- Prospective biomarker study stratifying ORR and PFS by fusion partner identity in selpercatinib-treated PTC cohorts
+- In vitro and PDX combinatorial screen of RET inhibitor plus AKT-mTOR inhibitor to distinguish primary from acquired bypass resistance
 
 ### omics_agent — ✅ support with limits
 *Discipline: omics, pathway, and perturbation evidence*
 
-Pathway and cellular evidence strongly justify RET kinase inhibition as a validated mechanism in both RET-fusion-driven PTC and RET-mutant MTC, with selective inhibitors selpercatinib and pralsetinib representing clinical proof-of-concept; however, resistance biology and combination strategies remain incompletely characterized.
+Pathway and cellular evidence strongly justify RET kinase inhibition as a validated mechanism in both RET-fusion PTC and RET-mutant MTC, with selective inhibitors selpercatinib and pralsetinib providing clinical proof-of-concept, though resistance biology and combination strategies require further experimental validation
 
 **Concerns:**
-- OpenTargets PTC RET score (0.481) is moderate and ranks below NKX2-1 and CHEK2, reflecting that RET fusions occur in only ~10-20% of PTC cases, limiting generalizability
-- Structural basis for G810 solvent-front mutations is inferred from kinase domain homology; direct crystallographic data for RET G810 variants was not surfaced in this evidence set
-- Fusion partner-specific response data (CCDC6 vs NCOA4 depth of response differences) lacks prospective validation in the retrieved evidence
-- OpenFDA adverse event counts are not incidence rates; selpercatinib hepatotoxicity signals (AST/ALP elevation) require prospective quantification
+- OpenTargets RET association score for PTC (0.481) is moderate, suggesting co-driver alterations (BRAF, RAS) dominate in a subset, potentially diluting RET-selective benefit
+- G810 structural resistance data are largely biochemical and cell-line-based; in vivo pharmacodynamic validation in patient-derived models is limited
+- Fusion partner functional heterogeneity is inferred from retrospective subgroup analyses rather than prospective biomarker-stratified trials
+- AKT-mTOR bypass resistance evidence comes from a single cell-line study and requires orthogonal validation in patient tumor samples
 
 **Requested follow-ups:**
-- Retrieve crystallographic or cryo-EM structures of RET G810R/S/C variants with selpercatinib to confirm steric clash mechanism directly
-- Query clinical trial databases for fusion-partner-stratified response data (ORR and PFS by CCDC6 vs NCOA4 vs KIF5B) from LIBRETTO-001
-- Identify preclinical combination datasets pairing selective RET inhibitors with MEK or SHP2 inhibitors in G810-mutant or RAS-bypass resistant models
+- Prospective biomarker-stratified trial comparing depth of response by fusion partner identity (CCDC6 vs NCOA4) under selpercatinib to establish partner as predictive biomarker
+- Patient-derived organoid or xenograft models harboring G810R/S/C to test next-generation RET inhibitors (e.g., LOXO-260) and structurally distinct multikinase agents head-to-head
+- Combinatorial screen of selpercatinib plus mTORC1/2 inhibitors in CCDC6-RET cells to distinguish additive from synergistic bypass blockade and define therapeutic window
 
 ### critic_agent — 🔄 revise
 *Discipline: skeptical scientific review*
 
-The hypothesis card understates the clinical maturity of selective RET inhibition in thyroid cancer; selpercatinib and pralsetinib have FDA-approved indications in RET-altered thyroid cancers, making 'insufficiently established' framing misleading. However, several mechanistic and stratification claims in the dossier objective lack direct evidence in the scored digest.
+The hypothesis card understates established clinical evidence; selective RET inhibitors have FDA approval in both RET-fusion PTC and RET-mutant MTC, making this far beyond an 'early or insufficiently established hypothesis'. However, several mechanistic and resistance claims in the dossier require scrutiny.
 
 **Concerns:**
-- No direct structural or biochemical evidence for G810 resistance mechanism is present in the scored digest - this is a literature claim not validated by the tools used
-- RET association score of 0.481 in PTC is ranked 4th, behind NKX2-1, CHEK2, NRG1 - weakens RET-centricity framing for PTC specifically
-- openFDA AE counts are not incidence rates; cabozantinib's higher count may reflect longer market presence and broader indications, not worse safety per patient
-- Fusion partner stratification and M918T as response predictors are asserted without any scored evidence supporting differential outcomes by partner identity
+- No head-to-head RCT comparing selpercatinib vs pralsetinib in matched PTC or MTC cohorts; cross-trial comparisons are confounded
+- Structural basis for G810 variants is inferred from homology with other kinases; direct co-crystal structures with selpercatinib at G810 mutants are not cited
+- Fusion partner as predictor of response depth lacks prospective validation; evidence is largely retrospective or case-series level
+- AKT-mTOR bypass resistance data (PMID 40688508) is cell-line only; in vivo and patient-level confirmation is absent
 
 **Requested follow-ups:**
-- Retrieve clinical trial outcome data (ORR, PFS) stratified by fusion partner (CCDC6 vs NCOA4) from LIBRETTO-001 or ARROW trial records
-- Obtain structural biology citations or PDB entries for RET G810 solvent-front mutations to validate resistance mechanism claims
-- Query OpenTargets or ClinVar for RET M918T vs C634F mutation-specific clinical outcome associations in MTC
+- Co-crystal or cryo-EM structures of selpercatinib/pralsetinib bound to G810R, G810S, G810C RET to confirm steric clash mechanism
+- Prospective biomarker sub-study within LIBRETTO or ARROW trials correlating fusion partner identity with PFS and depth of response
+- Patient-derived organoid or PDX models of acquired G810 resistance to test next-generation RET inhibitor plus mTOR inhibitor combinations
 
 ### PI Adjudication
 
 **Final confidence:** `0.72`
 
-Strong mechanistic and clinical-precedence evidence supports RET as a validated target in MTC and fusion-subset PTC. Confidence is capped below 0.80 because ORR data derive from single-arm trials, fusion-partner stratification lacks prospective support, combination strategies are unvalidated, and the mechanism agent parse failure leaves structural resistance claims partially unconfirmed by independent agent review.
+Strong clinical precedence from FDA approvals and high ORR in pivotal trials justifies high base confidence. Deductions applied for: unconfirmed crystallographic basis of G810 resistance mechanism; retrospective and underpowered fusion-partner stratification data; preclinical-only AKT-mTOR bypass evidence; and incomplete in vivo characterization of multikinase inhibitor resistance overlap. OpenTargets PTC association score of 0.481 reflects annotation gaps rather than absence of clinical validation and is weighted accordingly.
 
-- ⚠ Softened/rejected: Fusion partner identity (CCDC6 vs KIF5B vs NCOA4) and MTC hotspot (C634 vs M918T) are candidate - not confirmed - predictors of response depth and duration; prospective stratification data are absent
-- ⚠ Softened/rejected: LOXO-260/BLU-701 plus SHP2/MEK inhibitor combinations are a prioritized hypothesis, not a validated strategy; no published combinatorial efficacy data in RET-fusion thyroid models exist
-- ⚠ Softened/rejected: openFDA AE report counts (324 vs 3361) suggest differential tolerability signal but cannot be interpreted as causal without controlling for market exposure, indication mix, and reporting bias
-- ⚠ Softened/rejected: Bypass resistance via RAS/MAPK or MET amplification is mechanistically plausible but not prospectively validated as a distinct resistance class in thyroid-specific cohorts
+- ⚠ Softened/rejected: G810R/S/C steric clash mechanism is computationally and biochemically inferred; crystallographic or cryo-EM confirmation has not been surfaced and this claim must be qualified accordingly
+- ⚠ Softened/rejected: Fusion-partner-specific response duration correlations are based on retrospective subgroup analyses with limited statistical power and cannot be stated as established predictors
+- ⚠ Softened/rejected: AKT-mTOR bypass described as 'documented' resistance mechanism overstates evidence; in vivo and clinical validation in thyroid models is absent from surfaced evidence
+- ⚠ Softened/rejected: ORR figures of 60-70% are not uniformly applicable across PTC and MTC subtypes, prior treatment lines, and fusion partner compositions and must be contextualized per trial population
 
 ## Proposed Next Experiments
 
-### Experiment 1: Resolve the highest-uncertainty RET / papillary thyroid cancer and RET-mutant medullary thyroid cancer evidence gap with targeted Open Targets, literature, clinical-precedence, and safety review
+### Experiment 1: Resolve the highest-uncertainty RET / papillary thyroid cancer evidence gap with targeted Open Targets, literature, clinical-precedence, and safety review
 **Type:** `computational` | **Cost:** `low` | **Feasibility:** `high` | **Expected information gain:** `high`
 
-**Decision gate:** Advance the hypothesis only if this resolves: insufficient_literature_depth
+**Decision gate:** Proceed only if the result adds evidence not already represented in the run.
 
 **Success criteria:**
-- article-level literature support with citations
+- New evidence changes the confidence, claim boundary, or next experiment.
 
 **Failure modes to watch:**
 - The result is indirect, non-specific, or does not change the claim boundary.
 
-**Gate score:** `0.729` (usable)
+**Gate score:** `0.711` (usable)
 
-### Experiment 2: Run falsification search for contradictory, null, or failed evidence
-**Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
-
-**Decision gate:** Advance the hypothesis only if this resolves: missing_falsification_search
-
-**Success criteria:**
-- contradictory, null, failed, or negative evidence
-
-**Failure modes to watch:**
-- Negative evidence contradicts the mechanism or disease relevance.
-
-**Gate score:** `0.667` (usable)
-
-**Gate improvements:**
-- Tie the experiment to a named case validation assay.
-- Tie the experiment to an uncovered evidence requirement.
-
-### Experiment 3: Repair unsupported claim links or soften claim boundaries
+### Experiment 2: Repair unsupported claim links or soften claim boundaries
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
 
 **Decision gate:** Advance the hypothesis only if this resolves: claim_graph_evidence_gap
@@ -367,26 +374,8 @@ Strong mechanistic and clinical-precedence evidence supports RET as a validated 
 
 **Gate improvements:**
 - Tie the experiment to a named case validation assay.
-- Tie the experiment to an uncovered evidence requirement.
 
-### Experiment 4: Resolve evidence gap: reviewer_high_severity_concern
-**Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
-
-**Decision gate:** Advance the hypothesis only if this resolves: reviewer_high_severity_concern
-
-**Success criteria:**
-- direct evidence resolving reviewer-identified overclaim or contradiction
-
-**Failure modes to watch:**
-- The result is indirect, non-specific, or does not change the claim boundary.
-
-**Gate score:** `0.667` (usable)
-
-**Gate improvements:**
-- Tie the experiment to a named case validation assay.
-- Tie the experiment to an uncovered evidence requirement.
-
-### Experiment 5: Resolve evidence gap: evidence_relevance_noise
+### Experiment 3: Resolve evidence gap: evidence_relevance_noise
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
 
 **Decision gate:** Advance the hypothesis only if this resolves: evidence_relevance_noise
@@ -401,29 +390,41 @@ Strong mechanistic and clinical-precedence evidence supports RET as a validated 
 
 **Gate improvements:**
 - Tie the experiment to a named case validation assay.
-- Tie the experiment to an uncovered evidence requirement.
 
-### Experiment 6: Run safety-first triage before efficacy assays: exposure margins, off-target biology, and disease-context tolerability
-**Type:** `computational_plus_wet_lab` | **Cost:** `medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
+### Experiment 4: Rank candidate interventions by RET selectivity vs. wild-type, solvent-front resistance mutation coverage, and ADMET liabilities
+**Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
 
-**Decision gate:** Advance the hypothesis only if this resolves: insufficient_literature_depth
+**Decision gate:** Proceed only if the result adds evidence not already represented in the run.
 
 **Success criteria:**
-- article-level literature support with citations
+- New evidence changes the confidence, claim boundary, or next experiment.
 
 **Failure modes to watch:**
 - The result is indirect, non-specific, or does not change the claim boundary.
 
-**Gate score:** `0.632` (usable)
+**Gate score:** `0.636` (usable)
+
+### Experiment 5: Run safety-first triage before efficacy assays: exposure margins, off-target biology, and disease-context tolerability
+**Type:** `computational_plus_wet_lab` | **Cost:** `medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
+
+**Decision gate:** Proceed only if the result adds evidence not already represented in the run.
+
+**Success criteria:**
+- New evidence changes the confidence, claim boundary, or next experiment.
+
+**Failure modes to watch:**
+- The result is indirect, non-specific, or does not change the claim boundary.
+
+**Gate score:** `0.615` (usable)
 
 
 ## Critique and Refinement
 
-**Severity:** `high`
+**Severity:** `medium`
 
-The hypothesis asserts ORRs of 64-73% as 'clinically validated' anchors, but the supporting evidence consists entirely of single-arm Phase 1/2 trials (LIBRETTO-001, ARROW) without randomized controls, no head-to-head comparisons with MKIs, and no overall survival data. The evidence digest contains zero PubMed articles with extractable citations, only ClinicalTrials.gov registry entries and OpenTargets scores. The G810R/S/C structural resistance claim and bypass signaling via RAS/MAPK or MET are stated as established facts but lack any cited structural or functional validation in the retrieved evidence. The superiority claim over cabozantinib/vandetanib rests on indirect tolerability inference from FAERS report counts (324 vs 3361), which is methodologically invalid for comparative safety conclusions. The PTC OpenTargets score of 0.481 ranks RET fourth behind NKX2-1, CHEK2, and NRG1, undermining the 'high-confidence' framing for PTC broadly.
+1) The hypothesis conflates validated claims (FDA-approved selpercatinib/pralsetinib ORR in pivotal trials) with speculative ones (AKT-mTOR bypass as resistance mechanism supported only by preclinical cell line data; fusion partner identity as stratification variable from retrospective underpowered data) without clearly demarcating evidence tiers. 2) The structural basis for G810R/S/C resistance is described as 'steric occlusion pending crystallographic confirmation' yet the hypothesis still presents it as an established mechanism rather than a working model. 3) The claim that multikinase inhibitors 'may retain partial activity' against G810 variants is unsupported by cited in vivo or clinical data and is acknowledged as incompletely characterized, yet is stated alongside validated claims in a way that inflates confidence. 4) Safety comparison ('superior tolerability') between selective and multikinase inhibitors is asserted without quantitative effect-size data or head-to-head trial citation; openFDA adverse-event counts are not incidence rates and cannot support comparative tolerability claims. 5) The evidence digest shows 18 of 35 items scored as irrelevant and only 2 as strong support, indicating the evidence base is thinner than the hypothesis narrative implies.
 
-**Recommended fix:** (1) Restrict 'clinically validated' language to FDA-approved indications with explicit acknowledgment of single-arm design limitations and absence of OS benefit data. (2) Remove comparative safety inference from FAERS report counts. (3) Qualify G810 structural claims as computationally or crystallographically hypothesized pending experimental confirmation. (4) Reframe PTC association as fusion-restricted with explicit prevalence denominator (~10-20% of PTC). (5) Add prospective citation retrieval for resistance mechanism claims before asserting them as established.
+**Recommended fix:** Stratify all claims by evidence tier explicitly in the hypothesis text. Downgrade G810 structural mechanism to 'proposed model awaiting crystallographic validation.' Qualify multikinase inhibitor activity against resistance variants as 'in vitro signal only, clinical relevance unknown.' Replace 'superior tolerability' with a citation-anchored comparative statement or soften to 'improved tolerability profile observed in non-randomized comparisons.' Separate validated from candidate claims using explicit hedging language throughout.
 
 ## Guardrails
 

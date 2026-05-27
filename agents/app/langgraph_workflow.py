@@ -21,10 +21,13 @@ from app.services.scientific_planning import (
     build_abstention_assessment,
     build_capability_plan,
     build_claim_graph,
+    build_claim_retrieval_plan,
     build_evidence_coverage_matrix,
+    build_quality_dashboard,
     classify_objective,
     compile_case_profile,
     evaluate_report_against_criteria,
+    map_evidence_to_claims,
     score_experiment_gates,
     type_evidence_items,
 )
@@ -684,12 +687,20 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         variants = list(dict.fromkeys([*self._extract_variant_tokens(objective), *self._string_list(context.get("variants"))]))
         diseases = []
         for disease in self._string_list(context.get("diseases")):
-            cleaned = self._clean_disease_phrase(
-                re.sub(r"^[A-Z0-9]+-driven\s+", "", disease, flags=re.I).strip()
-            )
-            if cleaned:
-                diseases.append(cleaned)
-        explicit_diseases = self._heuristic_context(objective).get("diseases", [])
+            for disease_part in self._split_composite_disease_phrase(disease):
+                cleaned = self._clean_disease_phrase(
+                    re.sub(r"^[A-Z0-9]+-(?:driven|mutant)\s+", "", disease_part, flags=re.I).strip()
+                )
+                if cleaned:
+                    diseases.append(cleaned)
+        explicit_diseases = []
+        for disease in self._heuristic_context(objective).get("diseases", []):
+            for disease_part in self._split_composite_disease_phrase(disease):
+                cleaned = self._clean_disease_phrase(
+                    re.sub(r"^[A-Z0-9]+-(?:driven|mutant)\s+", "", disease_part, flags=re.I).strip()
+                )
+                if cleaned:
+                    explicit_diseases.append(cleaned)
         diseases = list(
             dict.fromkeys(
                 [
@@ -723,6 +734,22 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 for query in normalized["pubmed_queries"]
             ]
         return normalized
+
+    def _split_composite_disease_phrase(self, value: str) -> list[str]:
+        text = str(value or "").strip()
+        if not text:
+            return []
+        parts = [part.strip(" .;:,") for part in re.split(r"\s+and\s+", text, flags=re.I)]
+        if len(parts) <= 1:
+            return [text]
+        disease_like = [
+            part
+            for part in parts
+            if re.search(r"\b(cancer|carcinoma|tumou?r|leukemia|lymphoma|melanoma|sarcoma|disease|syndrome)\b", part, flags=re.I)
+        ]
+        if len(disease_like) < 2:
+            return [text]
+        return disease_like
 
     def _prioritize_diseases(self, diseases: list[str], objective: str) -> list[str]:
         vocab = [self._expand_disease_alias(v) for v in self._vocabulary_scan_diseases(objective)]
@@ -1317,8 +1344,73 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             score_output = scores_by_index.get(index)
             if score_output is None:
                 score_output = self._deterministic_score_evidence_item(item, hypothesis_seed, state)
+            else:
+                score_output = self._apply_relevance_floor(item, score_output, state)
             scored.append({**item, "score": score_output})
         return scored
+
+    def _apply_relevance_floor(
+        self,
+        item: dict[str, Any],
+        score_output: dict[str, Any],
+        state: ResearchRunState,
+    ) -> dict[str, Any]:
+        if str(score_output.get("label") or "").lower() != "irrelevant":
+            return score_output
+        source = str(item.get("source", ""))
+        if source.startswith("PubMed:"):
+            relevance = self._pubmed_title_relevance(item, state)
+            if not relevance["relevant"]:
+                return score_output
+            if relevance["clinical_hits"]:
+                label = "strong_support"
+                evidence_type = "clinical_precedence_literature"
+                floor = 0.68
+            elif relevance["safety_hits"]:
+                label = "safety_concern"
+                evidence_type = "safety_literature"
+                floor = 0.62
+            elif relevance["mechanism_hits"]:
+                label = "mechanistic_relevance"
+                evidence_type = "mechanistic_literature"
+                floor = 0.58
+            else:
+                label = "weak_support"
+                evidence_type = "literature_context"
+                floor = 0.52
+            return {
+                **score_output,
+                "label": label,
+                "score": max(float(score_output.get("score", 0.0) or 0.0), floor),
+                "evidence_type": evidence_type,
+                "rationale": (
+                    "Deterministic relevance floor applied because PubMed titles jointly matched the "
+                    "target and disease context despite an irrelevant LLM label."
+                ),
+                "warnings": [
+                    *self._string_list(score_output.get("warnings")),
+                    "relevance_floor: target+disease title match; manual review still required.",
+                ],
+            }
+        if source.startswith("ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId"):
+            target = self._primary_target(state).lower()
+            text = str(item.get("text", "")).lower()
+            if target and re.search(rf"\b{re.escape(target)}\b", text):
+                return {
+                    **score_output,
+                    "label": "weak_support",
+                    "score": max(float(score_output.get("score", 0.0) or 0.0), 0.55),
+                    "evidence_type": "target_disease_association",
+                    "rationale": (
+                        "Deterministic relevance floor applied because OpenTargets associated-target output "
+                        "included the primary target for the retrieved disease."
+                    ),
+                    "warnings": [
+                        *self._string_list(score_output.get("warnings")),
+                        "OpenTargets association is not clinical efficacy evidence.",
+                    ],
+                }
+        return score_output
 
     def _explicit_gene_symbols(self, objective: str) -> list[str]:
         stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "LLM"}
@@ -1375,10 +1467,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         classification = classify_objective(state.objective, biomedical_context).model_dump()
         case_profile = compile_case_profile(state.objective, classification, biomedical_context)
         capability_plan = build_capability_plan(classification, case_profile)
+        claim_retrieval_plan = build_claim_retrieval_plan(
+            state.objective,
+            classification,
+            case_profile,
+            biomedical_context,
+        )
         criteria_result = self.open_scientist.generate_evaluation_criteria(state.objective, classification, config)
         state.context["objective_classification"] = classification
         state.context["case_profile"] = case_profile
         state.context["capability_plan"] = capability_plan
+        state.context["claim_retrieval_plan"] = claim_retrieval_plan
         state.context["evaluation_criteria"] = criteria_result["criteria"]
         state.context["open_scientist_health"] = self.open_scientist.health()
         self._record(
@@ -1391,6 +1490,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "objective_classification": classification,
                 "case_profile": case_profile,
                 "capability_plan": capability_plan,
+                "claim_retrieval_plan": claim_retrieval_plan,
                 "evaluation_criteria": criteria_result["criteria"],
                 "open_scientist_health": state.context["open_scientist_health"],
             },
@@ -1853,6 +1953,27 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             clean_q = self._sanitize_pubmed_query(query, genes, diseases)
             if clean_q:
                 live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": clean_q, "retmax": pubmed_retmax}))
+        claim_retrieval_queries: list[str] = []
+        claim_plan = state.context.get("claim_retrieval_plan", {})
+        seen_claim_queries = {
+            str(payload.get("query", "")).strip().lower()
+            for _, tool_name, payload in live_calls
+            if tool_name == "pubmed_literature_search_tool"
+        }
+        max_claim_queries = max(0, min(int(config.get("claim_retrieval_max_queries", 5)), 8))
+        for claim in (claim_plan.get("claims", []) if isinstance(claim_plan, dict) else [])[:max_claim_queries]:
+            query = self._sanitize_pubmed_query(str(claim.get("query", "")), genes, diseases)
+            if not query or query.lower() in seen_claim_queries:
+                continue
+            live_calls.append(
+                (
+                    "claim_agent",
+                    "pubmed_literature_search_tool",
+                    {"query": query, "retmax": min(pubmed_retmax, 5)},
+                )
+            )
+            claim_retrieval_queries.append(query)
+            seen_claim_queries.add(query.lower())
         if candidates:
             live_calls.append(("molecule_agent", "pubchem_candidate_lookup_tool", {"names": candidates}))
         for gene in genes:
@@ -2157,6 +2278,11 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     "executed_count": len(strategy_repair_outputs),
                     "preliminary_readiness": preliminary_strategy.get("readiness", {}),
                 },
+                "claim_retrieval": {
+                    "planned_claims": len((claim_plan.get("claims", []) if isinstance(claim_plan, dict) else [])),
+                    "queries": claim_retrieval_queries,
+                    "executed_count": len(claim_retrieval_queries),
+                },
                 "sciflow_policy_application": {
                     "status": execution_policy.get("status", "disabled"),
                     "applied": policy_applied,
@@ -2400,6 +2526,11 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 scored.append({**item, "score": score_output})
         state.evidence = scored
         state.context["evidence_hierarchy"] = summarize_evidence_hierarchy(state.evidence)
+        state.context["claim_evidence_matrix"] = map_evidence_to_claims(
+            state.evidence,
+            state.context.get("claim_retrieval_plan", {}),
+            state.context.get("claim_graph", {}),
+        )
         if "adaptive_tool_plan" not in state.context:
             state.context["adaptive_tool_plan"] = plan_adaptive_tools(
                 task=state.context.get("benchmark_task", {}),
@@ -2421,6 +2552,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "scored_evidence": scored,
                 "evidence_hierarchy": state.context["evidence_hierarchy"],
+                "claim_evidence_matrix": state.context["claim_evidence_matrix"],
                 "scientific_strategy": state.context["scientific_strategy"],
                 "llm_calls": state.context.get("llm_calls", []),
             },
@@ -2500,8 +2632,14 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             state.evidence,
             claim_graph,
         )
+        claim_evidence_matrix = map_evidence_to_claims(
+            state.evidence,
+            state.context.get("claim_retrieval_plan", {}),
+            claim_graph,
+        )
         state.context["claim_graph"] = claim_graph
         state.context["evidence_coverage_matrix"] = evidence_coverage
+        state.context["claim_evidence_matrix"] = claim_evidence_matrix
         state.context["scientific_strategy"] = build_scientific_strategy(
             objective=state.objective,
             biomedical_context=state.context.get("biomedical_context", {}),
@@ -2511,6 +2649,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.hypothesis_card["claim_graph"] = claim_graph
         state.hypothesis_card["case_profile"] = state.context.get("case_profile", {})
         state.hypothesis_card["evidence_coverage_matrix"] = evidence_coverage
+        state.hypothesis_card["claim_evidence_matrix"] = claim_evidence_matrix
         state.hypothesis_card["scientific_strategy"] = state.context["scientific_strategy"]
         self._record(
             trace,
@@ -2521,6 +2660,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "hypothesis_card": state.hypothesis_card,
                 "claim_graph": claim_graph,
                 "evidence_coverage_matrix": evidence_coverage,
+                "claim_evidence_matrix": claim_evidence_matrix,
                 "scientific_strategy": state.context["scientific_strategy"],
                 "llm_calls": state.context.get("llm_calls", []),
             },
@@ -3007,10 +3147,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 state.evidence,
                 revised_claim_graph,
             )
+            revised_claim_matrix = map_evidence_to_claims(
+                state.evidence,
+                state.context.get("claim_retrieval_plan", {}),
+                revised_claim_graph,
+            )
             state.context["claim_graph"] = revised_claim_graph
             state.context["evidence_coverage_matrix"] = revised_coverage
+            state.context["claim_evidence_matrix"] = revised_claim_matrix
             state.hypothesis_card["claim_graph"] = revised_claim_graph
             state.hypothesis_card["evidence_coverage_matrix"] = revised_coverage
+            state.hypothesis_card["claim_evidence_matrix"] = revised_claim_matrix
         debate_record = {
             "scientist_positions": positions,
             "debate": debate,
@@ -3218,10 +3365,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             state.evidence,
             revised_claim_graph,
         )
+        revised_claim_matrix = map_evidence_to_claims(
+            state.evidence,
+            state.context.get("claim_retrieval_plan", {}),
+            revised_claim_graph,
+        )
         state.context["claim_graph"] = revised_claim_graph
         state.context["evidence_coverage_matrix"] = revised_coverage
+        state.context["claim_evidence_matrix"] = revised_claim_matrix
         state.hypothesis_card["claim_graph"] = revised_claim_graph
         state.hypothesis_card["evidence_coverage_matrix"] = revised_coverage
+        state.hypothesis_card["claim_evidence_matrix"] = revised_claim_matrix
 
     def _critique_repair_candidate(self, state: ResearchRunState) -> dict[str, Any] | None:
         target = self._primary_target(state)
@@ -3472,9 +3626,12 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "case_profile": state.context.get("case_profile", {}),
             "capability_plan": state.context.get("capability_plan", {}),
             "evaluation_criteria": state.context.get("evaluation_criteria", []),
+            "claim_retrieval_plan": state.context.get("claim_retrieval_plan", {}),
             "claim_graph": state.context.get("claim_graph", {}),
+            "claim_evidence_matrix": state.context.get("claim_evidence_matrix", {}),
             "evidence_coverage_matrix": state.context.get("evidence_coverage_matrix", {}),
             "experiment_gate_plan": state.context.get("experiment_gate_plan", {}),
+            "quality_dashboard": state.context.get("quality_dashboard", {}),
             "evidence_hierarchy": state.context.get("evidence_hierarchy", {}),
             "adaptive_tool_plan": state.context.get("adaptive_tool_plan", {}),
             "critique_enforced_revision": state.context.get("critique_enforced_revision", {}),
@@ -3540,6 +3697,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 # Also write to hypothesis_card so it flows into the board post content_json
                 state.hypothesis_card["key_claims"] = key_claims
         self._enforce_abstention_on_report(state)
+        self._enforce_critique_lock_on_report(state)
+        state.context["quality_dashboard"] = build_quality_dashboard(
+            evidence=state.evidence,
+            tool_outputs=state.tool_outputs,
+            claim_matrix=state.context.get("claim_evidence_matrix", {}),
+            evidence_coverage=state.context.get("evidence_coverage_matrix", {}),
+            scientific_strategy=state.context.get("scientific_strategy", {}),
+            critique=state.critique,
+            experiments=state.experiments,
+        )
+        state.report["quality_dashboard"] = state.context["quality_dashboard"]
         state.report["report_evaluation"] = evaluate_report_against_criteria(
             state.report,
             state.context.get("evaluation_criteria", []),
@@ -3560,6 +3728,32 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             },
         )
         return state
+
+    def _enforce_critique_lock_on_report(self, state: ResearchRunState) -> None:
+        revision = state.context.get("critique_enforced_revision", {})
+        repaired = revision.get("repaired", {}) if isinstance(revision, dict) else {}
+        previous = revision.get("previous", {}) if isinstance(revision, dict) else {}
+        repaired_summary = str(repaired.get("hypothesis") or "").strip()
+        if not repaired_summary:
+            return
+
+        current_summary = str(state.report.get("summary") or "")
+        previous_summary = str(previous.get("hypothesis") or "").strip()
+        current_lower = current_summary.lower()
+        stale_previous = bool(previous_summary and previous_summary[:80].lower() in current_lower)
+        stale_underclaim = bool(
+            re.search(r"\b(early|insufficiently established|unvalidated|speculative)\b", current_summary, flags=re.I)
+            and "not as a new target discovery" in repaired_summary.lower()
+        )
+        if stale_previous or stale_underclaim:
+            state.report["summary"] = repaired_summary
+            state.report["title"] = repaired.get("title") or state.hypothesis_card.get("title") or state.report.get("title")
+            state.report["confidence"] = repaired.get("confidence", state.hypothesis_card.get("confidence"))
+            state.report["critique_repair_lock"] = {
+                "applied": True,
+                "reason": "final_report_reintroduced_repaired_claim_language",
+                "revision_schema": revision.get("schema"),
+            }
 
     def _enforce_abstention_on_report(self, state: ResearchRunState) -> None:
         abstention_policy = state.context.get("abstention_policy", {})
