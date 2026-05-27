@@ -14,6 +14,8 @@ CASE_TITLES = {
     "egfr-osimertinib-resistance": "EGFR Osimertinib Resistance in NSCLC",
     "braf-v600e-melanoma": "BRAF V600E Targeted Therapy in Melanoma",
     "ret-fusion-thyroid": "RET Fusions and Mutations in Thyroid Cancer",
+    "kras-g12c-nsclc": "KRAS G12C Inhibition in NSCLC",
+    "met-exon14-nsclc": "MET Exon 14 Skipping in NSCLC",
 }
 
 
@@ -315,7 +317,7 @@ def render_index(cases: list[dict[str, Any]]) -> str:
 <main>
   <section class="hero">
     <div>
-      <div class="kicker">Three diverse oncology capability runs</div>
+      <div class="kicker">{len(cases)} diverse oncology capability runs</div>
       <h1>AutoScientist audits cancer hypotheses with tools, agents, evidence, and calibrated limits.</h1>
       <p>These are full-system showcase runs, not a benchmark leaderboard. Each dossier includes ToolUniverse/OpenTargets calls, public biomedical evidence, claim graphs, scientist debate, critic calibration, experiment gates, and replayable provenance.</p>
       <div class="actions">
@@ -330,7 +332,7 @@ def render_index(cases: list[dict[str, Any]]) -> str:
     </div>
   </section>
   <section class="metrics">
-    {metric_card("Cases", len(cases), "EGFR NSCLC, BRAF melanoma, RET thyroid")}
+    {metric_card("Cases", len(cases), ", ".join(c["slug"].split("-")[0].upper() for c in cases))}
     {metric_card("Agent steps", total_steps)}
     {metric_card("Tool calls", total_tools, f"{successes} success")}
     {metric_card("Evidence items", total_evidence)}
@@ -437,7 +439,13 @@ def html_doc(title: str, body: str) -> str:
 
 
 def latest_default_paths(base: Path) -> list[Path]:
-    wanted = ["egfr-osimertinib-resistance", "braf-v600e-melanoma", "ret-fusion-thyroid"]
+    wanted = [
+        "egfr-osimertinib-resistance",
+        "braf-v600e-melanoma",
+        "ret-fusion-thyroid",
+        "kras-g12c-nsclc",
+        "met-exon14-nsclc",
+    ]
     paths = []
     for slug in wanted:
         matches = sorted(base.glob(f"{slug}_*/provenance.json"), key=lambda p: p.stat().st_mtime, reverse=True)

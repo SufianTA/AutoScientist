@@ -15,7 +15,7 @@
 <main>
   <section class="hero">
     <div>
-      <div class="kicker">Three diverse oncology capability runs</div>
+      <div class="kicker">5 diverse oncology capability runs</div>
       <h1>AutoScientist audits cancer hypotheses with tools, agents, evidence, and calibrated limits.</h1>
       <p>These are full-system showcase runs, not a benchmark leaderboard. Each dossier includes ToolUniverse/OpenTargets calls, public biomedical evidence, claim graphs, scientist debate, critic calibration, experiment gates, and replayable provenance.</p>
       <div class="actions">
@@ -30,12 +30,12 @@
     </div>
   </section>
   <section class="metrics">
-    <article class="metric"><span>Cases</span><strong>3</strong><small>EGFR NSCLC, BRAF melanoma, RET thyroid</small></article>
-    <article class="metric"><span>Agent steps</span><strong>424</strong><small></small></article>
-    <article class="metric"><span>Tool calls</span><strong>174</strong><small>156 success</small></article>
-    <article class="metric"><span>Evidence items</span><strong>96</strong><small></small></article>
-    <article class="metric"><span>Experiments</span><strong>17</strong><small></small></article>
-    <article class="metric"><span>Claims mapped</span><strong>18</strong><small></small></article>
+    <article class="metric"><span>Cases</span><strong>5</strong><small>EGFR, BRAF, RET, KRAS, MET</small></article>
+    <article class="metric"><span>Agent steps</span><strong>711</strong><small></small></article>
+    <article class="metric"><span>Tool calls</span><strong>293</strong><small>268 success</small></article>
+    <article class="metric"><span>Evidence items</span><strong>163</strong><small></small></article>
+    <article class="metric"><span>Experiments</span><strong>26</strong><small></small></article>
+    <article class="metric"><span>Claims mapped</span><strong>25</strong><small></small></article>
   </section>
   <section class="section">
     <div class="intro"><div class="kicker">Genericity check</div><h2>Data-driven publishing, calibrated scoring.</h2></div>
@@ -50,50 +50,78 @@
 <article class="caseCard">
   <div class="caseTop"><span>egfr-osimertinib-resistance</span><strong>experiment_ready_with_gaps</strong></div>
   <h3>EGFR Osimertinib Resistance in NSCLC</h3>
-  <p>Amivantamab plus lazertinib and osimertinib produce distinct acquired resistance mechanism profiles in first-line EGFR-mutated NSCLC, as reported in the MARIPOSA trial. Immunotherapy demonstrates limited clinical activity in TKI-resistant, EGFR L858R-mutated NSCLC based on a systematic review and meta-analysis of rand...</p>
+  <p>EGFR has an OpenTargets association score of 0.888 for NSCLC, reflecting the highest-ranked target association among 13,431 candidates retrieved for this disease. Resistance mechanism frequency data reported in MARIPOSA (PMID 42061572) were generated in a combination amivantamab-plus-lazertinib versus osimertinib tria...</p>
   <div class="miniStats">
-    <span>confidence <b>0.81</b></span>
-    <span>readiness <b>65/100</b></span>
-    <span>tools <b>52/58</b></span>
-    <span>evidence <b>32</b></span>
+    <span>confidence <b>0.72</b></span>
+    <span>readiness <b>69/100</b></span>
+    <span>tools <b>56/60</b></span>
+    <span>evidence <b>34</b></span>
   </div>
-  <p class="labels">strong_support:10, irrelevant:10, weak_support:7, mechanistic_relevance:2, safety_concern:3</p>
+  <p class="labels">strong_support:11, weak_support:8, irrelevant:11, safety_concern:3, mechanistic_relevance:1</p>
   <a class="btn small" href="docs/showcase/egfr-osimertinib-resistance.html">Open full dossier</a>
 </article>
 
-<article class="caseCard caution">
-  <div class="caseTop"><span>braf-v600e-melanoma</span><strong>hypothesis_only</strong></div>
+<article class="caseCard">
+  <div class="caseTop"><span>braf-v600e-melanoma</span><strong>experiment_ready_with_gaps</strong></div>
   <h3>BRAF V600E Targeted Therapy in Melanoma</h3>
-  <p>BRAF V600E is the most frequently identified cancer-causing mutation in melanoma and constitutively activates the MAPK/ERK signaling pathway via a RAF-family serine/threonine kinase mechanism. Dabrafenib and vemurafenib, as approved BRAF inhibitors, are subject to acquired resistance driven in part by rapid ARF6 activ...</p>
+  <p>BRAF V600E is the most frequently identified oncogenic mutation in melanoma and encodes a constitutively active serine/threonine kinase that drives MAP kinase/ERK pathway signaling, as established by NCBI Gene annotation and an Open Targets disease-association score of 0.853. Dabrafenib (approved for melanoma across m...</p>
   <div class="miniStats">
     <span>confidence <b>0.82</b></span>
-    <span>readiness <b>64/100</b></span>
-    <span>tools <b>54/59</b></span>
-    <span>evidence <b>33</b></span>
+    <span>readiness <b>73/100</b></span>
+    <span>tools <b>54/58</b></span>
+    <span>evidence <b>32</b></span>
   </div>
-  <p class="labels">weak_support:10, irrelevant:16, safety_concern:3, mechanistic_relevance:1, strong_support:3</p>
+  <p class="labels">weak_support:8, irrelevant:17, safety_concern:5, mechanistic_relevance:1, strong_support:1</p>
   <a class="btn small" href="docs/showcase/braf-v600e-melanoma.html">Open full dossier</a>
 </article>
 
 <article class="caseCard caution">
   <div class="caseTop"><span>ret-fusion-thyroid</span><strong>hypothesis_only</strong></div>
   <h3>RET Fusions and Mutations in Thyroid Cancer</h3>
-  <p>RET is the highest-ranked associated target for medullary thyroid gland carcinoma in Open Targets (association score 0.883), consistent with its role as a disease-defining oncogenic driver in that indication. In papillary thyroid carcinoma, RET ranks fourth among associated targets (association score 0.481), indicatin...</p>
+  <p>Selpercatinib and pralsetinib have received regulatory approval for RET-mutant MTC and RET-fusion-positive solid tumors based on single-arm Phase 1/2 trial data showing ORRs of approximately 64–73%, without randomized controlled trial or overall survival confirmation. The CCDC6-RET chromosomal rearrangement, producing...</p>
   <div class="miniStats">
-    <span>confidence <b>0.0</b></span>
-    <span>readiness <b>44/100</b></span>
-    <span>tools <b>50/57</b></span>
-    <span>evidence <b>31</b></span>
+    <span>confidence <b>0.55</b></span>
+    <span>readiness <b>33/100</b></span>
+    <span>tools <b>51/59</b></span>
+    <span>evidence <b>33</b></span>
   </div>
-  <p class="labels">irrelevant:20, weak_support:5, safety_concern:3, mechanistic_relevance:1, strong_support:2</p>
+  <p class="labels">irrelevant:21, weak_support:5, strong_support:3, safety_concern:3, mechanistic_relevance:1</p>
   <a class="btn small" href="docs/showcase/ret-fusion-thyroid.html">Open full dossier</a>
+</article>
+
+<article class="caseCard">
+  <div class="caseTop"><span>kras-g12c-nsclc</span><strong>experiment_ready_with_gaps</strong></div>
+  <h3>KRAS G12C Inhibition in NSCLC</h3>
+  <p>Sotorasib is FDA-approved for KRAS G12C-mutant NSCLC, establishing clinical precedence for covalent G12C inhibition as a therapeutic strategy in this disease. STK11 co-mutation status is retrospectively associated with divergent clinical and immunologic outcomes in KRAS-mutant NSCLC patients receiving neoadjuvant immu...</p>
+  <div class="miniStats">
+    <span>confidence <b>0.72</b></span>
+    <span>readiness <b>65/100</b></span>
+    <span>tools <b>52/58</b></span>
+    <span>evidence <b>32</b></span>
+  </div>
+  <p class="labels">strong_support:6, weak_support:5, irrelevant:15, safety_concern:5, mechanistic_relevance:1</p>
+  <a class="btn small" href="docs/showcase/kras-g12c-nsclc.html">Open full dossier</a>
+</article>
+
+<article class="caseCard">
+  <div class="caseTop"><span>met-exon14-nsclc</span><strong>experiment_ready_with_gaps</strong></div>
+  <h3>MET Exon 14 Skipping in NSCLC</h3>
+  <p>Capmatinib and tepotinib have received regulatory approval specifically for NSCLC harboring MET exon 14 skipping alterations, establishing MET as a clinically validated target in this molecularly defined subgroup. The CAPTURE trial is prospectively evaluating cabozantinib in NSCLC patients who developed acquired resis...</p>
+  <div class="miniStats">
+    <span>confidence <b>0.75</b></span>
+    <span>readiness <b>67/100</b></span>
+    <span>tools <b>55/58</b></span>
+    <span>evidence <b>32</b></span>
+  </div>
+  <p class="labels">weak_support:2, irrelevant:13, strong_support:13, safety_concern:3, mechanistic_relevance:1</p>
+  <a class="btn small" href="docs/showcase/met-exon14-nsclc.html">Open full dossier</a>
 </article>
 </div>
   </section>
   <section class="section">
     <div class="intro"><div class="kicker">Cross-case signal</div><h2>The system does not force all cases to look good.</h2></div>
     <div class="card">
-      <div class="table"><table><thead><tr><th>Case</th><th>Run ID</th><th>Confidence</th><th>Readiness</th><th>Evidence</th><th>Tool calls</th><th>Debate</th></tr></thead><tbody><tr><td>EGFR Osimertinib Resistance in NSCLC</td><td>run_268916424e63</td><td>0.81</td><td>experiment_ready_with_gaps (65/100)</td><td>32</td><td>58</td><td>support_with_limits:5, revise:2</td></tr><tr><td>BRAF V600E Targeted Therapy in Melanoma</td><td>run_74eca9cfa2ea</td><td>0.82</td><td>hypothesis_only (64/100)</td><td>33</td><td>59</td><td>revise:5, support_with_limits:2</td></tr><tr><td>RET Fusions and Mutations in Thyroid Cancer</td><td>run_cceee020dceb</td><td>0.0</td><td>hypothesis_only (44/100)</td><td>31</td><td>57</td><td>support_with_limits:5, revise:2</td></tr></tbody></table></div>
+      <div class="table"><table><thead><tr><th>Case</th><th>Run ID</th><th>Confidence</th><th>Readiness</th><th>Evidence</th><th>Tool calls</th><th>Debate</th></tr></thead><tbody><tr><td>EGFR Osimertinib Resistance in NSCLC</td><td>run_ea89127752dd</td><td>0.72</td><td>experiment_ready_with_gaps (69/100)</td><td>34</td><td>60</td><td>support_with_limits:5, revise:2</td></tr><tr><td>BRAF V600E Targeted Therapy in Melanoma</td><td>run_0572f34d7a9d</td><td>0.82</td><td>experiment_ready_with_gaps (73/100)</td><td>32</td><td>58</td><td>support_with_limits:7</td></tr><tr><td>RET Fusions and Mutations in Thyroid Cancer</td><td>run_040e2aeb55a9</td><td>0.55</td><td>hypothesis_only (33/100)</td><td>33</td><td>59</td><td>support_with_limits:5, revise:2</td></tr><tr><td>KRAS G12C Inhibition in NSCLC</td><td>run_d38611f0fcdc</td><td>0.72</td><td>experiment_ready_with_gaps (65/100)</td><td>32</td><td>58</td><td>support_with_limits:5, revise:2</td></tr><tr><td>MET Exon 14 Skipping in NSCLC</td><td>run_e47cb91c7550</td><td>0.75</td><td>experiment_ready_with_gaps (67/100)</td><td>32</td><td>58</td><td>support_with_limits:2, revise:5</td></tr></tbody></table></div>
     </div>
   </section>
 </main>

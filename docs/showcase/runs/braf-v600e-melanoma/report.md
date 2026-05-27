@@ -3,40 +3,40 @@
 
 ---
 
-**Run ID:** `run_74eca9cfa2ea`  
+**Run ID:** `run_0572f34d7a9d`  
 **Status:** `completed`  
 **Confidence:** `0.82`  
-**Agent steps:** 143  
-**Tool calls:** 59  
-**Evidence items:** 33  
+**Agent steps:** 141  
+**Tool calls:** 58  
+**Evidence items:** 32  
 **Experiments proposed:** 5  
 
 ---
 
 
-Run: `run_74eca9cfa2ea`
+Run: `run_0572f34d7a9d`
 Status: `completed`
 Confidence: `0.82`
 Confidence interpretation: `moderate`
 
 ## Candidate Hypothesis
 
-BRAF V600E is a mature, FDA-validated oncogenic driver in cutaneous melanoma (~50% prevalence), with dabrafenib+trametinib and vemurafenib+cobimetinib approved on the basis of phase 3 OS benefit in metastatic and adjuvant stage III settings. Acquired resistance is mechanistically heterogeneous, converging primarily on MAPK reactivation (BRAF amplification, NRAS/MEK1/2 mutations, paradoxical ERK activation); additional non-cell-autonomous mechanisms (TME immunosuppression, exosomal miRNA) have been identified preclinically but lack clinical actionability. ctDNA BRAF V600E is a validated prognostic biomarker in the adjuvant setting. TMB and immune infiltration signatures are candidate predictive biomarkers pending prospective validation. Key unresolved questions are: optimal sequencing of targeted versus immune checkpoint therapy, tolerability and incremental benefit of triplet BRAFi+MEKi+anti-PD-1 strategies, and prospective companion diagnostic validation for patient selection.
+BRAF V600E is a causally validated, clinically precedented oncogenic driver in melanoma with FDA-approved combination therapies (dabrafenib+trametinib, vemurafenib+cobimetinib) demonstrating OS benefit in metastatic and adjuvant stage III settings. The outstanding scientific work concerns: (1) resistance biology - MAPK reactivation via BRAF amplification, splice variants, NRAS/MEK1/2 mutations, and paradoxical ERK activation are established mechanisms, but no approved strategy durably overcomes them; (2) combination sequencing with immunotherapy - transient TME remodeling provides mechanistic rationale for triplet strategies, but clinical validation of durability and tolerability remains incomplete; (3) biomarker-guided patient selection - TMB and immune infiltration signatures are candidate associative biomarkers for immunotherapy benefit, and PTEN loss/MITF amplification associate with targeted therapy resistance, but none are prospectively validated predictive biomarkers in this specific context. Priority experiments include prospective biomarker-stratified trials distinguishing MAPK-driven from immune-mediated resistance, longitudinal TME profiling to define optimal immunotherapy combination windows, and dedicated safety studies for triplet regimens in patients with baseline cardiac dysfunction.
 
 ## Scientific Assessment
 
-- Treat as speculative until public target-disease evidence is retrieved.
+- Treat as an established or clinically precedented target-disease context; focus on residual mechanism, responder biology, resistance, safety, and patient selection.
 - The disease-target rationale is biologically plausible when live/public evidence links BRAF to melanoma through disease association, pathway, or mechanism records.
 - The current claim should remain pathway-level: evidence supports target and mechanism grounding, not clinical efficacy for any intervention unless direct clinical evidence is cited.
-- Relevant clinical literature titles include: Clinical validation of droplet digital PCR assays in detecting BRAF(V600)-mutant circulating tumour DNA as a prognostic biomarker in patients with resected stage III melanoma receiving adjuvant therapy (COMBI-AD): a biomarker analysis from a double-blind, randomised phase 3 trial.; Comparative analysis of adjuvant therapy for stage III BRAF-mut melanoma: A real-world retrospective study from single center in China..
+- Relevant clinical literature titles include: Comparative analysis of adjuvant therapy for stage III BRAF-mut melanoma: A real-world retrospective study from single center in China..
 - Candidate molecules or interventions are prioritization leads only; potency, selectivity, exposure, safety, and disease-model response must be tested.
 
 ## Key Scientific Claims
 
-- BRAF V600E is the most frequently identified cancer-causing mutation in melanoma and constitutively activates the MAPK/ERK signaling pathway via a RAF-family serine/threonine kinase mechanism.
-- Dabrafenib and vemurafenib, as approved BRAF inhibitors, are subject to acquired resistance driven in part by rapid ARF6 activation after RAF inhibition, which augments BRAF(V600E) signaling.
-- Keratinocyte-derived exosomal miR-31-5p reduces vemurafenib sensitivity in melanoma cells, representing a non-cell-autonomous, tumor microenvironment-mediated resistance mechanism characterized in preclinical models.
-- BRAF V600E circulating tumor DNA has been evaluated as a prognostic biomarker in a phase 3 adjuvant melanoma biomarker sub-study, but prospective validation in an independently powered cohort has not been reported in the retrieved evidence.
+- BRAF V600E is the most frequently identified oncogenic mutation in melanoma and encodes a constitutively active serine/threonine kinase that drives MAP kinase/ERK pathway signaling, as established by NCBI Gene annotation and an Open Targets disease-association score of 0.853.
+- Dabrafenib (approved for melanoma across multiple indications per Open Targets) and trametinib are FDA-approved agents targeting the BRAF V600E-MEK-ERK axis, with adjuvant dabrafenib plus trametinib demonstrating relapse-free survival and distant metastasis-free survival benefit in stage III BRAF-mutant melanoma; mature overall survival data are not yet available.
+- Acquired resistance to BRAF-targeted therapy involves preclinically and retrospectively characterized MAPK reactivation mechanisms-including BRAF amplification, splice variants, and NRAS/MEK1/2 mutations-but prospective mechanistic validation in human tumor cohorts remains incomplete.
+- PTEN loss is associated with resistance to BRAF-targeted therapy in melanoma based on available evidence, but neither PTEN loss nor TMB nor immune infiltration signatures have been prospectively validated as predictive biomarkers for treatment selection in BRAF-mutant melanoma.
 
 ## Objective Classification
 
@@ -76,74 +76,69 @@ Score: `0.826` (19/23 points)
 
 ## Biomedical Validation Controls
 
-- BioTruth critic: `weak_support` (score: `83.2`)
-- Evidence hierarchy: `33` evidence items; `14` high-tier items; score `64.65`
-- Contradiction search attempted: `True`; findings `7`
-- Abstention policy decision: `tentative_only` with required flag `False`
-- Actionability profile: `moderate` with recommended decision `tentative_only`
+- BioTruth critic: `weak_support` (score: `81.2`)
+- Evidence hierarchy: `32` evidence items; `14` high-tier items; score `64.58`
+- Contradiction search attempted: `True`; findings `6`
+- Abstention policy decision: `support_allowed` with required flag `False`
+- Actionability profile: `high` with recommended decision `support_allowed`
 
 ## Scientific Strategy
 
-**Readiness tier:** **Hypothesis only** (64/100)
-> hypothesis_only: blocked mainly by claim_graph_evidence_gap (medium).
+**Readiness tier:** **Experiment ready (with gaps)** (73/100)
+> experiment_ready_with_gaps: blocked mainly by claim_graph_evidence_gap (medium).
 
 **Recommended next action:** `run_falsification_and_depth_pass`
-> Readiness is hypothesis_only; remaining gaps should be challenged before confidence increases.
+> Readiness is experiment_ready_with_gaps; remaining gaps should be challenged before confidence increases.
 
 **Evidence gaps identified:**
 
-- 🟡 **claim_graph_evidence_gap** (medium): The claim graph still has unsupported evidence links: NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms.
+- 🟡 **claim_graph_evidence_gap** (medium): The claim graph still has unsupported evidence links: NCBI Gene, PubMed: BRAF BRAF V600E targeting in melanoma not associated, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma.
   - Recommended tool: `tooluniverse_query_tool`
 - 🟡 **evidence_relevance_noise** (medium): A material fraction of retrieved evidence was judged irrelevant to the claim boundary.
   - Recommended tool: `pubmed_literature_search_tool`
 
 ## Claim Graph
 
-*6 claims mapped across 33 evidence items.*
+*5 claims mapped across 32 evidence items.*
 
 ### Claim claim_1 — `computational`
-> BRAF V600E is a mature, FDA-validated oncogenic driver in cutaneous melanoma (~50% prevalence), with dabrafenib+trametinib and vemurafenib+cobimetinib approved on the basis of phase 3 OS benefit in metastatic and adjuvant stage III settings.
+> BRAF V600E is a causally validated, clinically precedented oncogenic driver in melanoma with FDA-approved combination therapies (dabrafenib+trametinib, vemurafenib+cobimetinib) demonstrating OS benefit in metastatic and adjuvant stage III settings.
 - ✅ **Supporting:** ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib
-- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms, PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF BRAF V600E targeting in melanoma not associated, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms
 
 ### Claim claim_2 — `computational`
-> Acquired resistance is mechanistically heterogeneous, converging primarily on MAPK reactivation (BRAF amplification, NRAS/MEK1/2 mutations, paradoxical ERK activation)
+> The outstanding scientific work concerns: (1) resistance biology - MAPK reactivation via BRAF amplification, splice variants, NRAS/MEK1/2 mutations, and paradoxical ERK activation are established mechanisms, but no approved strategy durably overcomes them
 - ✅ **Supporting:** ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib
-- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms, PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF BRAF V600E targeting in melanoma not associated, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms
 
 ### Claim claim_3 — `computational`
-> additional non-cell-autonomous mechanisms (TME immunosuppression, exosomal miRNA) have been identified preclinically but lack clinical actionability.
+> (2) combination sequencing with immunotherapy - transient TME remodeling provides mechanistic rationale for triplet strategies, but clinical validation of durability and tolerability remains incomplete
 - ✅ **Supporting:** ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib
-- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms, PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF BRAF V600E targeting in melanoma not associated, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms
 
 ### Claim claim_4 — `computational`
-> ctDNA BRAF V600E is a validated prognostic biomarker in the adjuvant setting.
+> (3) biomarker-guided patient selection - TMB and immune infiltration signatures are candidate associative biomarkers for immunotherapy benefit, and PTEN loss/MITF amplification associate with targeted therapy resistance, but none are prospectively validated predictive biomarkers in this specific context.
 - ✅ **Supporting:** ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib
-- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms, PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF BRAF V600E targeting in melanoma not associated, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms
 
-### Claim claim_5 — `computational`
-> TMB and immune infiltration signatures are candidate predictive biomarkers pending prospective validation.
+### Claim claim_5 — `⚠ no efficacy claim`
+> Priority experiments include prospective biomarker-stratified trials distinguishing MAPK-driven from immune-mediated resistance, longitudinal TME profiling to define optimal immunotherapy combination windows, and dedicated safety studies for triplet regimens in patients with baseline cardiac dysfunction.
 - ✅ **Supporting:** ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib
-- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms, PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma
-
-### Claim claim_6 — `computational`
-> Key unresolved questions are: optimal sequencing of targeted versus immune checkpoint therapy, tolerability and incremental benefit of triplet BRAFi+MEKi+anti-PD-1 strategies, and prospective companion diagnostic validation for patient selection.
-- ✅ **Supporting:** ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib
-- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms, PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma
+- ⬜ **Gaps / irrelevant:** NCBI Gene, PubMed: BRAF BRAF V600E targeting in melanoma not associated, PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma, PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms
 
 
 ## Evidence Coverage Matrix
 
-Coverage score: `1.0` (7 covered, 0 partial, 0 missing)
+Coverage score: `0.929` (6 covered, 1 partial, 0 missing)
 
 | Requirement | Status | Matched sources |
 | --- | --- | --- |
-| Literature evidence | `covered` | PubMed: BRAF BRAF V600E targeting in melanoma failed trial, PubMed: BRAF BRAF V600E targeting in melanoma mechanism, PubMed: BRAF BRAF V600E targeting in melanoma therapeutic target validation |
+| Literature evidence | `partial` | PubMed: BRAF BRAF V600E targeting in melanoma failed trial |
 | Target-disease association | `covered` | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
 | Clinical or trial context | `covered` | ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib |
 | Safety and toxicity context | `covered` | openFDA adverse events: dabrafenib, openFDA adverse events: trametinib, openFDA adverse events: vemurafenib |
-| Mechanistic pathway evidence | `covered` | PubMed: BRAF BRAF V600E targeting in melanoma mechanism, ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
-| Contradictions or missing evidence | `covered` | ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, PubMed: BRAF BRAF V600E targeting in melanoma failed trial |
+| Mechanistic pathway evidence | `covered` | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId, ToolUniverse: OpenTargets_get_disease_id_description_by_name, ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name |
+| Contradictions or missing evidence | `covered` | ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, PubMed: BRAF BRAF V600E targeting in melanoma failed trial |
 | Fusion and copy-number detection | `covered` | ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF, ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib, ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib, ClinicalTrials.gov: melanoma BRAF, ClinicalTrials.gov: melanoma dabrafenib, ClinicalTrials.gov: melanoma trametinib |
 
 ## Candidate Intervention Summary
@@ -157,53 +152,52 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 | Source | Label | Score | Evidence |
 | --- | --- | --- | --- |
 | NCBI Gene | weak_support | 0.65 | NCBI Gene BRAF: This gene encodes a protein belonging to the RAF family of serine/threonine protein kinases. This protein plays a role in regulating the MAP kinase/ERK signaling pathway, which affects cell division, differentiation, and secretion. Mutations in this gene, most commonly the V600E muta |
-| NCBI Gene | irrelevant | 0.31 | NCBI Gene V600E: NCBI Gene returned a live gene record. |
-| Reactome: V600E | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment | irrelevant | 0.1 | PubMed returned live literature search results for BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 melanoma tumor microenvironment. |
+| NCBI Gene | irrelevant | 0.31 | NCBI Gene MAP2K7: The protein encoded by this gene is a dual specificity protein kinase that belongs to the MAP kinase kinase family. This kinase specifically activates MAPK8/JNK1 and MAPK9/JNK2, and this kinase itself is phosphorylated and activated by MAP kinase kinase kinases including MAP3K1/MEK |
 | PubMed: BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms | irrelevant | 0.1 | PubMed returned live literature search results for BRAF V600E melanoma dabrafenib trametinib vemurafenib cobimetinib clinical trial resistance mechanisms. |
-| Reactome: MAPK signaling pathway | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
 | Reactome: BRAF | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma | irrelevant | 0.1 | PubMed returned live literature search results for BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma. |
-| ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Testing Trametinib and Dabrafenib as a Potential Targeted Treatment in Cancers With BRAF Genetic Changes (MATCH-Subprotocol H) (ACTIVE_NOT_RECRUITING, PHASE2); A Study of IMM-6-415 in RAS/RAF Mutant Solid Tumors (COMPLETED, PHASE1, PHASE2); Bi |
-| ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Testing Trametinib and Dabrafenib as a Potential Targeted Treatment in Cancers With BRAF Genetic Changes (MATCH-Subprotocol H) (ACTIVE_NOT_RECRUITING, PHASE2); Biopsy- and Biology-driven Optimization of Targeted Therapy in Subjects With Advanc |
-| ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Testing Trametinib and Dabrafenib as a Potential Targeted Treatment in Cancers With BRAF Genetic Changes (MATCH-Subprotocol H) (ACTIVE_NOT_RECRUITING, PHASE2); Biopsy- and Biology-driven Optimization of Targeted Therapy in Subjects With Advanc |
+| Reactome: MEK | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| Reactome: MAPK signaling pathway | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
+| ClinicalTrials.gov: BRAF V600E targeting in melanoma BRAF | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: A Study of IMM-6-415 in RAS/RAF Mutant Solid Tumors (COMPLETED, PHASE1, PHASE2); Biopsy- and Biology-driven Optimization of Targeted Therapy in Subjects With Advanced Melanoma (TERMINATED, PHASE2); Testing Trametinib and Dabrafenib as a Potent |
 | Reactome: RAS-RAF-MEK-ERK cascade | irrelevant | 0.31 | Reactome returned pathway/mechanism records: . |
-| ClinicalTrials.gov: melanoma BRAF | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Binimetinib Plus Encorafenib Real Life Investigation of Next Generation Melanoma Treatment (RECRUITING, phase not listed); Treatment of a Resistant Disease Using Decitabine Combined With Vemurafenib Plus Cobimetinib (TERMINATED, PHASE1); Assoc |
-| ClinicalTrials.gov: melanoma dabrafenib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Association of Hydroxychloroquine, BRAF and MEK Inhibitors in Metastatic Melanoma : a Retrospective Case-control Study. (COMPLETED, phase not listed); Study of Dabrafenib+Trametinib in the Adjuvant Treatment of Stage III BRAF V600+ Melanoma Af |
-| ClinicalTrials.gov: melanoma trametinib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Association of Hydroxychloroquine, BRAF and MEK Inhibitors in Metastatic Melanoma : a Retrospective Case-control Study. (COMPLETED, phase not listed); Study of Dabrafenib+Trametinib in the Adjuvant Treatment of Stage III BRAF V600+ Melanoma Af |
+| ClinicalTrials.gov: BRAF V600E targeting in melanoma dabrafenib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Biopsy- and Biology-driven Optimization of Targeted Therapy in Subjects With Advanced Melanoma (TERMINATED, PHASE2); Testing Trametinib and Dabrafenib as a Potential Targeted Treatment in Cancers With BRAF Genetic Changes (MATCH-Subprotocol H) |
+| ClinicalTrials.gov: BRAF V600E targeting in melanoma trametinib | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: Biopsy- and Biology-driven Optimization of Targeted Therapy in Subjects With Advanced Melanoma (TERMINATED, PHASE2); Testing Trametinib and Dabrafenib as a Potential Targeted Treatment in Cancers With BRAF Genetic Changes (MATCH-Subprotocol H) |
+| ClinicalTrials.gov: melanoma BRAF | weak_support | 0.65 | ClinicalTrials.gov returned translational study records: A Study to Compare the Administration of Encorafenib + Binimetinib + Nivolumab Versus Ipilimumab + Nivolumab in BRAF-V600 Mutant Melanoma With Brain Metastases (RECRUITING, PHASE2); A Study of Vemurafenib in Participants With Metastatic Melano |
+| ClinicalTrials.gov: melanoma dabrafenib | safety_concern | 0.72 | ClinicalTrials.gov returned translational study records: Targeted Therapy Directed by Genetic Testing in Treating Patients With Advanced Refractory Solid Tumors, Lymphomas, or Multiple Myeloma (The MATCH Screening Trial) (ACTIVE_NOT_RECRUITING, PHASE2); Effectiveness and Safety of Dabrafenib in Comb |
+| ClinicalTrials.gov: melanoma trametinib | safety_concern | 0.72 | ClinicalTrials.gov returned translational study records: Trametinib With GSK2141795 in BRAF Wild-type Melanoma (COMPLETED, PHASE2); Targeted Therapy Directed by Genetic Testing in Treating Patients With Advanced Refractory Solid Tumors, Lymphomas, or Multiple Myeloma (The MATCH Screening Trial) (ACT |
 | openFDA adverse events: dabrafenib | safety_concern | 0.72 | openFDA returned 5499 matching adverse-event reports. Common returned reaction terms include: Basal cell carcinoma; Ejection fraction decreased; Gastroenteritis. These are safety signals, not incidence rates or causal proof. |
 | openFDA adverse events: vemurafenib | safety_concern | 0.72 | openFDA returned 4046 matching adverse-event reports. Common returned reaction terms include: Angina pectoris; Blood alkaline phosphatase increased; Brain oedema; Cerebral haemorrhage; Gamma-glutamyltransferase increased. These are safety signals, not incidence rates or causal proof. |
-| ToolUniverse: OpenTargets_get_disease_id_description_by_name | irrelevant | 0.31 | OpenTargets_get_disease_id_description_by_name returned ToolUniverse/OpenTargets evidence: None |
-| ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.62 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: melanoma: A malignant, usually aggressive tumor composed of atypical, neoplastic melanocytes. Most often, melanomas arise in the skin (cutaneous melanomas) and include the following histologic subtypes: superficial spre |
-| PubMed: tumor mutational burden immune infiltration biomarker BRAF inhibitor melanoma response prediction | irrelevant | 0.2 | Multi-Modal Biomarker Profiling of Tumor Microenvironment and Genomic Alterations to Enhance Immunotherapy Stratification in Melanoma.; Melanoma: Prognostic Factors and Factors Predictive of Response to Therapy. |
 | openFDA adverse events: trametinib | safety_concern | 0.72 | openFDA returned 6718 matching adverse-event reports. Common returned reaction terms include: Blood creatine phosphokinase increased; Cerebrovascular accident; Confusional state; Convulsion; Dehydration. These are safety signals, not incidence rates or causal proof. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: VEMURAFENIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 13 investigational indications. |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TRAMETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 32 investigational indications.; TRAMETINIB DIMETHYL SULFOXIDE: Small molecule drug with a maximum cl |
+| PubMed: BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma | irrelevant | 0.1 | PubMed returned live literature search results for BRAF MEK inhibitor immunotherapy combination anti-PD-1 LAG-3 tumor microenvironment melanoma. |
+| ToolUniverse: OpenTargets_get_disease_id_description_by_name | irrelevant | 0.31 | OpenTargets_get_disease_id_description_by_name returned ToolUniverse/OpenTargets evidence: None |
+| PubMed: BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma | irrelevant | 0.1 | PubMed returned live literature search results for BRAF inhibitor acquired resistance MAPK reactivation NRAS MEK1 MEK2 mutation amplification melanoma. |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | weak_support | 0.65 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: DABRAFENIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for melanoma and neoplasm and 16 investigational indications.; DABRAFENIB MESYLATE: Small molecule drug  |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: VEMURAFENIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 13 investigational indications. |
+| ToolUniverse: OpenTargets_get_disease_id_description_by_name | weak_support | 0.62 | OpenTargets_get_disease_id_description_by_name returned OpenTargets search hits: melanoma: A malignant, usually aggressive tumor composed of atypical, neoplastic melanocytes. Most often, melanomas arise in the skin (cutaneous melanomas) and include the following histologic subtypes: superficial spre |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: TRAMETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with 3 approved and 32 investigational indications.; TRAMETINIB DIMETHYL SULFOXIDE: Small molecule drug with a maximum cl |
+| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: RELATLIMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with an approval for melanoma and 13 investigational indications. |
+| PubMed: tumor mutational burden immune infiltration biomarker BRAF inhibitor response melanoma | irrelevant | 0.2 | Multi-Modal Biomarker Profiling of Tumor Microenvironment and Genomic Alterations to Enhance Immunotherapy Stratification in Melanoma.; Case report: Is severe toxicity the price to pay for high sensitivity to checkpoint inhibitors immunotherapy in desmoplastic melanoma?; Melanoma: Prognostic Factors |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: PEMBROLIZUMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with 9 approved and 146 investigational indications. |
 | ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: COBIMETINIB: Small molecule drug with a maximum clinical stage of Approval (across all indications), with an approval for neoplasm and melanoma and 10 investigational indications.; COBIMETINIB FUMARATE: Small molecule dru |
-| ToolUniverse: OpenTargets_get_drug_chembId_by_generic_name | irrelevant | 0.31 | OpenTargets_get_drug_chembId_by_generic_name returned OpenTargets search hits: RELATLIMAB: Antibody drug with a maximum clinical stage of Approval (across all indications), with an approval for melanoma and 13 investigational indications. |
 | PubChem candidate lookup | mechanistic_relevance | 0.46 | PubChem returned candidate/intervention records for: dabrafenib, trametinib, vemurafenib, cobimetinib. |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | weak_support | 0.65 | OpenTargets_get_associated_targets_by_disease_efoId returned 13182 associated targets for melanoma; top retrieved targets: CDKN2A association score 0.88; BRAF association score 0.853; BAP1 association score 0.827; PTEN association score 0.81 |
 | ToolUniverse: OpenTargets_get_associated_targets_by_disease_efoId | irrelevant | 0.31 | OpenTargets_get_associated_targets_by_disease_efoId returned 3696 associated targets for cutaneous melanoma; top retrieved targets: CDKN2A association score 0.845; MITF association score 0.754; PTEN association score 0.714; TERT association score 0.712 |
-| PubMed: BRAF BRAF V600E targeting in melanoma mechanism | strong_support | 0.78 | Mechanistic and preclinical evaluation of SIRT3 as a therapeutic target in melanoma.; Rapid activation of ARF6 after RAF inhibition augments BRAF(V600E) and promotes therapy resistance.; Keratinocyte-derived exosomal miR-31-5p reduces vemurafenib sensitivity in melanoma cells.; PHI-501, a dual inhib |
-| PubMed: BRAF BRAF V600E targeting in melanoma therapeutic target validation | strong_support | 0.78 | Mechanistic and preclinical evaluation of SIRT3 as a therapeutic target in melanoma.; Genomic profiling and therapeutic targets of Thai melanoma revealed by next-generation sequencing.; AI-driven de novo design of BRAF inhibitors with enhanced binding affinity and optimized drug-likeness.; Clinical  |
 | PubMed: BRAF BRAF V600E targeting in melanoma failed trial | strong_support | 0.78 | An alginate-based 3D cell culture model as a useful tool for melanoma drug testing.; Comparative analysis of adjuvant therapy for stage III BRAF-mut melanoma: A real-world retrospective study from single center in China.; Molecular targeted therapy of BRAF-mutant colorectal cancer. |
+| PubMed: BRAF BRAF V600E targeting in melanoma not associated | irrelevant | 0.2 | Resveratrol as a Dual MAPK/STAT3 Inhibitor in Glioblastoma: Mutation-Dependent Therapeutic Efficacy.; Cancer biomarker that are currently used in cancer therapy and under evaluation in clinical trials.; Mechanistic and preclinical evaluation of SIRT3 as a therapeutic target in melanoma.; From suspec |
 
 ## Citations and Retrieved Records
 
 - [BRAF](https://www.ncbi.nlm.nih.gov/gene/673) (gene_id: 673)
+- [MAP2K7](https://www.ncbi.nlm.nih.gov/gene/5609) (gene_id: 5609)
 - [Multi-Modal Biomarker Profiling of Tumor Microenvironment and Genomic Alterations to Enhance Immunotherapy Stratification in Melanoma.](https://pubmed.ncbi.nlm.nih.gov/41150769/) (pmid: 41150769; journal: Current issues in molecular biology; pubdate: 2025 Oct 3)
+- [Case report: Is severe toxicity the price to pay for high sensitivity to checkpoint inhibitors immunotherapy in desmoplastic melanoma?](https://pubmed.ncbi.nlm.nih.gov/38799429/) (pmid: 38799429; journal: Frontiers in immunology; pubdate: 2024)
 - [Melanoma: Prognostic Factors and Factors Predictive of Response to Therapy.](https://pubmed.ncbi.nlm.nih.gov/31804158/) (pmid: 31804158; journal: Current medicinal chemistry; pubdate: 2020)
 - [dabrafenib](https://pubchem.ncbi.nlm.nih.gov/compound/44462760) (cid: 44462760)
 - [trametinib](https://pubchem.ncbi.nlm.nih.gov/compound/11707110) (cid: 11707110)
 - [vemurafenib](https://pubchem.ncbi.nlm.nih.gov/compound/42611257) (cid: 42611257)
 - [cobimetinib](https://pubchem.ncbi.nlm.nih.gov/compound/16222096) (cid: 16222096)
-- [Mechanistic and preclinical evaluation of SIRT3 as a therapeutic target in melanoma.](https://pubmed.ncbi.nlm.nih.gov/42146866/) (pmid: 42146866; journal: Journal of dermato-oncology; pubdate: 2026)
-- [Rapid activation of ARF6 after RAF inhibition augments BRAF(V600E) and promotes therapy resistance.](https://pubmed.ncbi.nlm.nih.gov/42050077/) (pmid: 42050077; journal: Oncogene; pubdate: 2026 Apr 28)
-- [Keratinocyte-derived exosomal miR-31-5p reduces vemurafenib sensitivity in melanoma cells.](https://pubmed.ncbi.nlm.nih.gov/41997057/) (pmid: 41997057; journal: International immunopharmacology; pubdate: 2026 Jun 15)
-- [PHI-501, a dual inhibitor of RAF and DDR1/2, overcomes MAPK drug resistance in Melanoma.](https://pubmed.ncbi.nlm.nih.gov/41935307/) (pmid: 41935307; journal: Cancer cell international; pubdate: 2026 Apr 4)
-- [Multiplexed enrichment and tracking of lineages with CloneSweeper.](https://pubmed.ncbi.nlm.nih.gov/41659616/) (pmid: 41659616; journal: bioRxiv : the preprint server for biology; pubdate: 2026 Jan 30)
+- [An alginate-based 3D cell culture model as a useful tool for melanoma drug testing.](https://pubmed.ncbi.nlm.nih.gov/41905086/) (pmid: 41905086; journal: Biomedicine & pharmacotherapy = Biomedecine & pharmacotherapie; pubdate: 2026 May)
+- [Comparative analysis of adjuvant therapy for stage III BRAF-mut melanoma: A real-world retrospective study from single center in China.](https://pubmed.ncbi.nlm.nih.gov/37016119/) (pmid: 37016119; journal: Cancer medicine; pubdate: 2023 May)
+- [Molecular targeted therapy of BRAF-mutant colorectal cancer.](https://pubmed.ncbi.nlm.nih.gov/31244912/) (pmid: 31244912; journal: Therapeutic advances in medical oncology; pubdate: 2019)
 
 ## Limitations
 
@@ -212,137 +206,137 @@ PubChem/literature candidate records were found, but none are asserted as clinic
 - Compound specificity and translational risk remain unresolved.
 - Evidence scoring is rule-based and should be calibrated with a trained biomedical evidence model.
 - LLM hypothesis synthesis was unstructured; raw response is preserved in provenance.
-- ARF6 activation and keratinocyte exosomal miR-31-5p are preclinical resistance mechanisms only; they are not validated co-targets or clinically actionable nodes at this time
-- TMB and immune infiltration signatures are exploratory/candidate predictive biomarkers; prospective RCT-level validation as companion diagnostics in BRAFi+IO combination context is lacking
-- Triplet BRAFi+MEKi+anti-PD-1 strategies show modest incremental benefit with increased toxicity (IMspire150); clinical utility remains under investigation and is not established
-- Hypothesis card framing of BRAF V600E as 'early or insufficiently established' is factually incorrect and is rejected; unresolved questions concern sequencing, durability, and biomarker validation, not target validity
+- TMB and immune infiltration signatures are candidate biomarkers associated with immunotherapy benefit but lack prospectively validated predictive utility specifically in BRAF-mutant melanoma; 'predict' overstates current evidence
+- Triplet BRAF+MEK+anti-PD-1 rationale remains mechanistic only; IMspire150 showed modest PFS gain with additive toxicity and no confirmed OS benefit, so clinical validation is incomplete
+- Median PFS ~12 months for doublet BRAF+MEK is an approximate benchmark that varies by trial and line of therapy and should not be cited as a fixed value without confidence intervals
+- PTEN loss and MITF amplification are associative markers of intrinsic resistance, not prospectively validated predictive biomarkers
 
 ## Scientist Panel Debate
 
 *Collaboration model: `parallel_llm_scientist_panel`*
 
-### tooluniverse_agent — 🔄 revise
-*Discipline: ToolUniverse/OpenTargets target and intervention evidence*
+### mechanism_agent — ✅ support with limits
+*Discipline: disease mechanism and causal pathway biology*
 
-BRAF V600E is a well-validated, high-confidence oncology target in melanoma with multiple approved combination regimens; the hypothesis card's framing as 'early or insufficiently established' is factually incorrect and should be revised to reflect mature clinical precedence while acknowledging unresolved resistance and combination sequencing questions.
+BRAF V600E is a causally validated, clinically precedented oncogenic driver in melanoma with approved combination therapies; the outstanding scientific work concerns resistance biology, combination sequencing with immunotherapy, and biomarker-guided patient selection - not target discovery.
 
 **Concerns:**
-- Hypothesis card misclassifies BRAF V600E melanoma as 'early or insufficiently established'-this contradicts FDA-approved regimens and must be corrected before downstream decisions
-- Resistance mechanism evidence (ARF6, miR-31-5p) is preclinical; clinical validation of these nodes as actionable co-targets is lacking
-- TMB and immune-infiltration as predictive biomarkers for targeted/IO combination benefit lack prospective randomized validation
-- Triplet strategies (BRAF+MEK+anti-PD-1) carry overlapping toxicity signals not fully resolved in current trial data
+- Resistance is near-universal within 12-18 months for metastatic disease; no approved strategy durably overcomes MAPK reactivation-driven acquired resistance
+- Triplet BRAF/MEK + anti-PD-1 strategies (e.g., IMspire150) show modest PFS gains with additive toxicity; hepatotoxicity and pyrexia complicate combination tolerability
+- openFDA signals (basal cell carcinoma, ejection fraction decrease) reflect class-level paradoxical MAPK activation and cardiac liabilities requiring prospective monitoring
+- Real-world adjuvant data (PMID 37016119) are retrospective and single-center, limiting generalizability for sequencing decisions
 
 **Requested follow-ups:**
-- Retrieve OpenTargets drug evidence records for vemurafenib+cobimetinib and trametinib+dabrafenib to document approved indications and clinical trial phases
-- Query PubMed for prospective biomarker studies linking TMB or immune infiltration scores to BRAF/MEK inhibitor plus anti-PD-1 outcomes
-- Search for clinical trial data on ARF6 or MEK1/2 mutation frequency at acquired resistance to quantify MAPK reactivation prevalence
+- Prospective biomarker-stratified trials distinguishing MAPK-driven vs. immune-mediated resistance at progression to guide second-line sequencing (targeted  immunotherapy vs. concurrent)
+- Functional validation of BRAF splice variant and MEK1/2 mutation co-occurrence as synthetic lethal vulnerabilities for next-generation ERK inhibitor combinations
+- Longitudinal TME profiling (scRNA-seq) during BRAF/MEK inhibition to define the optimal immunotherapy combination window before exhaustion sets in
+
+### tooluniverse_agent — ✅ support with limits
+*Discipline: ToolUniverse/OpenTargets target and intervention evidence*
+
+BRAF V600E is a well-validated, FDA-approved target in melanoma with dabrafenib+trametinib and vemurafenib+cobimetinib combinations; the open scientific questions concern resistance mechanisms, sequencing with immunotherapy, and patient selection rather than target novelty
+
+**Concerns:**
+- openFDA signals (basal cell carcinoma, paradoxical ERK activation) represent real safety liabilities for long-term or combination use
+- Durability of response remains limited; median PFS ~12 months for doublet BRAF+MEK without immunotherapy
+- Evidence for optimal sequencing of targeted therapy vs immunotherapy is not resolved by current records
+- Real-world data (PMID 37016119) is single-center retrospective, limiting generalizability
+
+**Requested follow-ups:**
+- Retrieve OpenTargets clinical evidence scores specifically for BRAF V600E variant to distinguish variant-level from gene-level association
+- Query ClinicalTrials for completed Phase 3 triplet (BRAF+MEK+anti-PD-1) trials to assess durability endpoints
+- Obtain OpenTargets safety liability data for BRAF inhibitors to quantify paradoxical activation risk
 
 ### literature_agent — ✅ support with limits
 *Discipline: biomedical literature and citation grounding*
 
-BRAF V600E is a well-validated, FDA-approved therapeutic target in melanoma with extensive phase 3 clinical evidence; the hypothesis card understates the maturity of this field
+BRAF V600E is a well-validated, FDA-approved target in melanoma; the scientific frontier lies in resistance mechanisms, combination strategies, and patient selection rather than target discovery.
 
 **Concerns:**
-- Triplet BRAFi+MEKi+anti-PD-1 strategies (e.g., IMspire150) show modest incremental benefit with increased toxicity; clinical utility remains debated
-- Resistance mechanism heterogeneity means no single re-treatment strategy is validated after progression
-- TMB and immune infiltration as predictive biomarkers lack prospective RCT-level validation in BRAFi combination context
-- Real-world and single-center retrospective data (PMID 37016119) have confounding limitations and cannot substitute for RCT evidence
+- Available PubMed hits are limited; landmark COMBI-d/v and coBRIM trial data not directly cited in digest
+- Resistance mechanism evidence is largely preclinical or inferred; prospective biomarker validation trials are sparse
+- Triplet BRAF+MEK+immunotherapy strategies carry compounded toxicity risk (openFDA: 5499 AE reports for dabrafenib alone)
+- Sequencing of targeted vs. immunotherapy remains unresolved with no head-to-head RCT data in digest
 
 **Requested follow-ups:**
-- Prospective biomarker sub-studies within triplet trials to validate TMB and immune infiltration as predictive (not just prognostic) markers
-- Head-to-head sequencing trials: BRAFi+MEKi first vs. immunotherapy first in BRAF V600E patients
-- Mechanistic dissection of MAPK-driven vs. immune-mediated resistance in paired pre/post-progression biopsies
+- Retrieve PubMed records for COMBI-d, COMBI-v, and coBRIM phase III trials to anchor OS/PFS claims
+- Search for prospective TMB and immune-infiltration biomarker studies in BRAF-mutant melanoma cohorts
+- Identify clinical trials testing triplet BRAF+MEK+anti-PD-1 or anti-LAG-3 with safety readouts
 
-### mechanism_agent — 🔄 revise
-*Discipline: disease mechanism and causal pathway biology*
-
-BRAF V600E is a well-validated, causally dominant oncogenic driver in melanoma with robust clinical precedence; the hypothesis card understates the strength of existing evidence
-
-**Concerns:**
-- Durability remains limited: median PFS on BRAFi+MEKi ~12 months due to acquired resistance; long-term OS plateau is modest
-- Triplet BRAFi+MEKi+anti-PD-1 trials (e.g., IMspire150) show mixed results with added toxicity, sequencing strategy unresolved
-- Exosomal and microenvironmental resistance signals (miR-31-5p from keratinocytes) add complexity not captured by genomic biomarkers alone
-- Hypothesis card framing as 'early or insufficiently established' is inaccurate given >10 years of Phase 3 data and regulatory approvals
-
-**Requested follow-ups:**
-- Clarify sequencing strategy: upfront BRAFi+MEKi vs. immunotherapy-first vs. concurrent triplet in BRAF V600E patients
-- Validate whether ctDNA BRAF V600E kinetics during treatment predict acquired resistance mechanism type
-- Define immune infiltration thresholds that stratify patients for triplet vs. doublet therapy
-
-### molecule_agent — 🔄 revise
+### molecule_agent — ✅ support with limits
 *Discipline: candidate intervention and chemistry review*
 
-BRAF V600E is a well-validated, clinically approved oncology target in melanoma with extensive mechanistic and trial evidence; the hypothesis card understates its maturity
+BRAF V600E is a well-validated, clinically approved target in melanoma; the scientific frontier lies in resistance mechanisms, combination strategies, and patient selection rather than target discovery
 
 **Concerns:**
-- Hypothesis card incorrectly frames BRAF as early or insufficiently established; this misrepresents decades of approved clinical use
-- Resistance mechanism studies cited are largely preclinical; clinical validation of ARF6 and exosomal pathways as actionable targets is absent
-- Triplet combination toxicity data are immature; immune-related adverse events may offset benefit
-- Biomarker thresholds for TMB and immune infiltration lack prospective validation in BRAF-mutant melanoma specifically
+- openFDA signals (basal cell carcinoma, decreased ejection fraction) highlight class-effect toxicities relevant to combination and long-term use
+- Paradoxical MAPK activation by BRAF inhibitors in BRAF wild-type cells limits use in non-V600E contexts and raises combination safety questions
+- No direct mechanistic evidence in the digest distinguishing adaptive MAPK resistance from immune-mediated resistance at the single-cell level
+- Real-world adjuvant data (PMID 37016119) from single center limits generalizability for sequencing conclusions
 
 **Requested follow-ups:**
-- Prospective biomarker-stratified trial comparing sequencing of targeted then immunotherapy versus concurrent triplet in BRAF V600E melanoma
-- In vivo validation of ARF6 inhibition reversing BRAFi resistance in patient-derived xenograft models
-- Clinical-grade assay standardization for ctDNA BRAF V600 monitoring in adjuvant and metastatic settings
+- Single-cell RNA-seq or spatial transcriptomics data characterizing TME remodeling under dabrafenib+trametinib to separate MAPK vs immune resistance
+- Prospective biomarker-stratified trial data correlating TMB and IFN-gamma signature with triplet (BRAF+MEK+PD-1) outcomes
+- Mechanistic validation experiments (isogenic cell lines with BRAF amplification vs MEK1 mutation) to model distinct resistance trajectories
 
 ### safety_agent — ✅ support with limits
 *Discipline: clinical safety and translation risk*
 
-BRAF V600E targeting in melanoma is clinically validated with FDA-approved combination regimens, but durability, resistance, and optimal sequencing with immunotherapy remain incompletely resolved translational risks.
+BRAF V600E is a well-validated, FDA-approved target in melanoma; the scientific frontier lies in resistance mechanisms, combination sequencing, and patient selection-not target discovery
 
 **Concerns:**
-- Triplet BRAF/MEK inhibitor + anti-PD-1 strategies carry additive hepatotoxicity and pyrexia risk without phase 3 OS validation; efficacy overclaims must be flagged
-- Resistance mechanism studies (SIRT3, ARF6, miR-31-5p) are preclinical only; translational relevance to patient tumors is unproven
-- TMB and immune infiltration as predictive biomarkers for combination benefit lack prospective validation in BRAF-mutant-specific cohorts
-- Sequencing of targeted therapy vs. immunotherapy first remains unresolved; cross-trial comparisons are confounded by patient selection and prior therapy
+- openFDA signals (5499 AE reports including basal cell carcinoma, decreased ejection fraction) indicate non-trivial safety liabilities often underweighted in combination proposals
+- No head-to-head RCT data distinguishing MAPK-driven from immune-mediated resistance to guide combination design
+- Triplet toxicity burden may compromise immunotherapy dosing and patient tolerability
+- Real-world data from single-center Chinese cohort (PMID 37016119) limits generalizability
 
 **Requested follow-ups:**
-- Prospective biomarker-stratified trial separating MAPK-reactivation resistance from immune-excluded phenotype before triplet combination enrollment
-- Standardized ctDNA assay validation as on-treatment predictive (not just prognostic) biomarker in adjuvant and metastatic settings
-- In vivo validation of ARF6 and miR-31-5p resistance nodes in patient-derived xenograft or organoid models before clinical translation
+- Prospective biomarker studies co-stratifying TMB and MAPK reactivation markers at progression are needed
+- Mechanistic validation experiments separating adaptive MAPK resistance from T-cell exclusion phenotypes before triplet trial design
+- Cardiac safety monitoring protocols for BRAF/MEK/PD-1 triplets require prospective definition
 
-### omics_agent — 🔄 revise
+### omics_agent — ✅ support with limits
 *Discipline: omics, pathway, and perturbation evidence*
 
-Pathway and cellular evidence strongly support BRAF V600E as a validated, clinically actionable driver in melanoma; the hypothesis card understates the maturity of this target.
+Pathway and cellular evidence strongly support BRAF V600E as the mechanistic driver in melanoma, with established clinical precedence for BRAF/MEK inhibitor combinations; remaining work centers on resistance biology and combination strategies.
 
 **Concerns:**
-- Hypothesis card incorrectly frames BRAF V600E as 'early or insufficiently established'; this contradicts >10 years of phase 3 data and regulatory approvals
-- Resistance mechanism studies (SIRT3, ARF6, miR-31-5p) are preclinical; translation to combination trial design requires in vivo validation
-- Sequencing of targeted therapy vs immunotherapy and triplet strategy durability remain unresolved in prospective data
-- Real-world adjuvant data from single-center Chinese cohort (PMID 37016119) limits generalizability
+- Paradoxical ERK activation with BRAF inhibitor monotherapy is a pathway-level liability requiring MEK co-inhibition; monotherapy use is mechanistically unsound
+- Resistance mechanisms are heterogeneous and tumor-cell-extrinsic (TME) components are underrepresented in current omics evidence
+- openFDA signals (basal cell carcinoma, ejection fraction decrease) reflect known class toxicities but require prospective monitoring in combination regimens
+- TMB and immune infiltration as predictive biomarkers for combination benefit lack prospective validation in BRAF-mut melanoma cohorts
 
 **Requested follow-ups:**
-- Prospective ctDNA (COMBI-AD biomarker) data to validate ddPCR as a dynamic resistance biomarker during adjuvant therapy
-- In vivo co-treatment experiments combining BRAF/MEK inhibition with anti-PD-1 to distinguish MAPK-driven vs immune-mediated resistance
-- Tumor immune infiltration profiling (TMB, CD8+ density) in patients progressing on dabrafenib+trametinib to stratify immunotherapy benefit
+- Transcriptomic profiling of pre- and post-progression biopsies to distinguish MAPK-reactivation vs immune-exclusion resistance mechanisms
+- Functional CRISPR screens in BRAF V600E melanoma lines under MEK inhibitor pressure to rank resistance gene dependencies
+- Spatial proteomics of TME in responders vs non-responders to BRAF/MEK+anti-PD-1 triplets
 
-### critic_agent — 🔄 revise
+### critic_agent — ✅ support with limits
 *Discipline: skeptical scientific review*
 
-BRAF V600E targeting in melanoma is well-established clinical precedent, not an early or insufficiently validated hypothesis; the hypothesis card materially understates the evidentiary base and conflates open mechanistic questions with target validation status.
+The hypothesis correctly frames BRAF V600E as an established, clinically precedented target in melanoma rather than a novel discovery. The scientific work remaining centers on resistance mechanisms, combination strategies, and patient selection-not target validation.
 
 **Concerns:**
-- Hypothesis card framing ('early or insufficiently established') is contradicted by decade-long phase 3 approval data - this is a critical internal inconsistency that undermines the card's credibility
-- Resistance mechanism evidence (ARF6, miR-31-5p, SIRT3) is entirely preclinical; no randomized trial has prospectively stratified or intervened on these nodes
-- TMB and immune infiltration as predictive biomarkers for combination benefit lack head-to-head validation against MAPK-pathway biomarkers in the same trial cohort
-- Real-world retrospective data (single-center China study) used to support clinical claims introduces selection bias and limits generalizability
+- Scored evidence digest lacks direct Phase III resistance-mechanism trial data; resistance claims rely on preclinical and small cohort studies
+- openFDA AE signals (basal cell carcinoma, ejection fraction decrease) are underweighted in the hypothesis card safety section
+- Real-world single-center China study (PMID 37016119) has selection bias and limited generalizability to Western populations
+- No head-to-head sequencing trial (targeted then IO vs IO then targeted) data cited; sequencing question remains open and is a critical gap
 
 **Requested follow-ups:**
-- Provide phase 3 OS data for COMBI-d/v and coBRIM to correct the 'insufficiently established' framing with quantitative effect sizes
-- Identify any prospective biomarker-stratified trial testing ARF6 or exosomal miRNA as resistance predictors before elevating these to combination trial design rationale
-- Clarify whether triplet (BRAF+MEK+anti-PD-1) trials (e.g., TRILOGY, IMspire150) show PFS/OS superiority over doublets, not just response rate signals
+- Cite Phase III data (COMBI-d/v, coBRIM) directly for OS/PFS endpoints rather than relying on approval status as proxy
+- Include validated resistance mechanism frequency data from post-progression biopsy cohorts
+- Specify which TMB/immune infiltration cutoffs are under prospective evaluation in combination trials
 
 ### PI Adjudication
 
 **Final confidence:** `0.82`
 
-Multiple converging lines of evidence-phase 3 RCTs, FDA approvals, OpenTargets association score, and mechanistic studies-establish BRAF V600E as a high-confidence validated target in melanoma. Confidence is set at 0.82 rather than higher because key clinical questions (sequencing, triplet tolerability, prospective biomarker validation) remain unresolved, and several resistance mechanism claims are preclinical only.
+All three agents converge on support_with_limits with no substantive positional disagreements. Core claims regarding target validation, approved combinations, and resistance mechanisms are well-supported by regulatory records, OpenTargets scores, and published literature. Confidence is held below 0.85 because: biomarker claims are associative not prospectively validated; triplet strategies lack confirmed OS benefit; and the primary real-world evidence source is retrospective and single-center. The revised hypothesis preserves all supported mechanistic and clinical claims while enforcing appropriate epistemic guardrails on biomarker and combination durability assertions.
 
-- ⚠ Softened/rejected: ARF6 activation and keratinocyte exosomal miR-31-5p are preclinical resistance mechanisms only; they are not validated co-targets or clinically actionable nodes at this time
-- ⚠ Softened/rejected: TMB and immune infiltration signatures are exploratory/candidate predictive biomarkers; prospective RCT-level validation as companion diagnostics in BRAFi+IO combination context is lacking
-- ⚠ Softened/rejected: Triplet BRAFi+MEKi+anti-PD-1 strategies show modest incremental benefit with increased toxicity (IMspire150); clinical utility remains under investigation and is not established
-- ⚠ Softened/rejected: Hypothesis card framing of BRAF V600E as 'early or insufficiently established' is factually incorrect and is rejected; unresolved questions concern sequencing, durability, and biomarker validation, not target validity
+- ⚠ Softened/rejected: TMB and immune infiltration signatures are candidate biomarkers associated with immunotherapy benefit but lack prospectively validated predictive utility specifically in BRAF-mutant melanoma; 'predict' overstates current evidence
+- ⚠ Softened/rejected: Triplet BRAF+MEK+anti-PD-1 rationale remains mechanistic only; IMspire150 showed modest PFS gain with additive toxicity and no confirmed OS benefit, so clinical validation is incomplete
+- ⚠ Softened/rejected: Median PFS ~12 months for doublet BRAF+MEK is an approximate benchmark that varies by trial and line of therapy and should not be cited as a fixed value without confidence intervals
+- ⚠ Softened/rejected: PTEN loss and MITF amplification are associative markers of intrinsic resistance, not prospectively validated predictive biomarkers
 
 ## Proposed Next Experiments
 
@@ -357,7 +351,7 @@ Multiple converging lines of evidence-phase 3 RCTs, FDA approvals, OpenTargets a
 **Failure modes to watch:**
 - The result is indirect, non-specific, or does not change the claim boundary.
 
-**Gate score:** `0.711` (usable)
+**Gate score:** `0.729` (usable)
 
 ### Experiment 2: Repair unsupported claim links or soften claim boundaries
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
@@ -374,6 +368,7 @@ Multiple converging lines of evidence-phase 3 RCTs, FDA approvals, OpenTargets a
 
 **Gate improvements:**
 - Tie the experiment to a named case validation assay.
+- Tie the experiment to an uncovered evidence requirement.
 
 ### Experiment 3: Resolve evidence gap: evidence_relevance_noise
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `high` | **Expected information gain:** `high`
@@ -390,6 +385,7 @@ Multiple converging lines of evidence-phase 3 RCTs, FDA approvals, OpenTargets a
 
 **Gate improvements:**
 - Tie the experiment to a named case validation assay.
+- Tie the experiment to an uncovered evidence requirement.
 
 ### Experiment 4: Rank candidate interventions by BRAF mutation selectivity, paradoxical-activation profile, combination potential (MEKi, immunotherapy), and ADMET liabilities
 **Type:** `computational` | **Cost:** `low-medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
@@ -404,6 +400,9 @@ Multiple converging lines of evidence-phase 3 RCTs, FDA approvals, OpenTargets a
 
 **Gate score:** `0.636` (usable)
 
+**Gate improvements:**
+- Tie the experiment to an uncovered evidence requirement.
+
 ### Experiment 5: Run safety-first triage before efficacy assays: exposure margins, off-target biology, and disease-context tolerability
 **Type:** `computational_plus_wet_lab` | **Cost:** `medium` | **Feasibility:** `medium` | **Expected information gain:** `high`
 
@@ -417,14 +416,17 @@ Multiple converging lines of evidence-phase 3 RCTs, FDA approvals, OpenTargets a
 
 **Gate score:** `0.615` (usable)
 
+**Gate improvements:**
+- Tie the experiment to an uncovered evidence requirement.
+
 
 ## Critique and Refinement
 
-**Severity:** `medium`
+**Severity:** `moderate`
 
-1) The hypothesis asserts ctDNA BRAF V600E is a 'validated prognostic biomarker in the adjuvant setting' but the cited COMBI-AD biomarker analysis is a single retrospective biomarker sub-study, not a prospectively powered validation cohort; regulatory validation status is overstated. 2) The ~50% prevalence figure is presented without confidence interval or subtype stratification (acral/mucosal melanomas have far lower rates). 3) Resistance mechanisms described as 'converging primarily on MAPK reactivation' underweights PI3K/AKT/PTEN and phenotype-switching mechanisms documented in clinical specimens. 4) Exosomal miRNA and TME immunosuppression are labeled 'preclinical only' yet several translational studies with patient tissue exist; the binary clinical/preclinical framing is oversimplified. 5) Safety evidence from openFDA (FAERS) is pharmacovigilance signal data, not incidence rates; the hypothesis card does not flag this limitation. 6) Evidence scoring labels 16 of 33 items 'irrelevant' and 10 'weak_support', meaning the majority of the evidence base does not robustly support the specific claims made; the readiness score of 89 is therefore inflated. 7) Triplet BRAFi+MEKi+anti-PD-1 tolerability claims lack citation of the TRILOGY or IMspire150 trial outcomes showing hepatotoxicity signals that constrain clinical use.
+1) OS benefit claim for adjuvant stage III is overstated: COMBI-AD showed RFS/DMFS benefit but OS data remain immature; asserting OS benefit conflates surrogate and hard endpoints. 2) Resistance mechanisms listed as 'established' rely heavily on preclinical and small retrospective series; prospective mechanistic validation in human tumors is incomplete. 3) TME remodeling rationale for triplet immunotherapy combinations is extrapolated from short-window biopsy studies and mouse models; durability claims lack Phase III support. 4) TMB and immune infiltration described as 'candidate associative biomarkers' but the evidence digest contains no prospectively validated predictive biomarker study in this specific BRAF-mutant melanoma context. 5) MAP2K7/JNK pathway evidence is irrelevant to BRAF V600E-MEK1/2-ERK axis and inflates apparent mechanistic support. 6) Safety gap: cardiac dysfunction subgroup for triplet regimens is flagged as a priority but openFDA signals (ejection fraction decrease, angina) are not quantified or contextualized against baseline cardiac risk in trial populations.
 
-**Recommended fix:** 1) Downgrade ctDNA claim to 'exploratory validated in single phase-3 biomarker sub-study, prospective validation pending'. 2) Stratify prevalence by melanoma subtype. 3) Expand resistance mechanism section to include PI3K/AKT/PTEN and phenotype-switching with clinical specimen citations. 4) Replace binary preclinical/clinical framing with evidence-tier language. 5) Add explicit FAERS caveat. 6) Recalibrate readiness score to reflect majority-weak evidence base. 7) Cite hepatotoxicity data for triplet regimens.
+**Recommended fix:** 1) Replace 'OS benefit' with 'RFS/DMFS benefit with OS data pending maturity' for adjuvant setting. 2) Qualify resistance mechanisms as 'preclinically and retrospectively characterized, prospective validation lacking.' 3) Restrict TME combination rationale to mechanistic hypothesis tier, not clinical validation. 4) Remove MAP2K7 evidence or explicitly label it as off-pathway. 5) Add explicit prospective biomarker trial citation requirement before claiming predictive biomarker candidacy. 6) Quantify cardiac AE rates from trial publications rather than relying on raw FAERS counts.
 
 ## Guardrails
 
