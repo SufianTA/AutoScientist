@@ -1,12 +1,12 @@
 # Deep EGFR-Mutant NSCLC Osimertinib Resistance Case Study Runbook
 
-This runbook defines the cancer-resistance showcase run for AutoScientist: a single hard biomedical case run deeply enough to show mechanistic reasoning, public evidence retrieval, memory, replay, policy guidance, and ablation-based evaluation.
+This runbook defines the cancer-resistance showcase run for AutoScientist: a single hard biomedical case run deeply enough to show mechanistic reasoning, public evidence retrieval, memory, replay, policy guidance, and decision-grade experiment planning.
 
 ## Research Question
 
 Can AutoScientist produce an audit-ready mechanistic explanation and validation strategy for why EGFR-mutant non-small cell lung carcinoma tumors acquire resistance to osimertinib?
 
-The case is anchored on EGFR because EGFR is a high-evidence NSCLC target and osimertinib is clinically established. The actual question is harder: acquired resistance is heterogeneous, so the system must compare EGFR-dependent mutations, bypass signaling, cell-state transition, histologic transformation, and safety-limited combination strategies.
+The case is anchored on EGFR because EGFR is a high-evidence NSCLC target and osimertinib is clinically established. The actual question is harder: acquired resistance is heterogeneous, so the system must compare EGFR-dependent mutations and clone phasing, EGFR amplification, MET/ERBB2/fusion bypass, MAPK/PI3K reactivation, AXL/EMT cell-state transition, CNS or pharmacologic resistance, histologic transformation, and safety-limited combination strategies.
 
 ## What This Is Meant To Demonstrate
 
@@ -15,8 +15,8 @@ The case is anchored on EGFR because EGFR is a high-evidence NSCLC target and os
 3. A biological mechanism graph linking genes, variants, drugs, pathways, resistance phenotypes, evidence, and uncertainty.
 4. Scientific memory that preserves evolving hypotheses, contradictions, weak branches, and confidence updates.
 5. SciFlow policy guidance that changes tool selection and reasoning sequence.
-6. Ablation evidence showing what is lost without public tools, memory, or policy control.
-7. Calibrated uncertainty: the system should propose research hypotheses and validation plans, not patient-treatment recommendations.
+6. Calibrated uncertainty: the system should propose research hypotheses and validation plans, not patient-treatment recommendations.
+7. A shareable, auditable case package rather than a leaderboard or baseline comparison.
 
 ## What This Must Not Claim
 
@@ -71,12 +71,11 @@ python -u tools/run_cancer_resistance_case_study.py \
   --tool-budget-usd 25 \
   --strategy-repair-max-queries 6 \
   --llm-max-tokens 1200 \
-  --ablations full plain_llm no_public_tools no_memory no_sciflow \
   --neural-epochs 60 \
   --strict-real-run
 ```
 
-This is intentionally not a cheap run. It is designed to produce roughly 20 benchmark artifacts: 4 tasks x 5 ablations.
+This is intentionally not a cheap run. It is designed to produce four deep full-system artifacts, one per task, with enough trace depth to inspect how the system reasoned.
 
 ## Cheaper Smoke Run
 
@@ -99,12 +98,11 @@ python -u tools/run_cancer_resistance_case_study.py \
   --strategy-repair-max-queries 4 \
   --llm-max-tokens 1000 \
   --template-ids resistance_mechanism_dossier combination_strategy_and_experiment_plan \
-  --ablations full plain_llm no_public_tools \
   --neural-epochs 30 \
   --strict-real-run
 ```
 
-This produces 2 tasks x 3 ablations = 6 benchmark artifacts and should be used if the full run feels too risky.
+This produces two full-system artifacts and should be used if the full run feels too risky.
 
 ## Stop Conditions
 
@@ -138,7 +136,7 @@ The run is worth sharing only if all of the following are true:
 
 The wrapper creates:
 
-1. Benchmark result JSON files for every task/ablation.
+1. Result JSON files for every task.
 2. `benchmark_summary.md`
 3. `biotruth_scores.md`
 4. `analysis/*.md`
@@ -152,9 +150,8 @@ The wrapper creates:
 
 Strong result:
 
-- Full system outperforms `plain_llm` and `no_public_tools`.
-- Full system uses substantially more evidence and tool calls.
-- Full system compares EGFR C797S, MET amplification, bypass signaling, EMT/state transition, and histologic transformation rather than naming only one cause.
+- The system uses public biomedical and ToolUniverse evidence with inspectable trace calls.
+- The system compares EGFR C797S/T790M phasing, EGFR amplification, MET amplification, ERBB2 or fusion bypass, MAPK/PI3K reactivation, EMT/state transition, CNS or pharmacologic resistance, and histologic transformation rather than naming only one cause.
 - Full system preserves uncertainty and safety limitations.
 - Full system proposes concrete experiments with controls and failure criteria.
 - The case study is understandable to a biomedical reviewer.
@@ -165,7 +162,6 @@ Weak result:
 - Resistance mechanisms are shallow or unranked.
 - Experiment proposals are generic.
 - Safety signals are listed but not used in ranking.
-- Ablations are too similar to the full system.
 
 Failure:
 

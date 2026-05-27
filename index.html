@@ -3,99 +3,100 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AutoScientist EGFR NSCLC Showcase</title>
-  <meta name="description" content="A concise showcase of the completed AutoScientist EGFR-mutant NSCLC osimertinib resistance run.">
+  <title>AutoScientist powered by ToolUniverse</title>
   <style>
-    :root{--bg:#fbfaf7;--surface:#fff;--ink:#191716;--muted:#665f5b;--line:#e3ddd6;--red:#a51c30;--red2:#7b1322;--green:#2f6f4e;--blue:#315f7d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.48}a{color:inherit;text-decoration:none}.top{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;gap:18px;align-items:center;padding:16px 28px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.94)}.brand{font-weight:800;color:var(--red)}.nav{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:14px}.nav a:hover{color:var(--red)}main{width:min(1240px,calc(100% - 56px));margin:0 auto;padding:34px 0 54px}.hero{display:grid;grid-template-columns:minmax(0,.95fr) minmax(420px,1.05fr);gap:34px;align-items:center;min-height:calc(100vh - 132px)}.kicker{text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--red);font-weight:800}h1{max-width:720px;font-size:52px;line-height:1.02;margin:8px 0 16px}h2{font-size:30px;line-height:1.16;margin:0 0 14px}h3{margin:0 0 8px;font-size:16px}p{color:var(--muted)}.hero p{max-width:650px;font-size:18px;line-height:1.55}.powered{display:inline-flex;align-items:center;min-height:32px;margin-top:10px;border:1px solid rgba(49,95,125,.2);border-radius:999px;background:#eef5f7;color:var(--blue);padding:0 12px;font-size:13px;font-weight:800}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}.btn{display:inline-flex;align-items:center;min-height:42px;border-radius:6px;padding:0 14px;background:var(--red);color:#fff;font-weight:800}.btn.alt{background:#f3eee8;color:var(--red2);border:1px solid var(--line)}.board{position:relative;min-height:500px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(90deg,rgba(49,95,125,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(49,95,125,.08) 1px,transparent 1px),#fff;background-size:36px 36px;overflow:hidden;box-shadow:0 28px 70px rgba(33,25,20,.08);animation:rise .52s ease-out both}.board:before,.board:after{content:"";position:absolute;border:1px solid rgba(165,28,48,.22);border-radius:50%;inset:104px 92px}.board:after{inset:154px 140px;border-color:rgba(47,111,78,.24)}.boardHead{position:relative;z-index:1;display:flex;justify-content:space-between;gap:14px;padding:16px;color:var(--muted);font-size:13px}.boardHead strong{color:var(--green)}.core,.lane{position:absolute;z-index:1;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.95);box-shadow:0 18px 36px rgba(33,25,20,.08)}.core{left:50%;top:50%;width:238px;min-height:108px;transform:translate(-50%,-50%);display:grid;place-items:center;text-align:center;background:#fff7f8;border-color:rgba(165,28,48,.32)}.lane{width:190px;padding:14px}.lane span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.l1{left:7%;top:22%}.l2{right:7%;top:22%}.l3{left:10%;bottom:17%}.l4{right:10%;bottom:17%}.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;border:1px solid var(--line);border-radius:8px;background:var(--line);overflow:hidden;margin:8px 0 42px}.kpis div{background:#fff;padding:16px}.kpis span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}.kpis strong{display:block;margin-top:6px;font-size:24px}.section{scroll-margin-top:88px;margin-top:40px}.intro{max-width:790px;margin-bottom:16px}.grid3,.grid4,.grid5{display:grid;gap:12px}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid5{grid-template-columns:repeat(5,minmax(0,1fr))}.card,.barbox,.timeline article,.cta{border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 12px 30px rgba(33,25,20,.05)}.card{padding:18px;min-height:148px}.card .big{display:block;margin:6px 0;font-size:26px;color:var(--ink);font-weight:800}.bars{display:grid;gap:10px}.barbox{padding:16px}.bar{display:grid;grid-template-columns:210px minmax(0,1fr) 46px;gap:14px;align-items:center;min-height:46px}.bar small{display:block;color:var(--muted);margin-top:2px}.track{height:10px;border-radius:999px;background:#f1ede8;overflow:hidden}.track span{display:block;height:100%;border-radius:inherit;background:var(--red);animation:fill .68s ease-out both}.bar b{text-align:right;color:var(--red2)}.trace article{padding:16px}.trace span,.timeline span,.timeline em{display:block;color:var(--muted)}.trace strong{display:block;margin-top:12px}.timeline article{padding:16px}.timeline strong{display:block;margin:8px 0}.timeline em{font-style:normal}.cta{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px}.note{border-left:4px solid var(--red);padding:12px 14px;background:#fff;color:var(--muted);border-radius:0 8px 8px 0}@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes fill{from{width:0}}@media(max-width:860px){.top{align-items:flex-start;flex-direction:column}main{width:min(100% - 32px,640px);padding-top:22px}.hero,.kpis,.grid3,.grid4,.grid5{grid-template-columns:1fr}.hero{min-height:auto}h1{font-size:36px}.board{min-height:520px}.core,.lane{left:50%!important;right:auto!important;width:min(250px,calc(100% - 36px));transform:translateX(-50%)}.core{top:74px}.l1{top:204px}.l2{top:286px}.l3{top:368px;bottom:auto}.l4{top:450px;bottom:auto}.bar{grid-template-columns:1fr 42px}.track{grid-column:1/-1;order:3}.cta{align-items:flex-start;flex-direction:column}}
-  </style>
+:root{--bg:#f7f8fb;--ink:#111827;--muted:#5b6472;--line:#dfe4ec;--card:#fff;--accent:#0f766e;--blue:#1d4ed8;--warn:#a16207}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}a{color:inherit}.top{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:16px 28px;background:rgba(247,248,251,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.top a{font-weight:800;text-decoration:none}.top span{color:var(--muted);font-size:14px}main{max-width:1220px;margin:0 auto;padding:28px}.hero{min-height:430px;display:grid;grid-template-columns:minmax(0,1.4fr) 420px;gap:28px;align-items:center}.hero.detail{min-height:330px}.kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:800}h1{font-size:clamp(40px,6vw,78px);line-height:.96;margin:10px 0 18px;letter-spacing:0}h2{font-size:28px;margin:0 0 14px}h3{font-size:18px;margin:0 0 10px}p{color:var(--muted);font-size:16px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:8px;background:var(--ink);color:#fff;text-decoration:none;font-weight:750}.btn.alt{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.small{min-height:36px;font-size:14px}.panel,.card,.metric,.caseCard{background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 18px 45px rgba(15,23,42,.06)}.panel{padding:26px;display:grid;gap:10px}.panel span{color:var(--muted);font-size:13px}.panel strong{font-size:22px}.panel.brand{min-height:260px;align-content:center;background:linear-gradient(135deg,#ffffff,#e8f5f3)}.panel.brand strong{font-size:36px;line-height:1}.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:20px 0 36px}.metric{padding:18px}.metric span,.metric small{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:28px;margin:5px 0}.section{margin:48px 0}.intro{max-width:760px;margin-bottom:18px}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{padding:20px}.caseGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.caseCard{padding:20px;display:flex;flex-direction:column;gap:10px}.caseCard.caution{border-color:#e7c66b}.caseTop{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}.caseTop strong{color:var(--warn)}.miniStats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.miniStats span{padding:8px;background:#f2f5f9;border-radius:6px;color:var(--muted);font-size:13px}.labels{font-size:13px}.bar{display:grid;grid-template-columns:220px 1fr 70px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.bar small{display:block;color:var(--muted)}.track{height:10px;background:#edf1f6;border-radius:99px;overflow:hidden}.track span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--blue))}.table{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}table{border-collapse:collapse;min-width:960px;width:100%}th,td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:13px}th{position:sticky;top:0;background:#f2f5f9;color:#374151}td{color:#344054}ul{padding-left:18px;color:var(--muted)}@media(max-width:900px){main{padding:18px}.hero{grid-template-columns:1fr;min-height:auto}.metrics,.caseGrid,.two{grid-template-columns:1fr}.bar{grid-template-columns:1fr}.top{padding:14px 18px}h1{font-size:42px}}
+</style>
 </head>
 <body>
-  <header class="top">
-    <a class="brand" href="#">BioAutoScientist</a>
-    <nav class="nav">
-      <a href="#case">Case</a>
-      <a href="#evidence">Evidence</a>
-      <a href="#traces">Traces</a>
-      <a href="#runs">Runs</a>
-      <a href="DEEP_EGFR_NSCLC_RESISTANCE_CASE_STUDY_RUNBOOK.md">Runbook</a>
-    </nav>
-  </header>
-  <main>
-    <section class="hero">
-      <div>
-        <div class="kicker">Deep cancer-resistance case</div>
-        <h1>EGFR osimertinib resistance, traced by agents.</h1>
-        <p>AutoScientist ran a strict real oncology workflow: live public evidence, ToolUniverse/OpenTargets, memory, replay, policy control, scoring, and ablations.</p>
-        <div class="powered">Powered by ToolUniverse and OpenTargets evidence retrieval</div>
-        <div class="actions"><a class="btn" href="#case">Case insights</a><a class="btn alt" href="#evidence">Evidence lift</a></div>
-      </div>
-      <div class="board">
-        <div class="boardHead"><span>Mechanism map</span><strong>Powered by ToolUniverse</strong></div>
-        <div class="core">EGFR-mutant NSCLC<br><strong>osimertinib resistance</strong></div>
-        <div class="lane l1"><span>On-target</span><strong>C797S / EGFR amp</strong></div>
-        <div class="lane l2"><span>Bypass</span><strong>MET / ERBB2</strong></div>
-        <div class="lane l3"><span>State change</span><strong>AXL / EMT</strong></div>
-        <div class="lane l4"><span>Transformation</span><strong>SCLC / squamous</strong></div>
-      </div>
-    </section>
 
-    <section class="kpis">
-      <div><span>Status</span><strong>Completed</strong></div><div><span>Agent steps</span><strong>593</strong></div><div><span>Tool calls</span><strong>251</strong></div><div><span>Evidence</span><strong>140</strong></div><div><span>Full score</span><strong>100</strong></div><div><span>BioTruth mean</span><strong>88.0</strong></div>
-    </section>
-
-    <section id="case" class="section">
-      <div class="intro"><div class="kicker">Case result</div><h2>The useful output was not a cure claim. It was a ranked resistance strategy.</h2></div>
-      <div class="grid3">
-        <article class="card"><h3>Strong branches</h3><p>EGFR C797S, EGFR amplification, MET amplification, ERBB2 amplification.</p></article>
-        <article class="card"><h3>Gated branches</h3><p>AXL/EMT state plasticity and lineage transformation kept as lower-certainty hypotheses.</p></article>
-        <article class="card"><h3>Next work</h3><p>Validate prevalence, co-occurrence, safety, and matched combination experiments.</p></article>
+<header class="top"><a href="#">AutoScientist</a><span>powered by ToolUniverse</span></header>
+<main>
+  <section class="hero">
+    <div>
+      <div class="kicker">Three diverse oncology capability runs</div>
+      <h1>AutoScientist audits cancer hypotheses with tools, agents, evidence, and calibrated limits.</h1>
+      <p>These are full-system showcase runs, not a benchmark leaderboard. Each dossier includes ToolUniverse/OpenTargets calls, public biomedical evidence, claim graphs, scientist debate, critic calibration, experiment gates, and replayable provenance.</p>
+      <div class="actions">
+        <a class="btn" href="#cases">Explore cases</a>
+        <a class="btn alt" href="docs/showcase/runs">Open artifacts</a>
       </div>
-    </section>
+    </div>
+    <div class="panel brand">
+      <span>AutoScientist</span>
+      <strong>powered by ToolUniverse</strong>
+      <small>public biomedical tools, OpenTargets grounding, multi-agent debate, and audit trails</small>
+    </div>
+  </section>
+  <section class="metrics">
+    <article class="metric"><span>Cases</span><strong>3</strong><small>EGFR NSCLC, BRAF melanoma, RET thyroid</small></article>
+    <article class="metric"><span>Agent steps</span><strong>424</strong><small></small></article>
+    <article class="metric"><span>Tool calls</span><strong>174</strong><small>156 success</small></article>
+    <article class="metric"><span>Evidence items</span><strong>96</strong><small></small></article>
+    <article class="metric"><span>Experiments</span><strong>17</strong><small></small></article>
+    <article class="metric"><span>Claims mapped</span><strong>18</strong><small></small></article>
+  </section>
+  <section class="section">
+    <div class="intro"><div class="kicker">Genericity check</div><h2>Data-driven publishing, calibrated scoring.</h2></div>
+    <div class="two">
+      <div class="card"><h3>What is generic</h3><p>The static pages are generated from provenance JSON. Readiness calibration uses critic severity, evidence relevance, abstention policy, BioTruth/actionability signals, and tool outcomes rather than case-specific score constants.</p></div>
+      <div class="card"><h3>What is curated</h3><p>The showcase objectives are curated cancer stress tests, and the runtime still has oncology-domain fallback templates for common target families. The public claims therefore stay about system capability, not unbiased clinical truth.</p></div>
+    </div>
+  </section>
+  <section id="cases" class="section">
+    <div class="intro"><div class="kicker">Case dossiers</div><h2>Every run keeps the same audit structure.</h2></div>
+    <div class="caseGrid">
+<article class="caseCard">
+  <div class="caseTop"><span>egfr-osimertinib-resistance</span><strong>experiment_ready_with_gaps</strong></div>
+  <h3>EGFR Osimertinib Resistance in NSCLC</h3>
+  <p>Amivantamab plus lazertinib and osimertinib produce distinct acquired resistance mechanism profiles in first-line EGFR-mutated NSCLC, as reported in the MARIPOSA trial. Immunotherapy demonstrates limited clinical activity in TKI-resistant, EGFR L858R-mutated NSCLC based on a systematic review and meta-analysis of rand...</p>
+  <div class="miniStats">
+    <span>confidence <b>0.81</b></span>
+    <span>readiness <b>65/100</b></span>
+    <span>tools <b>52/58</b></span>
+    <span>evidence <b>32</b></span>
+  </div>
+  <p class="labels">strong_support:10, irrelevant:10, weak_support:7, mechanistic_relevance:2, safety_concern:3</p>
+  <a class="btn small" href="docs/showcase/egfr-osimertinib-resistance.html">Open full dossier</a>
+</article>
 
-    <section id="evidence" class="section">
-      <div class="intro"><div class="kicker">Evidence lift</div><h2>Grounded runs beat ungrounded baselines where it matters.</h2></div>
-      <div class="barbox bars">
-        <div class="bar"><div><strong>Full system</strong><small>All integrations on · 35 evidence/run</small></div><div class="track"><span style="width:100%"></span></div><b>100</b></div>
-        <div class="bar"><div><strong>No memory</strong><small>Replay removed · 34.5 evidence/run</small></div><div class="track"><span style="width:95%"></span></div><b>95</b></div>
-        <div class="bar"><div><strong>No SciFlow</strong><small>Controller removed · 33.75 evidence/run</small></div><div class="track"><span style="width:95%"></span></div><b>95</b></div>
-        <div class="bar"><div><strong>Plain LLM</strong><small>No tools · 2 evidence/run</small></div><div class="track"><span style="width:54%"></span></div><b>54</b></div>
-        <div class="bar"><div><strong>No public tools</strong><small>Grounding removed · 2 evidence/run</small></div><div class="track"><span style="width:54%"></span></div><b>54</b></div>
-      </div>
-    </section>
+<article class="caseCard caution">
+  <div class="caseTop"><span>braf-v600e-melanoma</span><strong>hypothesis_only</strong></div>
+  <h3>BRAF V600E Targeted Therapy in Melanoma</h3>
+  <p>BRAF V600E is the most frequently identified cancer-causing mutation in melanoma and constitutively activates the MAPK/ERK signaling pathway via a RAF-family serine/threonine kinase mechanism. Dabrafenib and vemurafenib, as approved BRAF inhibitors, are subject to acquired resistance driven in part by rapid ARF6 activ...</p>
+  <div class="miniStats">
+    <span>confidence <b>0.82</b></span>
+    <span>readiness <b>64/100</b></span>
+    <span>tools <b>54/59</b></span>
+    <span>evidence <b>33</b></span>
+  </div>
+  <p class="labels">weak_support:10, irrelevant:16, safety_concern:3, mechanistic_relevance:1, strong_support:3</p>
+  <a class="btn small" href="docs/showcase/braf-v600e-melanoma.html">Open full dossier</a>
+</article>
 
-    <section id="traces" class="section trace">
-      <div class="intro"><div class="kicker">Trace packets</div><h2>Four completed full-system artifacts.</h2></div>
-      <div class="grid4">
-        <article class="card"><h3>Mechanism dossier</h3><span>run_ab460d57712c</span><strong>62 calls · 93.0 critic</strong></article>
-        <article class="card"><h3>Bypass graph</h3><span>run_7b4f4c405a93</span><strong>65 calls · 92.4 critic</strong></article>
-        <article class="card"><h3>Cohort validation</h3><span>run_f8a1c9d37675</span><strong>62 calls · 94.4 critic</strong></article>
-        <article class="card"><h3>Experiment plan</h3><span>run_a2672e1f7e40</span><strong>62 calls · 91.0 critic</strong></article>
-      </div>
-    </section>
+<article class="caseCard caution">
+  <div class="caseTop"><span>ret-fusion-thyroid</span><strong>hypothesis_only</strong></div>
+  <h3>RET Fusions and Mutations in Thyroid Cancer</h3>
+  <p>RET is the highest-ranked associated target for medullary thyroid gland carcinoma in Open Targets (association score 0.883), consistent with its role as a disease-defining oncogenic driver in that indication. In papillary thyroid carcinoma, RET ranks fourth among associated targets (association score 0.481), indicatin...</p>
+  <div class="miniStats">
+    <span>confidence <b>0.0</b></span>
+    <span>readiness <b>44/100</b></span>
+    <span>tools <b>50/57</b></span>
+    <span>evidence <b>31</b></span>
+  </div>
+  <p class="labels">irrelevant:20, weak_support:5, safety_concern:3, mechanistic_relevance:1, strong_support:2</p>
+  <a class="btn small" href="docs/showcase/ret-fusion-thyroid.html">Open full dossier</a>
+</article>
+</div>
+  </section>
+  <section class="section">
+    <div class="intro"><div class="kicker">Cross-case signal</div><h2>The system does not force all cases to look good.</h2></div>
+    <div class="card">
+      <div class="table"><table><thead><tr><th>Case</th><th>Run ID</th><th>Confidence</th><th>Readiness</th><th>Evidence</th><th>Tool calls</th><th>Debate</th></tr></thead><tbody><tr><td>EGFR Osimertinib Resistance in NSCLC</td><td>run_268916424e63</td><td>0.81</td><td>experiment_ready_with_gaps (65/100)</td><td>32</td><td>58</td><td>support_with_limits:5, revise:2</td></tr><tr><td>BRAF V600E Targeted Therapy in Melanoma</td><td>run_74eca9cfa2ea</td><td>0.82</td><td>hypothesis_only (64/100)</td><td>33</td><td>59</td><td>revise:5, support_with_limits:2</td></tr><tr><td>RET Fusions and Mutations in Thyroid Cancer</td><td>run_cceee020dceb</td><td>0.0</td><td>hypothesis_only (44/100)</td><td>31</td><td>57</td><td>support_with_limits:5, revise:2</td></tr></tbody></table></div>
+    </div>
+  </section>
+</main>
 
-    <section id="runs" class="section timeline">
-      <div class="intro"><div class="kicker">Run history</div><h2>From infrastructure proof to focused cancer case.</h2></div>
-      <div class="grid5">
-        <article><span>May 23</span><strong>100-task campaign</strong><em>100 artifacts</em></article>
-        <article><span>May 24</span><strong>20-case salvage</strong><em>26 complete</em></article>
-        <article><span>May 24</span><strong>Strict canary</strong><em>16/16 complete</em></article>
-        <article><span>May 25</span><strong>Value rerun</strong><em>20 artifacts</em></article>
-        <article><span>May 26</span><strong>EGFR deep case</strong><em>251 calls</em></article>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="grid3">
-        <article class="card"><h3>Public tools mattered</h3><span class="big">+46 quality</span><p>Removing public grounding dropped scientific quality from 100 to 54.</p></article>
-        <article class="card"><h3>Memory became an artifact</h3><span class="big">7,544 nodes</span><p>SciState retained hypotheses, entities, tools, and experiments.</p></article>
-        <article class="card"><h3>Boundary stayed explicit</h3><span class="big">0 clinical claims</span><p>Auditable hypothesis workflow, not clinical guidance.</p></article>
-      </div>
-    </section>
-
-    <section class="section cta">
-      <div><div class="kicker">Defensible claim</div><h2>AutoScientist can generate, audit, and stress-test biomedical hypotheses.</h2><p>Powered by ToolUniverse/OpenTargets, live public biomedical tools, and replayable agent traces.</p></div>
-      <a class="btn alt" href="DEEP_EGFR_NSCLC_RESISTANCE_CASE_STUDY_RUNBOOK.md">Open runbook</a>
-    </section>
-  </main>
 </body>
 </html>

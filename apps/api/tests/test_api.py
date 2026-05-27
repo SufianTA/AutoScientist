@@ -157,10 +157,15 @@ def test_cli_runner_report_exposes_validation_controls() -> None:
     assert report["contradiction_analysis"]["schema"] == "autosci.contradiction_analysis.v0.1"
     assert report["evidence_hierarchy"]["schema"] == "autosci.evidence_hierarchy_summary.v0.1"
     assert report["adaptive_tool_plan"]["schema"] == "autosci.adaptive_tool_plan.v0.1"
+    assert report["case_profile"]["schema"] == "autosci.case_profile.v0.1"
+    assert report["evidence_coverage_matrix"]["schema"] == "autosci.evidence_coverage_matrix.v0.1"
+    assert report["experiment_gate_plan"]["schema"] == "autosci.experiment_gate_plan.v0.1"
+    assert report["next_experiments"][0]["decision_impact_score"] >= 0
 
     markdown = format_result(result, "markdown")
     assert "## Biomedical Validation Controls" in markdown
     assert "BioTruth critic" in markdown
+    assert "## Evidence Coverage Matrix" in markdown
 
 
 def test_cli_runner_is_not_acvr1_hardcoded_for_other_targets() -> None:
@@ -229,7 +234,7 @@ def test_demo_run_generates_report() -> None:
     assert markdown.text.startswith("# ")
     assert "ACVR1" in markdown.text
     assert "FOP" in markdown.text
-    assert "Agent Debate And Revision" in markdown.text
+    assert "Scientist Panel Debate" in markdown.text
     report_json = client.get(f"/reports/{run_id}/download?format=json")
     assert report_json.status_code == 200
     assert report_json.json()["run"]["id"] == run_id

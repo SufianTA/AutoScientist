@@ -18,7 +18,6 @@ class OpenScientistCapabilityRegistry:
 
     def health(self) -> dict[str, Any]:
         return {
-            "qworld": self._module_health("qworld"),
             "txagent": self._module_health("txagent"),
             "tooluniverse": self._module_health("tooluniverse"),
             "clawinstitute_board": {
@@ -28,51 +27,22 @@ class OpenScientistCapabilityRegistry:
             },
         }
 
-    def generate_qworld_criteria(
+    def generate_evaluation_criteria(
         self,
         objective: str,
         classification: dict[str, Any],
         config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        """Generate fallback evaluation criteria (formerly delegated to qworld)."""
         started = time.perf_counter()
-        config = config or {}
-        if not config.get("qworld_enabled", True):
-            return self._criteria_result(
-                objective,
-                classification,
-                started,
-                status="skipped",
-                mode="disabled",
-                warnings=["Qworld criteria generation is disabled in run_config."],
-            )
-        try:
-            qworld = importlib.import_module("qworld")
-            generator_cls = getattr(qworld, "CriteriaGenerator")
-            model = config.get("qworld_model") or config.get("llm_model") or "gpt-4.1"
-            base_url = config.get("qworld_base_url") or config.get("llm_base_url") or None
-            api_key = self._api_key_from_env(config.get("qworld_api_key_env_var") or config.get("llm_api_key_env_var"))
-            generator = generator_cls(model=model, base_url=base_url, api_key=api_key)
-            raw = generator.generate({"id": "autosci_objective", "question": objective})
-            criteria = raw.get("final_criteria") or raw.get("reviewed_criteria") or []
-            if not criteria:
-                raise RuntimeError("Qworld returned no final criteria.")
-            return {
-                "status": "success",
-                "mode": "qworld",
-                "criteria": criteria,
-                "raw": raw,
-                "warnings": [],
-                "runtime_ms": int((time.perf_counter() - started) * 1000),
-            }
-        except Exception as exc:
-            return self._criteria_result(
-                objective,
-                classification,
-                started,
-                status="partial",
-                mode="fallback",
-                warnings=[f"Qworld unavailable or failed: {str(exc)[:300]}"],
-            )
+        return self._criteria_result(
+            objective,
+            classification,
+            started,
+            status="success",
+            mode="fallback",
+            warnings=[],
+        )
 
     def txagent_health(self) -> dict[str, Any]:
         health = self._module_health("txagent")

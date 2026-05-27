@@ -39,7 +39,7 @@ def test_deep_ra_manifest_is_auditable_and_not_person_specific() -> None:
         )
 
 
-def test_deep_case_runner_defaults_to_strict_real_ablation_study() -> None:
+def test_deep_case_runner_defaults_to_strict_real_showcase_study() -> None:
     args = parse_args(["--dry-run"])
     argv = build_pipeline_argv(args)
 
@@ -47,10 +47,6 @@ def test_deep_case_runner_defaults_to_strict_real_ablation_study() -> None:
     assert "--train-neural-policy" in argv
     assert "--skip-build" in argv
     assert "benchmarks/autoscientist_deep_ra_refractory_case.json" in argv
-    assert "full" in args.ablations
-    assert "plain_llm" in args.ablations
-    assert "no_public_tools" in args.ablations
-    assert "no_memory" in args.ablations
-    assert "no_sciflow" in args.ablations
+    assert args.ablations == ["full"]
     assert args.agent_count == 12
     assert args.strategy_repair_max_queries == 6

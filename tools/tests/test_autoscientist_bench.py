@@ -23,9 +23,6 @@ def _args(**overrides: object) -> SimpleNamespace:
         "tool_budget_usd": 1.0,
         "llm_max_tokens": 64,
         "offline_public_context": False,
-        "qworld_model": "",
-        "qworld_api_key_env_var": "",
-        "disable_qworld": True,
         "require_real_llm": False,
         "enable_sciflow_policy": True,
         "sciflow_policy_model_id": "",
@@ -134,7 +131,6 @@ def test_plain_llm_ablation_disables_runtime_differentiators() -> None:
     assert config["real_data_enabled"] is False
     assert config["persist_memory_enabled"] is False
     assert config["sciflow_policy_enabled"] is False
-    assert config["qworld_enabled"] is False
     assert config["strategy_repair_enabled"] is False
 
 
@@ -171,7 +167,6 @@ def test_benchmark_value_score_adds_public_context_checks() -> None:
         },
     }
     integrations = {
-        "qworld": {"executed": False},
         "public_biomedical": {"executed": True},
         "tooluniverse": {"executed": False},
         "local_board": {"executed": True},
@@ -215,7 +210,6 @@ def test_no_public_tools_ablation_is_capped_below_strong_score() -> None:
         },
     }
     integrations = {
-        "qworld": {"executed": False},
         "public_biomedical": {"executed": False},
         "tooluniverse": {"executed": False},
         "local_board": {"executed": True},
@@ -257,7 +251,6 @@ def test_benchmark_penalizes_serialized_pubmed_query_inputs() -> None:
         },
     }
     integrations = {
-        "qworld": {"executed": False},
         "public_biomedical": {"executed": True},
         "tooluniverse": {"executed": False},
         "local_board": {"executed": True},

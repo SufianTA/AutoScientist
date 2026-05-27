@@ -121,9 +121,6 @@ def run_biotruth_benchmark(args: argparse.Namespace, manifest_path: Path) -> dic
         llm_model=model,
         llm_api_key_env_var=args.llm_api_key_env_var,
         llm_max_tokens=args.llm_max_tokens,
-        qworld_model=args.qworld_model,
-        qworld_api_key_env_var=args.qworld_api_key_env_var,
-        disable_qworld=args.disable_qworld,
         agent_count=args.agent_count,
         max_runtime_minutes=args.max_runtime_minutes,
         tool_budget_usd=args.tool_budget_usd,
@@ -301,9 +298,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-api-key-env-var", default="")
     parser.add_argument("--llm-max-tokens", type=int, default=384)
     parser.add_argument("--allow-mock", action="store_true")
-    parser.add_argument("--qworld-model", default="")
-    parser.add_argument("--qworld-api-key-env-var", default="")
-    parser.add_argument("--disable-qworld", action="store_true")
     parser.add_argument("--agent-count", type=int, default=3)
     parser.add_argument("--max-runtime-minutes", type=int, default=8)
     parser.add_argument("--tool-budget-usd", type=float, default=1.0)

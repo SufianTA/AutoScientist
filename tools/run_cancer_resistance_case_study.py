@@ -18,12 +18,12 @@ DEFAULT_TEMPLATES = [
     "biomarker_and_cohort_validation",
     "combination_strategy_and_experiment_plan",
 ]
-DEFAULT_ABLATIONS = ["full", "plain_llm", "no_public_tools", "no_memory", "no_sciflow"]
+DEFAULT_ABLATIONS = ["full"]
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run the deep EGFR-mutant NSCLC osimertinib-resistance AutoScientist case study."
+        description="Run the deep EGFR-mutant NSCLC osimertinib-resistance AutoScientist showcase case study."
     )
     parser.add_argument("--mode", choices=["prepare", "smoke", "full"], default="full")
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
@@ -58,7 +58,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-full-mean-score", type=float, default=85.0)
     parser.add_argument("--min-neural-holdout-top1", type=float, default=0.5)
     parser.add_argument("--min-state-graph-nodes", type=int, default=100)
-    parser.add_argument("--disable-qworld", action="store_true", default=True)
     parser.add_argument("--strict-real-run", action="store_true", default=True)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)

@@ -120,21 +120,113 @@ def classify_objective(objective: str, biomedical_context: dict[str, Any] | None
 
 
 def route_capabilities(task_types: list[str], risk_level: str) -> list[str]:
-    capabilities = ["public_biomedical", "tooluniverse", "qworld", "clawinstitute_board"]
+    capabilities = ["public_biomedical", "tooluniverse", "clawinstitute_board"]
     tasks = set(task_types)
     if ScientificTaskType.THERAPEUTIC_REASONING.value in tasks or ScientificTaskType.DRUG_SAFETY.value in tasks:
         capabilities.append("txagent")
-    if ScientificTaskType.REPORT_EVALUATION.value in tasks:
-        capabilities.append("qworld")
     if risk_level == "high":
         capabilities.extend(["safety_reviewer", "abstention_policy"])
     return list(dict.fromkeys(capabilities))
 
 
-def build_capability_plan(classification: dict[str, Any]) -> dict[str, Any]:
+def compile_case_profile(
+    objective: str,
+    classification: dict[str, Any],
+    biomedical_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    context = biomedical_context or {}
+    entities = classification.get("entities", {}) if isinstance(classification.get("entities"), dict) else {}
+    text = " ".join(
+        [
+            objective,
+            " ".join(entities.get("genes", []) or []),
+            " ".join(entities.get("diseases", []) or []),
+            " ".join(entities.get("interventions", []) or []),
+        ]
+    ).lower()
+
+    def present(*terms: str) -> bool:
+        return any(term in text for term in terms)
+
+    mechanism_branches: list[dict[str, Any]] = []
+    branch_specs = [
+        ("on_target_variant", ["c797s", "t790m", "secondary egfr", "exon 20"], "Variant-level on-target resistance"),
+        ("copy_number", ["amplification", "copy-number", "copy number", "egfr amp"], "Copy-number driven resistance"),
+        ("rtk_bypass", ["met", "erbb2", "her2", "ret", "alk", "fusion"], "RTK or fusion bypass signaling"),
+        ("mapk_pi3k_reactivation", ["mapk", "pi3k", "kras", "braf", "nras", "pik3ca"], "MAPK or PI3K pathway reactivation"),
+        ("cell_state", ["emt", "axl", "state transition", "plasticity"], "Cell-state plasticity"),
+        ("lineage_transformation", ["small-cell", "small cell", "squamous", "histologic"], "Lineage or histologic transformation"),
+        ("anatomic_pharmacologic", ["cns", "sanctuary", "exposure", "pharmacologic"], "Anatomic or pharmacologic resistance"),
+        ("safety_translation", ["safety", "toxicity", "adverse", "combination"], "Safety and translational feasibility"),
+    ]
+    for branch_id, terms, label in branch_specs:
+        if present(*terms):
+            mechanism_branches.append(
+                {
+                    "id": branch_id,
+                    "label": label,
+                    "evidence_need": "supporting evidence, counterevidence, assay feasibility, and failure gate",
+                }
+            )
+
+    evidence_requirements = [
+        {"id": "literature", "label": "Literature evidence", "sources": ["PubMed", "NCBI"]},
+        {"id": "target_disease", "label": "Target-disease association", "sources": ["OpenTargets", "ToolUniverse"]},
+        {"id": "clinical_context", "label": "Clinical or trial context", "sources": ["ClinicalTrials", "PubMed"]},
+        {"id": "safety", "label": "Safety and toxicity context", "sources": ["openFDA", "PubMed"]},
+        {"id": "mechanism", "label": "Mechanistic pathway evidence", "sources": ["ToolUniverse", "PubMed"]},
+        {"id": "counterevidence", "label": "Contradictions or missing evidence", "sources": ["contradiction_search", "abstention_policy"]},
+    ]
+    if any(branch["id"] in {"cell_state", "lineage_transformation"} for branch in mechanism_branches):
+        evidence_requirements.append(
+            {"id": "cell_state_assays", "label": "Cell-state or lineage assay evidence", "sources": ["single-cell", "spatial", "pathology"]}
+        )
+    if any(branch["id"] == "rtk_bypass" for branch in mechanism_branches):
+        evidence_requirements.append(
+            {"id": "fusion_copy_number", "label": "Fusion and copy-number detection", "sources": ["ctDNA", "NGS", "copy-number profiling"]}
+        )
+
+    validation_assays = []
+    if present("ctdna", "clone", "phasing", "t790m", "c797s"):
+        validation_assays.append("ctDNA clone structure and cis/trans phasing")
+    if present("paired", "biopsy", "pre/post", "post-treatment"):
+        validation_assays.append("paired pre/post-treatment biopsy profiling")
+    if present("single-cell", "single cell", "spatial", "emt", "axl"):
+        validation_assays.append("single-cell or spatial cell-state profiling")
+    if present("fusion", "amplification", "copy-number"):
+        validation_assays.append("fusion and copy-number profiling")
+    if present("organoid", "xenograft", "patient-derived", "explant"):
+        validation_assays.append("patient-derived functional model validation")
+    if not validation_assays:
+        validation_assays = ["public evidence audit", "targeted validation experiment with positive and negative controls"]
+
+    return {
+        "schema": "autosci.case_profile.v0.1",
+        "objective": objective,
+        "entities": {
+            "genes": entities.get("genes", []),
+            "diseases": entities.get("diseases", []),
+            "interventions": entities.get("interventions", []),
+            "context_primary_genes": context.get("primary_genes", []),
+            "context_diseases": context.get("diseases", []),
+        },
+        "mechanism_branches": mechanism_branches,
+        "evidence_requirements": evidence_requirements,
+        "validation_assays": validation_assays,
+        "capability_demonstrations": [
+            "case_compilation",
+            "public_evidence_retrieval",
+            "claim_graph",
+            "evidence_coverage_matrix",
+            "experiment_gate_scoring",
+            "replayable_provenance",
+        ],
+    }
+
+
+def build_capability_plan(classification: dict[str, Any], case_profile: dict[str, Any] | None = None) -> dict[str, Any]:
     tasks = set(classification.get("task_types", []))
     steps = [
-        {"capability": "qworld", "purpose": "Generate question-specific success criteria before the run."},
         {"capability": "tooluniverse", "purpose": "Collect biomedical tool evidence with provenance."},
     ]
     if "omics_analysis" in tasks:
@@ -152,10 +244,123 @@ def build_capability_plan(classification: dict[str, Any]) -> dict[str, Any]:
     steps.extend(
         [
             {"capability": "claim_graph", "purpose": "Attach every claim to supporting, contradictory, or missing evidence."},
+            {"capability": "evidence_coverage_matrix", "purpose": "Show which case-specific evidence requirements are covered, partial, or missing."},
+            {"capability": "experiment_gate_scoring", "purpose": "Rank proposed experiments by decision impact, feasibility, controls, and failure criteria."},
             {"capability": "clawinstitute_board", "purpose": "Publish hypotheses, critiques, revisions, and provenance to the research board."},
         ]
     )
-    return {"routing_policy": "task_type_and_risk", "steps": steps}
+    return {
+        "routing_policy": "task_type_and_risk",
+        "steps": steps,
+        "case_capabilities": (case_profile or {}).get("capability_demonstrations", []),
+    }
+
+
+def build_evidence_coverage_matrix(
+    case_profile: dict[str, Any],
+    evidence: list[dict[str, Any]],
+    claim_graph: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    requirements = case_profile.get("evidence_requirements", []) or []
+    claims = (claim_graph or {}).get("claims", []) or []
+    rows = []
+    for requirement in requirements:
+        req_id = str(requirement.get("id", "requirement"))
+        label = str(requirement.get("label", req_id))
+        expected_sources = [str(src) for src in requirement.get("sources", [])]
+        source_tokens, content_tokens = _coverage_tokens(req_id, label, expected_sources)
+        matched_sources = []
+        for item in evidence:
+            score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
+            label_value = str(item.get("support_label") or score.get("label") or "").lower()
+            if label_value in {"irrelevant", "contradiction", "contradicts"}:
+                continue
+            source_text = str(item.get("source", "")).lower()
+            body_text = " ".join(
+                [
+                    str(item.get("text", "")),
+                    json_like(item.get("structured", {})),
+                    json_like(score),
+                ]
+            ).lower()
+            haystack = " ".join(
+                [
+                    source_text,
+                    body_text,
+                ]
+            )
+            source_match = not source_tokens or any(token in source_text for token in source_tokens)
+            content_match = any(token in body_text or token in haystack for token in content_tokens)
+            if source_match and content_match:
+                matched_sources.append(str(item.get("source", "unknown")))
+        supporting_claims = [
+            claim.get("id")
+            for claim in claims
+            if any(src in claim.get("supporting_evidence_sources", []) for src in matched_sources)
+        ]
+        required_distinct = 1 if req_id in {"counterevidence", "cell_state_assays", "fusion_copy_number"} else 2
+        if len(set(matched_sources)) >= required_distinct:
+            status = "covered"
+        elif matched_sources:
+            status = "partial"
+        else:
+            status = "missing"
+        rows.append(
+            {
+                "id": req_id,
+                "label": label,
+                "expected_sources": expected_sources,
+                "status": status,
+                "matched_sources": sorted(set(matched_sources)),
+                "supporting_claims": sorted(set(supporting_claims)),
+            }
+        )
+    covered = sum(1 for row in rows if row["status"] == "covered")
+    partial = sum(1 for row in rows if row["status"] == "partial")
+    score = round((covered + 0.5 * partial) / len(rows), 3) if rows else 0.0
+    return {
+        "schema": "autosci.evidence_coverage_matrix.v0.1",
+        "coverage_score": score,
+        "covered_count": covered,
+        "partial_count": partial,
+        "missing_count": sum(1 for row in rows if row["status"] == "missing"),
+        "requirements": rows,
+    }
+
+
+def score_experiment_gates(
+    experiments: list[dict[str, Any]],
+    case_profile: dict[str, Any],
+    evidence_coverage: dict[str, Any],
+) -> list[dict[str, Any]]:
+    missing = [row for row in evidence_coverage.get("requirements", []) if row.get("status") != "covered"]
+    assays = [str(assay).lower() for assay in case_profile.get("validation_assays", [])]
+    scored = []
+    for experiment in experiments:
+        exp = dict(experiment)
+        text = " ".join(str(exp.get(key, "")) for key in ("name", "type", "decision_gate", "success_criteria", "failure_modes")).lower()
+        info = _ordinal_score(exp.get("expected_information_gain"), {"very_high": 4, "high": 3, "medium": 2, "low": 1})
+        feasibility = _ordinal_score(exp.get("feasibility"), {"high": 3, "medium": 2, "low": 1})
+        cost = _ordinal_score(exp.get("cost"), {"low": 3, "low-medium": 2.5, "medium": 2, "medium-high": 1.5, "high": 1})
+        controls = 1 if ("control" in text or exp.get("success_criteria")) else 0
+        failure_gate = 1 if ("failure" in text or exp.get("failure_modes")) else 0
+        assay_match = 1 if any(any(token in text for token in assay.split()[:3]) for assay in assays) else 0
+        gap_match = 1 if any(str(row.get("id", "")).replace("_", " ") in text for row in missing) else 0
+        score = round((info * 0.28 + feasibility * 0.16 + cost * 0.12 + controls * 0.16 + failure_gate * 0.16 + assay_match * 0.07 + gap_match * 0.05) / 2.91, 3)
+        exp["decision_impact_score"] = min(1.0, score)
+        exp["gate_quality"] = "strong" if score >= 0.75 else "usable" if score >= 0.5 else "weak"
+        exp["gate_reasons"] = [
+            reason
+            for condition, reason in [
+                (controls == 0, "Add explicit positive/negative controls."),
+                (failure_gate == 0, "Add a falsifying failure criterion."),
+                (assay_match == 0, "Tie the experiment to a named case validation assay."),
+                (gap_match == 0 and missing, "Tie the experiment to an uncovered evidence requirement."),
+            ]
+            if condition
+        ]
+        scored.append(exp)
+    return sorted(scored, key=lambda item: item.get("decision_impact_score", 0), reverse=True)
 
 
 def fallback_evaluation_criteria(objective: str, classification: dict[str, Any]) -> list[dict[str, Any]]:
@@ -329,3 +534,41 @@ def _extract_intervention_terms(text: str) -> list[str]:
 def _split_claims(text: str) -> list[str]:
     parts = re.split(r"(?<=[.!?])\s+|;\s+", text.strip())
     return [part.strip() for part in parts if len(part.strip()) > 20]
+
+
+def _coverage_tokens(req_id: str, label: str, expected_sources: list[str]) -> tuple[list[str], list[str]]:
+    source_map = {
+        "literature": ["pubmed", "pmid"],
+        "target_disease": ["opentargets", "open targets", "tooluniverse"],
+        "clinical_context": ["clinicaltrials", "clinical trials", "pubmed"],
+        "safety": ["openfda", "adverse", "safety", "toxicity", "pubmed"],
+        "mechanism": ["reactome", "pubmed", "tooluniverse"],
+        "counterevidence": ["pubmed", "clinicaltrials", "contradiction"],
+        "cell_state_assays": ["pubmed", "single-cell", "spatial", "pathology"],
+        "fusion_copy_number": ["pubmed", "clinicaltrials", "tooluniverse"],
+    }
+    content_map = {
+        "literature": ["pmid", "article", "publication", "study"],
+        "target_disease": ["association", "target", "disease", "driver"],
+        "clinical_context": ["trial", "phase", "nct", "clinical", "precedence"],
+        "safety": ["adverse", "toxicity", "safety", "serious", "tolerability"],
+        "mechanism": ["pathway", "signaling", "mechanism", "phosphorylation"],
+        "counterevidence": ["contradiction", "failed", "terminated", "null", "insufficient", "not associated"],
+        "cell_state_assays": ["emt", "axl", "single-cell", "single cell", "spatial", "lineage", "transformation"],
+        "fusion_copy_number": ["fusion", "copy-number", "copy number", "amplification", "alk", "ret", "erbb2", "met"],
+    }
+    fallback = [token for token in re.findall(r"[a-z0-9-]{4,}", f"{req_id} {label}".lower())]
+    source_tokens = source_map.get(req_id, [src.lower() for src in expected_sources if src])
+    content_tokens = content_map.get(req_id, fallback)
+    return list(dict.fromkeys(source_tokens)), list(dict.fromkeys(content_tokens))
+
+
+def _ordinal_score(value: object, mapping: dict[str, float]) -> float:
+    return float(mapping.get(str(value or "").lower(), 0))
+
+
+def json_like(value: object) -> str:
+    try:
+        return str(value) if isinstance(value, str) else repr(value)
+    except Exception:
+        return ""

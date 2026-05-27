@@ -53,7 +53,7 @@ def test_deep_egfr_nsclc_manifest_is_auditable_and_not_person_specific() -> None
         )
 
 
-def test_cancer_resistance_runner_defaults_to_strict_real_ablation_study() -> None:
+def test_cancer_resistance_runner_defaults_to_strict_real_showcase_study() -> None:
     args = parse_args(["--dry-run"])
     argv = build_pipeline_argv(args)
 
@@ -61,11 +61,7 @@ def test_cancer_resistance_runner_defaults_to_strict_real_ablation_study() -> No
     assert "--train-neural-policy" in argv
     assert "--skip-build" in argv
     assert "benchmarks/autoscientist_deep_egfr_nsclc_resistance_case.json" in argv
-    assert "full" in args.ablations
-    assert "plain_llm" in args.ablations
-    assert "no_public_tools" in args.ablations
-    assert "no_memory" in args.ablations
-    assert "no_sciflow" in args.ablations
+    assert args.ablations == ["full"]
     assert args.agent_count == 12
     assert args.strategy_repair_max_queries == 6
     assert args.review_package_name == "autoscientist_deep_egfr_nsclc_resistance_review"

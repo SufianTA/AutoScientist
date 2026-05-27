@@ -144,6 +144,21 @@ def test_openfda_adverse_event_tool_parses_response(monkeypatch) -> None:
     assert result.output["common_reactions"][0]["reaction"] == "Headache"
 
 
+def test_openfda_adverse_event_tool_degrades_to_partial_on_api_failure(monkeypatch) -> None:
+    from tools.custom_tools import live_biomedical
+
+    def fake_fetch_json(url: str, timeout: int = 20) -> dict:
+        raise RuntimeError("temporary upstream failure")
+
+    monkeypatch.setattr(live_biomedical, "fetch_json", fake_fetch_json)
+    tool = build_custom_tools()["openfda_adverse_event_tool"]
+    result = tool.run({"drug_name": "osimertinib", "limit": 3})
+
+    assert result.status == "partial"
+    assert result.output["safety_gap"].startswith("openFDA adverse-event lookup was unavailable")
+    assert result.warnings
+
+
 def test_hypothesis_card_does_not_downgrade_clinically_established_targets() -> None:
     tool = build_custom_tools()["hypothesis_card_generator_tool"]
 
@@ -189,6 +204,32 @@ def test_experiment_recommendation_is_target_disease_specific() -> None:
     assert "tnf / inflammatory bowel disease" in names
     assert "clinical-precedence" in names
     assert "disease-relevant" in names
+
+
+def test_experiment_recommendation_prefers_primary_case_entities_over_bypass_mentions() -> None:
+    tool = build_custom_tools()["experiment_recommendation_tool"]
+
+    result = tool.run(
+        {
+            "hypothesis_card": {
+                "title": "EGFR resistance strategy for non-small cell lung cancer",
+                "hypothesis": (
+                    "EGFR-mutant NSCLC resistance may involve BRAF, KRAS, MET, and ERBB2 bypass alterations, "
+                    "but the primary case anchor remains EGFR."
+                ),
+                "case_profile": {
+                    "entities": {
+                        "genes": ["EGFR", "MET", "ERBB2"],
+                        "diseases": ["non-small cell lung cancer"],
+                    }
+                },
+            }
+        }
+    )
+
+    names = " ".join(item["name"] for item in result.output["experiments"]).lower()
+    assert "egfr mutant selectivity" in names
+    assert "braf mutation selectivity" not in names
 
 
 def test_clinical_status_classifies_established_public_precedence() -> None:

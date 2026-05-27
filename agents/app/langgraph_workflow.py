@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import threading
@@ -20,11 +21,18 @@ from app.services.scientific_planning import (
     build_abstention_assessment,
     build_capability_plan,
     build_claim_graph,
+    build_evidence_coverage_matrix,
     classify_objective,
+    compile_case_profile,
     evaluate_report_against_criteria,
+    score_experiment_gates,
     type_evidence_items,
 )
-from app.services.scientific_strategy import build_scientific_strategy, rank_experiments_by_strategy
+from app.services.scientific_strategy import (
+    build_scientific_strategy,
+    calibrate_scientific_strategy_with_review,
+    rank_experiments_by_strategy,
+)
 from app.services.tooluniverse_adapter import ToolUniverseAdapter
 from agents.app.graph import AgentOrchestrator
 from agents.app.model_tool_runner import execute_model_tool
@@ -162,6 +170,33 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             ("generate_report", self._generate_report),
         ]
 
+    def _emit_checkpoint(self, state: "ResearchRunState", stage: str, config: dict[str, Any]) -> None:
+        """Write a partial state snapshot to the checkpoint directory for crash recovery."""
+        checkpoint_dir = config.get("checkpoint_dir") or ""
+        if not checkpoint_dir:
+            import tempfile
+            checkpoint_dir = os.path.join(tempfile.gettempdir(), "autoscientist_checkpoints")
+        try:
+            os.makedirs(checkpoint_dir, exist_ok=True)
+            run_id = state.run_id or "unknown"
+            ts = int(time.time())
+            path = os.path.join(checkpoint_dir, f"checkpoint_{run_id}_{stage}_{ts}.json")
+            snapshot = {
+                "run_id": run_id,
+                "stage": stage,
+                "timestamp_utc": datetime.utcnow().isoformat(),
+                "evidence_count": len(state.evidence),
+                "tool_output_count": len(state.tool_outputs),
+                "hypothesis_card": state.hypothesis_card,
+                "experiments": state.experiments,
+                "evidence_sources": [item.get("source") for item in state.evidence],
+                "current_state": state.current_state.value if state.current_state else None,
+            }
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(snapshot, fh, indent=2, default=str)
+        except Exception:
+            pass
+
     def _record(
         self,
         trace: list[dict[str, Any]],
@@ -228,6 +263,17 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
     def _llm_enabled(self, config: dict[str, Any]) -> bool:
         return config.get("llm_provider") not in {None, "", "mock"}
 
+    def _call_llm_with_retries(self, **kwargs: Any) -> dict[str, Any]:
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                return call_llm(**kwargs)
+            except Exception as exc:
+                last_exc = exc
+                if attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+        raise last_exc or RuntimeError("LLM provider request failed.")
+
     def _llm_json(
         self,
         state: ResearchRunState,
@@ -246,7 +292,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {"task": task, "provider": config["llm_provider"], "model": config["llm_model"]},
         )
         try:
-            result = call_llm(
+            result = self._call_llm_with_retries(
                 provider=config["llm_provider"],
                 model=config["llm_model"],
                 api_key_env_var=config.get("llm_api_key_env_var") or None,
@@ -262,7 +308,22 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "LLM_CALL_FAILED",
                 {"task": task, "provider": config["llm_provider"], "model": config["llm_model"], "error": str(exc)[:500]},
             )
-            raise
+            error_text = f"{type(exc).__name__}: {str(exc)[:1000]}"
+            state.context.setdefault("warnings", []).append(
+                f"LLM task {task} failed after retries; bounded fallback used: {error_text[:300]}"
+            )
+            state.context.setdefault("llm_calls", []).append(
+                {
+                    "agent_name": agent_name,
+                    "task": task,
+                    "provider": config["llm_provider"],
+                    "model": config["llm_model"],
+                    "status": "fallback_after_error",
+                    "latency_ms": 0,
+                    "response_excerpt": error_text[:600],
+                }
+            )
+            return self._fallback_llm_json(task, error_text)
         try:
             result["json"] = parse_json_object(result["text"])
         except RuntimeError:
@@ -271,20 +332,28 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "Return one compact JSON object only, with no markdown and no commentary. "
                 "Keep every array to at most 5 short strings."
             )
-            result = call_llm(
-                provider=config["llm_provider"],
-                model=config["llm_model"],
-                api_key_env_var=config.get("llm_api_key_env_var") or None,
-                base_url=config.get("llm_base_url") or None,
-                system_prompt=system_prompt,
-                prompt=compact_prompt,
-                temperature=0.0,
-                max_tokens=min(max_tokens, 900),
-            )
             try:
-                result["json"] = parse_json_object(result["text"])
-            except RuntimeError:
-                result["json"] = self._fallback_llm_json(task, result["text"])
+                result = self._call_llm_with_retries(
+                    provider=config["llm_provider"],
+                    model=config["llm_model"],
+                    api_key_env_var=config.get("llm_api_key_env_var") or None,
+                    base_url=config.get("llm_base_url") or None,
+                    system_prompt=system_prompt,
+                    prompt=compact_prompt,
+                    temperature=0.0,
+                    max_tokens=min(max_tokens, 900),
+                )
+            except Exception as exc:
+                error_text = f"{type(exc).__name__}: {str(exc)[:1000]}"
+                state.context.setdefault("warnings", []).append(
+                    f"LLM JSON repair for {task} failed after retries; bounded fallback used: {error_text[:300]}"
+                )
+                result["json"] = self._fallback_llm_json(task, error_text)
+            else:
+                try:
+                    result["json"] = parse_json_object(result["text"])
+                except RuntimeError:
+                    result["json"] = self._fallback_llm_json(task, result["text"])
         self._runtime_event(
             agent_name,
             "LLM_CALL_COMPLETED",
@@ -325,7 +394,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {"task": task, "provider": config["llm_provider"], "model": config["llm_model"]},
         )
         try:
-            result = call_llm(
+            result = self._call_llm_with_retries(
                 provider=config["llm_provider"],
                 model=config["llm_model"],
                 api_key_env_var=config.get("llm_api_key_env_var") or None,
@@ -341,7 +410,16 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "LLM_CALL_FAILED",
                 {"task": task, "provider": config["llm_provider"], "model": config["llm_model"], "error": str(exc)[:500]},
             )
-            raise
+            error_text = f"{type(exc).__name__}: {str(exc)[:1000]}"
+            return self._fallback_llm_json(task, error_text), {
+                "agent_name": agent_name,
+                "task": task,
+                "provider": config["llm_provider"],
+                "model": config["llm_model"],
+                "status": "fallback_after_error",
+                "latency_ms": 0,
+                "response_excerpt": error_text[:600],
+            }
         try:
             parsed = parse_json_object(result["text"])
         except RuntimeError:
@@ -350,20 +428,24 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "Return one compact JSON object only, with no markdown and no commentary. "
                 "Keep every array to at most 5 short strings."
             )
-            result = call_llm(
-                provider=config["llm_provider"],
-                model=config["llm_model"],
-                api_key_env_var=config.get("llm_api_key_env_var") or None,
-                base_url=config.get("llm_base_url") or None,
-                system_prompt=system_prompt,
-                prompt=compact_prompt,
-                temperature=0.0,
-                max_tokens=min(max_tokens, 900),
-            )
             try:
-                parsed = parse_json_object(result["text"])
-            except RuntimeError:
-                parsed = self._fallback_llm_json(task, result["text"])
+                result = self._call_llm_with_retries(
+                    provider=config["llm_provider"],
+                    model=config["llm_model"],
+                    api_key_env_var=config.get("llm_api_key_env_var") or None,
+                    base_url=config.get("llm_base_url") or None,
+                    system_prompt=system_prompt,
+                    prompt=compact_prompt,
+                    temperature=0.0,
+                    max_tokens=min(max_tokens, 900),
+                )
+            except Exception as exc:
+                parsed = self._fallback_llm_json(task, f"{type(exc).__name__}: {str(exc)[:1000]}")
+            else:
+                try:
+                    parsed = parse_json_object(result["text"])
+                except RuntimeError:
+                    parsed = self._fallback_llm_json(task, result["text"])
         self._runtime_event(
             agent_name,
             "LLM_CALL_COMPLETED",
@@ -510,6 +592,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "AI",
             "LLM",
         }
+        stop.update(self._DISEASE_ALIAS_EXPANSIONS.keys())
+        stop.update(alias.upper() for alias in self._DISEASE_ALIAS_EXPANSIONS)
         genes = [
             match
             for match in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
@@ -540,12 +624,24 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             re.I,
         )
         candidates = [*candidate_terms, *intervention_classes]
-        queries = []
+        if not diseases:
+            diseases.extend(self._vocabulary_scan_diseases(objective))
+        queries: list[str] = []
         if genes and diseases:
             queries.append(f"{genes[0]} {diseases[0]} mechanism")
             queries.append(f"{genes[0]} {diseases[0]} safety therapeutic")
+            if len(genes) > 1:
+                queries.append(f"{genes[1]} {diseases[0]} mechanism")
+        elif genes:
+            queries.append(f"{genes[0]} mechanism")
+            queries.append(f"{genes[0]} therapeutic target")
+        elif diseases:
+            queries.append(f"{diseases[0]} target therapy mechanism")
+            queries.append(f"{diseases[0]} novel therapeutic")
         else:
-            queries.append(objective[:180])
+            short = objective[:60].strip()
+            if short:
+                queries.append(short)
         return {
             "primary_genes": list(dict.fromkeys(genes))[:4],
             "diseases": list(dict.fromkeys(diseases))[:3],
@@ -558,11 +654,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
 
     def _clean_disease_phrase(self, value: str) -> str:
         cleaned = re.split(
-            r"\b(?:using|use|include|including|require|with|by|from)\b",
+            r"\b(?:using|use|include|including|require|with|by|from|and\s+produce|produce|propose|ranked|strategy|rather\s+than)\b",
             value,
             maxsplit=1,
             flags=re.I,
         )[0].strip(" .;:,")
+        cleaned = re.sub(r"^(?:analyze|assess|evaluate|generate|build|design)\s+", "", cleaned, flags=re.I)
+        cleaned = re.sub(r"\b(?:acquired|complex|candidate|therapeutic)\s+(?=resistance|hypothesis|strategy)", "", cleaned, flags=re.I)
         gene_then_disease = re.match(r"^([A-Z0-9-]{2,12})\s+in\s+(.+)$", cleaned, flags=re.I)
         if gene_then_disease:
             cleaned = gene_then_disease.group(2).strip(" .;:,")
@@ -580,7 +678,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         genes = self._string_list(context.get("primary_genes"))
         diseases = []
         for disease in self._string_list(context.get("diseases")):
-            cleaned = re.sub(r"^[A-Z0-9]+-driven\s+", "", disease, flags=re.I).strip()
+            cleaned = self._clean_disease_phrase(
+                re.sub(r"^[A-Z0-9]+-driven\s+", "", disease, flags=re.I).strip()
+            )
             if cleaned:
                 diseases.append(cleaned)
         explicit_diseases = self._heuristic_context(objective).get("diseases", [])
@@ -597,11 +697,11 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             )
         )
         explicit_genes = self._explicit_gene_symbols(objective)
-        genes = list(dict.fromkeys([*explicit_genes, *genes]))[:4]
+        genes = self._clean_primary_genes([*explicit_genes, *genes], diseases, objective)[:4]
         pubmed_queries = self._clean_pubmed_queries(self._string_list(context.get("pubmed_queries"))[:4])
         normalized = {
             "primary_genes": genes,
-            "diseases": diseases[:2],
+            "diseases": self._prioritize_diseases(diseases, objective)[:2],
             "candidate_interventions": self._string_list(context.get("candidate_interventions"))[:6],
             "pathways": self._string_list(context.get("pathways"))[:4],
             "pubmed_queries": pubmed_queries,
@@ -616,6 +716,47 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 for query in normalized["pubmed_queries"]
             ]
         return normalized
+
+    def _prioritize_diseases(self, diseases: list[str], objective: str) -> list[str]:
+        vocab = [self._expand_disease_alias(v) for v in self._vocabulary_scan_diseases(objective)]
+        clean = []
+        for disease in diseases:
+            disease = self._expand_disease_alias(self._clean_disease_phrase(disease))
+            if not disease or self._looks_like_task_instruction(disease):
+                continue
+            clean.append(disease)
+        lower_to_original = {d.lower(): d for d in clean}
+        ordered = [lower_to_original[v.lower()] for v in vocab if v.lower() in lower_to_original]
+        ordered.extend([d for d in clean if d not in ordered])
+        return list(dict.fromkeys(ordered))
+
+    _DISEASE_ALIAS_EXPANSIONS: dict[str, str] = {
+        "nsclc": "non-small cell lung cancer",
+        "sclc": "small cell lung cancer",
+        "hcc": "hepatocellular carcinoma",
+        "rcc": "renal cell carcinoma",
+        "copd": "chronic obstructive pulmonary disease",
+        "nash": "non-alcoholic steatohepatitis",
+    }
+
+    def _expand_disease_alias(self, disease: str) -> str:
+        return self._DISEASE_ALIAS_EXPANSIONS.get(str(disease).lower(), disease)
+
+    def _clean_primary_genes(self, genes: list[str], diseases: list[str], objective: str) -> list[str]:
+        disease_aliases = {alias.upper() for alias in self._DISEASE_ALIAS_EXPANSIONS}
+        disease_terms = {d.lower() for d in diseases}
+        objective_lower = objective.lower()
+        cleaned = []
+        for gene in self._string_list(genes):
+            upper = gene.upper()
+            alias_disease = self._DISEASE_ALIAS_EXPANSIONS.get(gene.lower())
+            if upper in disease_aliases and (
+                gene.lower() in objective_lower
+                or (alias_disease and alias_disease.lower() in disease_terms)
+            ):
+                continue
+            cleaned.append(gene)
+        return list(dict.fromkeys(cleaned))
 
     def _merge_configured_benchmark_context(
         self,
@@ -765,8 +906,65 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 continue
             if len(normalized) < 3 or len(normalized) > 180:
                 continue
+            if self._looks_like_task_instruction(normalized):
+                continue
             cleaned.append(normalized)
         return list(dict.fromkeys(cleaned))[:4]
+
+    _TASK_INSTRUCTION_PREFIXES = (
+        "use single-cell",
+        "use autoscientist",
+        "use rnaseq",
+        "use omics",
+        "use single",
+        "assess the",
+        "generate a target",
+        "generate a hypothesis",
+        "identify the best",
+        "evaluate the",
+        "prioritize the",
+        "use public biomedical",
+    )
+
+    _DISEASE_SUFFIXES: tuple[str, ...] = (
+        "cancer", "carcinoma", "adenocarcinoma", "lymphoma", "leukemia",
+        "leukaemia", "melanoma", "sarcoma", "glioma", "glioblastoma",
+        "myeloma", "neoplasm", "tumor", "tumour", "blastoma", "mesothelioma",
+        "cholangiocarcinoma", "malignancy",
+    )
+
+    _DISEASE_VOCAB: tuple[str, ...] = (
+        "nsclc", "sclc", "dlbcl", "aml", "cll", "cml", "hcc", "rcc",
+        "multiple myeloma", "hodgkin lymphoma", "glioblastoma multiforme",
+        "neuroblastoma", "retinoblastoma", "hepatocellular carcinoma",
+        "non-small cell lung cancer", "small cell lung cancer",
+        "colorectal cancer", "pancreatic cancer", "breast cancer",
+        "ovarian cancer", "prostate cancer", "thyroid cancer",
+        "renal cell carcinoma", "urothelial carcinoma", "bladder cancer",
+        "gastric cancer", "esophageal cancer", "cervical cancer",
+        "endometrial cancer", "head and neck cancer",
+        "rheumatoid arthritis", "systemic lupus erythematosus", "lupus",
+        "psoriasis", "atopic dermatitis", "crohn's disease", "crohn disease",
+        "ulcerative colitis", "multiple sclerosis", "systemic sclerosis",
+        "sjogren syndrome", "ankylosing spondylitis",
+        "heart failure", "myocardial infarction", "atrial fibrillation",
+        "type 2 diabetes", "type 1 diabetes", "hypercholesterolemia",
+        "non-alcoholic steatohepatitis", "nash", "nafld",
+        "pulmonary fibrosis", "idiopathic pulmonary fibrosis", "asthma",
+        "chronic obstructive pulmonary disease", "copd", "cystic fibrosis",
+        "sickle cell disease", "thalassemia", "hemophilia",
+        "gaucher disease", "fabry disease",
+        "alzheimer's disease", "alzheimer disease", "parkinson's disease",
+        "parkinson disease", "huntington disease", "huntington's disease",
+        "amyotrophic lateral sclerosis", "als", "spinal muscular atrophy",
+        "epilepsy", "schizophrenia", "major depressive disorder",
+    )
+
+    def _looks_like_task_instruction(self, value: str) -> bool:
+        if len(value) <= 60:
+            return False
+        lowered = value.lower()
+        return any(lowered.startswith(p) for p in self._TASK_INSTRUCTION_PREFIXES)
 
     def _looks_like_serialized_context(self, value: str) -> bool:
         stripped = value.strip()
@@ -786,6 +984,38 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             return True
         return stripped.count("{") + stripped.count("}") + stripped.count("[") + stripped.count("]") >= 2
 
+    def _vocabulary_scan_diseases(self, objective: str) -> list[str]:
+        """Return recognizable disease/condition terms found in the objective text."""
+        lowered = objective.lower()
+        found: list[str] = []
+        for term in self._DISEASE_VOCAB:
+            if term in lowered:
+                found.append(term)
+        for suffix in self._DISEASE_SUFFIXES:
+            pattern = rf"\b(?:[a-z]{{2,}}(?:[- ][a-z]{{2,}}){{0,3}} )?{re.escape(suffix)}\b"
+            for m in re.finditer(pattern, lowered):
+                phrase = m.group(0).strip()
+                if phrase and phrase not in found and 2 <= len(phrase.split()) <= 5:
+                    found.append(phrase)
+        return list(dict.fromkeys(found))[:3]
+
+    def _sanitize_pubmed_query(self, query: str, genes: list[str], diseases: list[str]) -> str:
+        """Validate a PubMed query before dispatch; replace task-instruction leaks with focused terms."""
+        q = re.sub(r"\s+", " ", str(query)).strip()
+        if not q or len(q) < 3:
+            return ""
+        if self._looks_like_serialized_context(q):
+            return ""
+        if self._looks_like_task_instruction(q):
+            if genes and diseases:
+                return f"{genes[0]} {diseases[0]} mechanism"
+            if genes:
+                return f"{genes[0]} mechanism"
+            if diseases:
+                return f"{diseases[0]} target therapy"
+            return ""
+        return q
+
     def _default_pubmed_queries(self, context: dict[str, Any], objective: str) -> list[str]:
         genes = context.get("primary_genes", [])
         diseases = context.get("diseases", [])
@@ -793,7 +1023,15 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         pieces = [*genes, *diseases] or [*genes, *pathways]
         base_query = " ".join(str(piece) for piece in pieces if str(piece).strip()).strip()
         if not base_query:
-            base_query = objective[:120]
+            vocab = self._vocabulary_scan_diseases(objective)
+            if genes and vocab:
+                base_query = f"{genes[0]} {vocab[0]}"
+            elif genes:
+                base_query = genes[0]
+            elif vocab:
+                base_query = vocab[0]
+            else:
+                base_query = objective[:60].strip()
         return [
             f"{base_query} mechanism",
             f"{base_query} therapeutic safety",
@@ -1018,25 +1256,31 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             }
             for index, item in enumerate(state.evidence)
         ]
-        scoring_json = self._llm_json(
-            state,
-            config,
-            agent_name="critic_agent",
-            task="evidence_quality_scoring",
-            system_prompt=(
-                "You are a skeptical biomedical evidence evaluator. Score each evidence item for how it "
-                "supports a candidate hypothesis. Be conservative and do not overclaim."
-            ),
-            prompt=(
-                "Return only JSON with key scores. scores must be an array with one object per evidence item. "
-                "Each object needs index, label, score, evidence_type, rationale, warnings. "
-                "Allowed labels: strong_support, weak_support, mechanistic_relevance, irrelevant, "
-                "contradicts, safety_concern. Scores must be 0-1. Keep rationales short.\n"
-                f"Hypothesis: {hypothesis_seed}\n"
-                f"Evidence items: {json.dumps(compact_items, default=str)[:9000]}"
-            ),
-            max_tokens=1400,
-        )
+        try:
+            scoring_json = self._llm_json(
+                state,
+                config,
+                agent_name="critic_agent",
+                task="evidence_quality_scoring",
+                system_prompt=(
+                    "You are a skeptical biomedical evidence evaluator. Score each evidence item for how it "
+                    "supports a candidate hypothesis. Be conservative and do not overclaim."
+                ),
+                prompt=(
+                    "Return only JSON with key scores. scores must be an array with one object per evidence item. "
+                    "Each object needs index, label, score, evidence_type, rationale, warnings. "
+                    "Allowed labels: strong_support, weak_support, mechanistic_relevance, irrelevant, "
+                    "contradicts, safety_concern. Scores must be 0-1. Keep rationales short.\n"
+                    f"Hypothesis: {hypothesis_seed}\n"
+                    f"Evidence items: {json.dumps(compact_items, default=str)[:9000]}"
+                ),
+                max_tokens=1400,
+            )
+        except Exception as exc:
+            state.context.setdefault("warnings", []).append(
+                f"LLM evidence batch scoring failed; deterministic fallback used: {str(exc)[:300]}"
+            )
+            scoring_json = {"scores": []}
         scores_by_index: dict[int, dict[str, Any]] = {}
         for score in scoring_json.get("scores", []) if isinstance(scoring_json.get("scores"), list) else []:
             try:
@@ -1061,6 +1305,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
 
     def _explicit_gene_symbols(self, objective: str) -> list[str]:
         stop = {"AND", "THE", "USE", "NOT", "DNA", "RNA", "LLM"}
+        stop.update(alias.upper() for alias in self._DISEASE_ALIAS_EXPANSIONS)
         genes = [
             value
             for value in re.findall(r"\b[A-Z][A-Z0-9]{2,9}\b", objective)
@@ -1074,7 +1319,30 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
 
     def _primary_disease(self, state: ResearchRunState) -> str:
         diseases = state.context.get("biomedical_context", {}).get("diseases", [])
-        return diseases[0] if diseases else "the disease context"
+        if diseases:
+            # Prefer entries that look like actual disease names over mechanism descriptions.
+            # Skip strings that sound like mechanisms/pathways/interventions rather than diseases.
+            _MECHANISM_TERMS = (
+                "pathway", "inhibition", "signaling", "modulation", "targeting",
+                "activation", "mutation", "knockout", "overexpression", "deficiency",
+                "therapy", "treatment", "strategy", "approach",
+            )
+            disease_candidates = [
+                d for d in diseases
+                if not any(t in d.lower() for t in _MECHANISM_TERMS)
+            ]
+            # Also prefer entries that match vocabulary scan
+            vocab = self._vocabulary_scan_diseases(state.objective)
+            vocab_set = {v.lower() for v in vocab}
+            vocab_matches = [d for d in disease_candidates if d.lower() in vocab_set]
+            if vocab_matches:
+                return vocab_matches[0]
+            if disease_candidates:
+                return disease_candidates[0]
+            # Fall back to the raw first entry if all entries look like mechanisms
+            return diseases[0]
+        vocab = self._vocabulary_scan_diseases(state.objective)
+        return vocab[0] if vocab else "the disease context"
 
     def _classify_objective(
         self,
@@ -1088,17 +1356,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if isinstance(biomedical_context.get("benchmark_task"), dict):
             state.context["benchmark_task"] = biomedical_context["benchmark_task"]
         classification = classify_objective(state.objective, biomedical_context).model_dump()
-        capability_plan = build_capability_plan(classification)
-        criteria_result = self.open_scientist.generate_qworld_criteria(state.objective, classification, config)
+        case_profile = compile_case_profile(state.objective, classification, biomedical_context)
+        capability_plan = build_capability_plan(classification, case_profile)
+        criteria_result = self.open_scientist.generate_evaluation_criteria(state.objective, classification, config)
         state.context["objective_classification"] = classification
+        state.context["case_profile"] = case_profile
         state.context["capability_plan"] = capability_plan
         state.context["evaluation_criteria"] = criteria_result["criteria"]
-        state.context["qworld"] = {
-            "status": criteria_result["status"],
-            "mode": criteria_result["mode"],
-            "warnings": criteria_result["warnings"],
-            "runtime_ms": criteria_result["runtime_ms"],
-        }
         state.context["open_scientist_health"] = self.open_scientist.health()
         self._record(
             trace,
@@ -1108,9 +1372,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "biomedical_context": biomedical_context,
                 "objective_classification": classification,
+                "case_profile": case_profile,
                 "capability_plan": capability_plan,
                 "evaluation_criteria": criteria_result["criteria"],
-                "qworld": state.context["qworld"],
                 "open_scientist_health": state.context["open_scientist_health"],
             },
         )
@@ -1205,8 +1469,6 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             ]
         routed_capabilities = state.context.get("objective_classification", {}).get("required_capabilities", [])
         capability_tools = []
-        if "qworld" in routed_capabilities:
-            capability_tools.append("qworld_criteria_generator")
         if "txagent" in routed_capabilities:
             capability_tools.append("txagent_agent")
         if "clawinstitute_board" in routed_capabilities:
@@ -1571,7 +1833,9 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         for gene in genes:
             live_calls.append(("knowledge_agent", "ncbi_gene_profile_tool", {"gene_symbol": gene, "organism": "Homo sapiens"}))
         for query in pubmed_queries:
-            live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": query, "retmax": pubmed_retmax}))
+            clean_q = self._sanitize_pubmed_query(query, genes, diseases)
+            if clean_q:
+                live_calls.append(("literature_agent", "pubmed_literature_search_tool", {"query": clean_q, "retmax": pubmed_retmax}))
         if candidates:
             live_calls.append(("molecule_agent", "pubchem_candidate_lookup_tool", {"names": candidates}))
         for gene in genes:
@@ -1614,6 +1878,18 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 )
             )
 
+        def _pubmed_zero_results(result: dict[str, Any]) -> bool:
+            if result.get("status") != "success":
+                return False
+            output = result.get("output", {})
+            articles = output.get("articles") or output.get("results") or output.get("items") or []
+            return isinstance(articles, list) and len(articles) == 0
+
+        def _simplify_pubmed_query(query: str) -> str:
+            words = [w for w in query.split() if len(w) >= 3]
+            focused = " ".join(words[:4])
+            return focused if focused != query else ""
+
         def execute_call(agent_name: str, tool_name: str, payload: dict[str, Any]) -> dict[str, Any]:
             starting_source = "live_public_biomedical" if tool_name in self.tools else "tooluniverse"
             self._runtime_event(
@@ -1624,22 +1900,43 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             )
             started = time.perf_counter()
             source = starting_source
-            try:
-                if tool_name in self.tools:
-                    result = self.tools[tool_name].run(payload).model_dump()
-                    source = "live_public_biomedical"
-                else:
-                    tooluniverse_adapter = ToolUniverseAdapter(scan_all=False)
-                    result = tooluniverse_adapter.execute(tool_name, payload)
-                    source = "tooluniverse"
-            except Exception as exc:
+            active_payload = payload
+            last_exc: Exception | None = None
+            for attempt in range(3):
+                last_exc = None
+                try:
+                    if tool_name in self.tools:
+                        result = self.tools[tool_name].run(active_payload).model_dump()
+                        source = "live_public_biomedical"
+                    else:
+                        tooluniverse_adapter = ToolUniverseAdapter(scan_all=False)
+                        result = tooluniverse_adapter.execute(tool_name, active_payload)
+                        source = "tooluniverse"
+                    # Retry PubMed zero-result responses with a simplified query
+                    if (
+                        tool_name == "pubmed_literature_search_tool"
+                        and attempt < 2
+                        and _pubmed_zero_results(result)
+                    ):
+                        original_query = active_payload.get("query", "")
+                        simplified = _simplify_pubmed_query(original_query)
+                        if simplified and simplified != original_query:
+                            active_payload = {**active_payload, "query": simplified}
+                            time.sleep(0.5 * (attempt + 1))
+                            continue
+                    break
+                except Exception as exc:
+                    last_exc = exc
+                    if attempt < 2:
+                        time.sleep(1.0 * (attempt + 1))
+            if last_exc is not None:
                 result = {
                     "status": "failure",
-                    "input": payload,
-                    "output": {"error": str(exc)[:1000]},
+                    "input": active_payload,
+                    "output": {"error": str(last_exc)[:1000]},
                     "sources": [{"name": source, "tool_name": tool_name}],
                     "confidence": 0.0,
-                    "warnings": [str(exc)[:1000]],
+                    "warnings": [str(last_exc)[:1000]],
                     "runtime_ms": int((time.perf_counter() - started) * 1000),
                     "tool_version": source,
                 }
@@ -1658,7 +1955,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "agent_name": agent_name,
                 "tool_name": tool_name,
                 "tool_source": source,
-                "input": payload,
+                "input": active_payload,
                 "result": result,
             }
 
@@ -1864,6 +2161,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 ],
             },
         )
+        self._emit_checkpoint(state, "evidence_collected", config)
         return state
 
     def _policy_followup_pubmed_queries(
@@ -2126,29 +2424,46 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         ).model_dump()
         state.hypothesis_card = card["output"]
         if self._llm_enabled(config):
+            max_tokens = int(config.get("llm_max_tokens", 1200))
+            # Richer output when token budget allows
+            rich_mode = max_tokens >= 1000
             hypothesis_json = self._llm_json(
                 state,
                 config,
                 agent_name="mechanism_agent",
                 task="hypothesis_synthesis",
                 system_prompt=(
-                    "You are a biomedical mechanism scientist. Synthesize a cautious therapeutic or "
-                    "mechanistic candidate hypothesis from the retrieved evidence. Keep guardrails explicit."
+                    "You are a senior biomedical research scientist with expertise in translational oncology "
+                    "and drug target biology. Synthesize a rigorous, specific, evidence-grounded candidate "
+                    "hypothesis from retrieved data. Be scientifically precise, distinguish established "
+                    "from speculative, and keep all guardrails explicit. Do not assert clinical efficacy "
+                    "or safety without direct clinical evidence in the retrieved data."
                 ),
                 prompt=(
-                    "Return only JSON with keys title, hypothesis, scientific_assessment, "
-                    "candidate_intervention_summary, limitations. Use short values. "
-                    "scientific_assessment and limitations are arrays of at most 3 short strings. "
-                    "The hypothesis must be at most 120 words. Do not assert efficacy or safety. "
-                    "If public Open Targets labels show a matched association or retrieved literature shows "
-                    "target-specific clinical precedence, explicitly distinguish established target validity "
-                    "from unresolved mechanism, safety, resistance, or patient-selection questions. "
-                    "Do not assert ligand-independent constitutive signaling unless the retrieved evidence directly supports it; "
-                    "when evidence is mixed, use broader wording such as aberrant or neomorphic pathway signaling.\n"
+                    "Return only JSON with these keys: title, hypothesis, scientific_assessment, "
+                    "candidate_intervention_summary, limitations.\n"
+                    "Rules:\n"
+                    f"- title: concise scientific title (10-15 words), name the specific target and disease\n"
+                    f"- hypothesis: {('200-280' if rich_mode else '80-120')} words. Be specific: name the "
+                    "target mutation or variant, the mechanism (pathway activation, resistance bypass, etc.), "
+                    "the disease context, clinical precedence status, and the key unresolved questions. "
+                    "Distinguish what is established from what requires validation. Do not assert efficacy.\n"
+                    f"- scientific_assessment: array of {('5-6' if rich_mode else '3')} strings, each addressing "
+                    "a specific aspect: (1) target-disease validity evidence, (2) clinical precedence status, "
+                    "(3) resistance or bypass mechanism evidence, (4) safety and translation gaps, "
+                    "(5) patient stratification considerations, (6) key unresolved mechanistic question.\n"
+                    "- candidate_intervention_summary: specific paragraph naming actual retrieved compounds "
+                    "or drug classes, their approval status, and open questions. Do not fabricate drug names "
+                    "not present in the evidence.\n"
+                    f"- limitations: array of {('4-5' if rich_mode else '3')} strings naming specific "
+                    "evidence gaps, not generic disclaimers.\n"
+                    "If clinical precedence evidence exists, frame it as established-but-incomplete, "
+                    "explicitly separating known activity from unresolved resistance, safety, and patient-"
+                    "selection questions. Do not present established targets as new discoveries.\n"
                     f"Objective: {state.objective}\n"
-                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 12, 450), default=str)[:5500]}"
+                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 14, 600), default=str)[:7000]}"
                 ),
-                max_tokens=1000,
+                max_tokens=max_tokens,
             )
             if hypothesis_json.get("_parse_fallback"):
                 state.hypothesis_card.setdefault("limitations", []).append(
@@ -2163,7 +2478,13 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                     if values:
                         state.hypothesis_card[key] = values
         claim_graph = build_claim_graph(state.hypothesis_card, state.evidence)
+        evidence_coverage = build_evidence_coverage_matrix(
+            state.context.get("case_profile", {}),
+            state.evidence,
+            claim_graph,
+        )
         state.context["claim_graph"] = claim_graph
+        state.context["evidence_coverage_matrix"] = evidence_coverage
         state.context["scientific_strategy"] = build_scientific_strategy(
             objective=state.objective,
             biomedical_context=state.context.get("biomedical_context", {}),
@@ -2171,6 +2492,8 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             claim_graph=claim_graph,
         )
         state.hypothesis_card["claim_graph"] = claim_graph
+        state.hypothesis_card["case_profile"] = state.context.get("case_profile", {})
+        state.hypothesis_card["evidence_coverage_matrix"] = evidence_coverage
         state.hypothesis_card["scientific_strategy"] = state.context["scientific_strategy"]
         self._record(
             trace,
@@ -2180,6 +2503,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "hypothesis_card": state.hypothesis_card,
                 "claim_graph": claim_graph,
+                "evidence_coverage_matrix": evidence_coverage,
                 "scientific_strategy": state.context["scientific_strategy"],
                 "llm_calls": state.context.get("llm_calls", []),
             },
@@ -2229,44 +2553,253 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
 
     def _deterministic_scientist_positions(self, state: ResearchRunState, config: dict[str, Any]) -> list[dict[str, Any]]:
         evidence_sources = [item.get("source", "unknown") for item in state.evidence[:6]]
+        target = self._primary_target(state)
+        disease = self._primary_disease(state)
+        genes = state.context.get("biomedical_context", {}).get("primary_genes", [target])
+        # Build context-specific talking points
+        lowered = f"{target} {disease} {state.objective}".lower()
+        is_oncology = any(t in lowered for t in [
+            "cancer", "nsclc", "sclc", "melanoma", "leukemia", "lymphoma", "carcinoma",
+            "glioma", "myeloma", "sarcoma", "adenocarcinoma",
+        ])
+        is_resistance = any(t in lowered for t in ["resistance", "acquired resistance", "bypass"])
+        is_kras = "kras" in lowered
+        is_egfr = "egfr" in lowered
+        is_braf = "braf" in lowered
+        is_ret = "ret" in lowered
+        is_met = lowered.count("met ") > 0 or "met exon" in lowered
+        target_str = genes[0] if genes else target
+        disease_str = disease if disease != "the disease context" else "the relevant disease"
+
+        def _context_position(agent: str) -> tuple[str, list[str], list[str], str, float]:
+            """Return (position, concerns, followups, vote, confidence_delta)."""
+            if agent == "mechanism_agent":
+                if is_kras:
+                    pos = (
+                        f"{target_str} G12C covalent inhibition is a validated strategy with approved clinical agents. "
+                        f"The mechanistic rationale for both direct KRAS G12C inhibition and resistance bypass is "
+                        f"well-supported by biochemical and clinical evidence, but response durability and co-mutation "
+                        f"effects on STK11/KEAP1 pathways remain key unresolved questions."
+                    )
+                    concerns = [
+                        "Adaptive resistance through RTK bypass and RAS pathway reactivation limits durability.",
+                        "Co-mutations in STK11 and KEAP1 are mechanistically distinct resistance drivers that require separate strategies.",
+                    ]
+                    followups = ["Profile resistance mechanism spectrum in clinical post-progression biopsies."]
+                elif is_egfr:
+                    pos = (
+                        f"{target_str} represents a well-validated oncogenic driver in {disease_str}. "
+                        f"The mechanistic cascade from EGFR mutation through RAS/MAPK and PI3K/AKT is supported "
+                        f"by decades of evidence, but acquired resistance mechanisms — particularly bypass via MET "
+                        f"and HER2 — require targeted co-inhibition strategies."
+                    )
+                    concerns = [
+                        "C797S mutation confers cis resistance to third-generation inhibitors.",
+                        "Bypass mechanisms are heterogeneous and co-exist in the same patient.",
+                    ]
+                    followups = ["Map bypass resistance mechanism frequency in osimertinib-resistant clinical specimens."]
+                elif is_braf:
+                    pos = (
+                        f"{target_str} V600E drives constitutive MAPK activation and is a validated target. "
+                        f"The combination of BRAF and MEK inhibition is clinically established, but adaptive "
+                        f"resistance through MAPK reactivation and immune evasion limits long-term benefit."
+                    )
+                    concerns = [
+                        "Paradoxical ERK activation with BRAF-only inhibition requires MEK co-inhibition.",
+                        "Immune checkpoint co-administration sequencing needs prospective validation.",
+                    ]
+                    followups = ["Characterize adaptive resistance kinetics in BRAF-inhibited patient tumor biopsies."]
+                elif is_ret:
+                    pos = (
+                        f"{target_str} fusion and mutation-driven oncogenesis is clinically validated by selective "
+                        f"RET inhibitor approvals. Solvent-front resistance mutations G810R/S/C are mechanistically "
+                        f"distinct from bypass resistance and require next-generation kinase engineering."
+                    )
+                    concerns = [
+                        "G810 solvent-front mutations confer resistance to current approved RET inhibitors.",
+                        "Fusion partner identity may influence sensitivity to inhibition.",
+                    ]
+                    followups = ["Profile G810 resistance mutation frequency across RET-altered tumor histologies."]
+                elif is_met:
+                    pos = (
+                        f"{target_str} exon 14 skipping drives receptor stabilization through impaired CBL-mediated "
+                        f"ubiquitination and degradation. This is a validated therapeutic target with approved agents, "
+                        f"but secondary MET mutations and bypass via KRAS limit durability."
+                    )
+                    concerns = [
+                        "Distinction between exon 14 skipping driver and MET amplification secondary to EGFR therapy is critical.",
+                        "Secondary MET D1228 and Y1230 mutations confer resistance to type Ib MET inhibitors.",
+                    ]
+                    followups = ["Validate MET exon 14 co-mutations with KRAS/EGFR in primary resistance specimens."]
+                elif is_oncology:
+                    pos = (
+                        f"The mechanistic rationale for targeting {target_str} in {disease_str} is supported by "
+                        f"retrieved evidence, but the causal link from target perturbation to therapeutic response "
+                        f"requires validation in disease-relevant models. Pathway context and co-mutation landscape "
+                        f"should be explicitly mapped."
+                    )
+                    concerns = [
+                        "Target dependency may be context-dependent and requires isogenic model validation.",
+                        "Co-mutations and resistance mechanisms should be mapped before clinical translation.",
+                    ]
+                    followups = [f"Run functional validation of {target_str} dependency in patient-derived tumor models."]
+                else:
+                    pos = (
+                        f"Retrieved evidence supports a mechanistic rationale for {target_str} in {disease_str}, "
+                        f"but pathway-level plausibility must be distinguished from validated therapeutic efficacy. "
+                        f"Mechanistic validation in disease-relevant models is required."
+                    )
+                    concerns = [
+                        "Pathway evidence does not prove target-disease causality.",
+                        "Off-target biology must be characterized before efficacy interpretation.",
+                    ]
+                    followups = ["Run target knockout or knockdown in disease-relevant cellular models."]
+                return pos, concerns, followups, "support_with_limits", 0.03
+
+            elif agent == "literature_agent":
+                pubmed_count = sum(1 for s in evidence_sources if "PubMed" in s or "pubmed" in s.lower())
+                pos = (
+                    f"PubMed retrieval surfaced {pubmed_count} literature evidence items for {target_str} "
+                    f"in {disease_str}. Literature supports the mechanistic hypothesis when articles directly "
+                    f"address target-disease biology; indirect or pathway-only citations must be separated "
+                    f"from clinical precedence records."
+                )
+                concerns = [
+                    "PubMed records must be inspected for study type — clinical vs. preclinical vs. review.",
+                    "Query specificity affects recall; resistance and combination queries may need explicit follow-up.",
+                ]
+                followups = [f"Retrieve clinical trial registration and outcomes data for {target_str}-directed therapies."]
+                return pos, concerns, followups, "support_with_limits", 0.02
+
+            elif agent == "tooluniverse_agent":
+                has_opentargets = any("OpenTargets" in s or "tooluniverse" in s.lower() for s in evidence_sources)
+                if has_opentargets:
+                    pos = (
+                        f"Open Targets / ToolUniverse evidence contributes target-disease association scores and "
+                        f"tractability data for {target_str}. Association scores are ranking heuristics, not "
+                        f"clinical efficacy evidence; they support target validity grounding but not response prediction."
+                    )
+                else:
+                    pos = (
+                        f"ToolUniverse and Open Targets tools should be queried for {target_str} target-disease "
+                        f"association, tractability, and approved drug records in {disease_str}. "
+                        f"This would strengthen or constrain the hypothesis before wet-lab investment."
+                    )
+                concerns = [
+                    "Open Targets association scores reflect evidence density, not clinical effect size.",
+                    "Drug records should distinguish approved, clinical-stage, and preclinical compounds.",
+                ]
+                followups = [f"Pull ToolUniverse tractability and approved intervention records for {target_str}."]
+                return pos, concerns, followups, "support_with_limits", 0.02
+
+            elif agent == "molecule_agent":
+                if is_kras:
+                    pos = (
+                        "Covalent KRAS G12C inhibitors (sotorasib, adagrasib) represent the current standard; "
+                        "combination partners targeting SOS1, MEK, or co-occurring vulnerabilities are in clinical "
+                        "evaluation. Compound records for these agents should distinguish approved use from "
+                        "investigational combination contexts."
+                    )
+                elif is_egfr:
+                    pos = (
+                        "Third-generation EGFR inhibitors (osimertinib) have established pharmacology; "
+                        "fourth-generation compounds and bi-specific approaches targeting resistance mutations "
+                        "are investigational. Molecular specificity of each against resistance mutants requires explicit review."
+                    )
+                elif is_braf:
+                    pos = (
+                        "BRAF/MEK inhibitor combinations (dabrafenib/trametinib) are approved; "
+                        "combination with anti-PD-1 in triplet regimens is investigational. "
+                        "Drug record retrieval should confirm approved indications versus experimental settings."
+                    )
+                else:
+                    pos = (
+                        f"Candidate intervention records for {target_str} should be retrieved from PubChem and "
+                        f"drug databases. Any molecules identified are leads only — potency, selectivity, "
+                        f"ADMET properties, and disease-model activity must be characterized before prioritization."
+                    )
+                concerns = [
+                    "Drug approval status differs by tumor type and mutation; approved ≠ active in all contexts.",
+                    "Resistance mechanisms alter compound binding and require structural biology validation.",
+                ]
+                followups = [f"Retrieve comprehensive drug records and clinical trial status for {target_str} inhibitors."]
+                return pos, concerns, followups, "support_with_limits", 0.02
+
+            elif agent == "safety_agent":
+                if is_oncology:
+                    pos = (
+                        f"Oncology therapeutic interventions targeting {target_str} carry class-specific toxicity "
+                        f"profiles. Kinase inhibitors in this class commonly cause gastrointestinal, hepatic, and "
+                        f"hematologic adverse events; off-target kinase inhibition requires explicit selectivity profiling. "
+                        f"Safety claims must not be made from mechanism data alone."
+                    )
+                    concerns = [
+                        "Off-target kinase inhibition in the broader kinome must be profiled before safety inference.",
+                        "Resistance mutation binding can alter selectivity and introduce new off-target risks.",
+                        "Combination regimens multiply toxicity risk and require independent safety review.",
+                    ]
+                else:
+                    pos = (
+                        f"Intervention-specific safety data for {target_str} in {disease_str} must be retrieved "
+                        f"before any translational claim. Adverse event profiles, contraindications, and "
+                        f"drug-drug interactions should be explicitly reviewed. This analysis does not support "
+                        f"any safety conclusion."
+                    )
+                    concerns = [
+                        "No safety inference from target biology alone.",
+                        "Disease-context tolerability may differ from canonical safety profiles.",
+                    ]
+                followups = [f"Retrieve FDA adverse event data and clinical trial safety profiles for {target_str} inhibitors."]
+                return pos, concerns, followups, "revise", -0.05
+
+            elif agent == "omics_agent":
+                pos = (
+                    f"Pathway and omics-level evidence for {target_str} in {disease_str} should confirm "
+                    f"that the proposed mechanism operates in the relevant disease cell context. "
+                    f"Single-cell transcriptomics, CRISPR screen data, and pathway enrichment analysis "
+                    f"would strengthen or refute the proposed mechanism before wet-lab investment."
+                )
+                concerns = [
+                    "Bulk transcriptomic data may obscure cell-type-specific target activity.",
+                    "Pathway models may not reflect the post-translational regulation relevant to the target.",
+                ]
+                followups = [f"Retrieve single-cell or CRISPR screen data for {target_str} dependency in {disease_str}."]
+                return pos, concerns, followups, "support_with_limits", 0.01
+
+            else:  # critic_agent
+                pos = (
+                    f"The {target_str} hypothesis in {disease_str} is plausible but must remain bounded to "
+                    f"computational prioritization. Retrieved evidence does not constitute clinical proof of "
+                    f"concept. The critical gaps are: unresolved resistance mechanism spectrum, absence of "
+                    f"patient-level selectivity data, and missing intervention-specific safety characterization."
+                )
+                concerns = [
+                    "Computational evidence does not prove clinical efficacy or safety.",
+                    f"Resistance and bypass mechanisms for {target_str} inhibitors must be explicitly addressed.",
+                    "Patient stratification strategy is underdetermined from current evidence.",
+                ]
+                followups = [
+                    "Run resistance mechanism profiling in post-progression clinical specimens.",
+                    "Retrieve patient stratification biomarker data from clinical trial subgroup analyses.",
+                ]
+                return pos, concerns, followups, "revise", -0.05
+
         positions = []
         for role in self._debate_scientist_roles(config):
             agent = role["agent_name"]
-            if agent == "critic_agent":
-                position = "The hypothesis is plausible but must remain bounded to computational prioritization."
-                concerns = [
-                    "Tool and literature evidence do not prove clinical efficacy.",
-                    "Candidate interventions require potency, selectivity, dose, and safety review.",
-                ]
-                vote = "revise"
-                confidence_delta = -0.05
-            elif agent == "safety_agent":
-                position = "Safety and translation gaps should lower confidence until intervention-specific safety is reviewed."
-                concerns = [
-                    "No safety claim should be made from target/pathway evidence alone.",
-                    "Pediatric and rare-disease translation risks require explicit review.",
-                ]
-                vote = "revise"
-                confidence_delta = -0.05
-            else:
-                position = (
-                    "Retrieved evidence supports a bounded mechanistic hypothesis, but not validated therapeutic efficacy."
-                )
-                concerns = ["Evidence should be separated into direct support, indirect pathway relevance, and gaps."]
-                vote = "support_with_limits"
-                confidence_delta = 0.02
+            pos, concerns, followups, vote, confidence_delta = _context_position(agent)
             positions.append(
                 {
                     "agent_name": agent,
                     "discipline": role["discipline"],
-                    "position": position,
-                    "key_claims": [state.hypothesis_card.get("hypothesis", "")],
+                    "position": pos,
+                    "key_claims": [state.hypothesis_card.get("hypothesis", "")[:300]],
                     "supporting_evidence_sources": evidence_sources,
                     "concerns": concerns,
-                    "requested_followups": ["Run intervention-specific potency, selectivity, and safety evidence retrieval."],
+                    "requested_followups": followups,
                     "confidence_delta": confidence_delta,
                     "vote": vote,
-                    "mode": "deterministic_local",
+                    "mode": "deterministic_context_aware",
                 }
             )
         return positions
@@ -2448,6 +2981,19 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             for item in softened:
                 if item not in limitations:
                     limitations.append(item)
+        # Rebuild claim graph from the revised hypothesis so claim texts reflect
+        # the debate-adjudicated language, not the pre-debate hypothesis_card output.
+        if revised_hypothesis:
+            revised_claim_graph = build_claim_graph(state.hypothesis_card, state.evidence)
+            revised_coverage = build_evidence_coverage_matrix(
+                state.context.get("case_profile", {}),
+                state.evidence,
+                revised_claim_graph,
+            )
+            state.context["claim_graph"] = revised_claim_graph
+            state.context["evidence_coverage_matrix"] = revised_coverage
+            state.hypothesis_card["claim_graph"] = revised_claim_graph
+            state.hypothesis_card["evidence_coverage_matrix"] = revised_coverage
         debate_record = {
             "scientist_positions": positions,
             "debate": debate,
@@ -2523,20 +3069,30 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         if abstention["abstention_required"]:
             state.critique["abstention_required"] = True
             state.critique["claim_boundary"] = abstention["allowed_output"]
+        # Build a minimal task dict for quality-control calls.
+        # On local/showcase runs there is no benchmark_task; fall back to
+        # gene/disease extracted from the biomedical context so that the
+        # actionability and contradiction assessors have entity anchors.
+        _benchmark_task = state.context.get("benchmark_task") or {}
+        _task_for_critics: dict[str, Any] = {
+            "gene_symbol": _benchmark_task.get("gene_symbol") or self._primary_target(state),
+            "disease_name": _benchmark_task.get("disease_name") or self._primary_disease(state),
+            **{k: v for k, v in _benchmark_task.items() if k not in {"gene_symbol", "disease_name"}},
+        }
         biotruth_critic = evaluate_hypothesis(
-            task=state.context.get("benchmark_task", {}),
+            task=_task_for_critics,
             hypothesis=state.hypothesis_card,
             evidence=state.evidence,
             tool_calls=state.tool_outputs,
-            public_labels=state.context.get("benchmark_task", {}).get("public_labels", {}),
+            public_labels=_benchmark_task.get("public_labels", {}),
         )
         contradiction_analysis = detect_contradictions(
-            task=state.context.get("benchmark_task", {}),
+            task=_task_for_critics,
             evidence=state.evidence,
             tool_calls=state.tool_outputs,
         )
         actionability_profile = assess_actionability(
-            task=state.context.get("benchmark_task", {}),
+            task=_task_for_critics,
             evidence=state.evidence,
             evidence_hierarchy=state.context.get("evidence_hierarchy", {}),
             contradiction_analysis=contradiction_analysis,
@@ -2547,10 +3103,10 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             contradiction_analysis=contradiction_analysis,
             actionability_profile=actionability_profile,
             existing_abstention=state.context.get("abstention", {}),
-            public_labels=state.context.get("benchmark_task", {}).get("public_labels", {}),
+            public_labels=_benchmark_task.get("public_labels", {}),
         )
         state.context["adaptive_tool_plan"] = plan_adaptive_tools(
-            task=state.context.get("benchmark_task", {}),
+            task=_task_for_critics,
             evidence_hierarchy=state.context.get("evidence_hierarchy", {}),
             contradiction_analysis=contradiction_analysis,
             max_recommendations=max(2, min(int(config.get("strategy_repair_max_queries", 2)) + 2, 6)),
@@ -2559,10 +3115,19 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
         state.context["contradiction_analysis"] = contradiction_analysis
         state.context["actionability_profile"] = actionability_profile
         state.context["abstention_policy"] = abstention_policy
+        state.context["scientific_strategy"] = calibrate_scientific_strategy_with_review(
+            state.context.get("scientific_strategy", {}),
+            evidence=state.evidence,
+            critique=state.critique,
+            abstention_policy=abstention_policy,
+            biotruth_critic=biotruth_critic,
+            actionability_profile=actionability_profile,
+        )
         state.critique["biotruth_critic"] = biotruth_critic
         state.critique["contradiction_analysis"] = contradiction_analysis
         state.critique["actionability_profile"] = actionability_profile
         state.critique["abstention_policy"] = abstention_policy
+        state.hypothesis_card["scientific_strategy"] = state.context["scientific_strategy"]
         state.hypothesis_card["biotruth_critic"] = biotruth_critic
         state.hypothesis_card["contradiction_analysis"] = contradiction_analysis
         state.hypothesis_card["actionability_profile"] = actionability_profile
@@ -2630,7 +3195,7 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "title": title,
                 "hypothesis": hypothesis,
-                "scientific_assessment": boundary,
+                "scientific_assessment": [boundary],
                 "confidence": round(max(0.0, confidence), 2),
                 "status": status,
             }
@@ -2650,10 +3215,78 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
                 "critique": state.critique,
             }
         ).model_dump()
-        state.experiments = rank_experiments_by_strategy(
-            experiments["output"]["experiments"],
+        base_experiments = experiments["output"]["experiments"]
+        ranked = rank_experiments_by_strategy(
+            base_experiments,
             state.context.get("scientific_strategy", {}),
         )
+        # ── LLM experiment enrichment ─────────────────────────────────────────────
+        if self._llm_enabled(config):
+            target = self._primary_target(state)
+            disease = self._primary_disease(state)
+            strategy = state.context.get("scientific_strategy", {})
+            gaps = strategy.get("gaps", [])
+            gaps_summary = "; ".join(
+                f"{g['id']} ({g['severity']}): {g['rationale']}" for g in gaps[:4]
+            )
+            exp_json = self._llm_json(
+                state,
+                config,
+                agent_name="experiment_designer_agent",
+                task="experiment_proposal",
+                system_prompt=(
+                    "You are an expert translational oncology scientist designing rigorous next validation "
+                    "experiments. Propose specific, actionable experiments with clear decision gates, "
+                    "success criteria, and failure modes. Prioritize by information gain relative to "
+                    "unresolved scientific gaps. Be concrete: name assays, models, and readouts."
+                ),
+                prompt=(
+                    "Return only JSON with key 'experiments': array of 4-5 experiment objects. "
+                    "Each must have: name (concise ≤15 words), type "
+                    "(computational|wet_lab|computational_plus_wet_lab|clinical_translational), "
+                    "cost (low|low-medium|medium|medium-high|high), "
+                    "feasibility (high|medium|low), "
+                    "expected_information_gain (very_high|high|medium|low), "
+                    "decision_gate (1 sentence: when to advance), "
+                    "success_criteria (array of 2-3 specific strings), "
+                    "failure_modes (array of 1-2 strings).\n"
+                    "Rank by: (1) resolving the highest-severity gap, (2) information gain per cost, "
+                    "(3) proximity to clinical translation.\n"
+                    f"Target: {target}\n"
+                    f"Disease: {disease}\n"
+                    f"Current hypothesis: {str(state.hypothesis_card.get('hypothesis', ''))[:600]}\n"
+                    f"Scientific strategy gaps: {gaps_summary}\n"
+                    f"Existing experiment seeds (use as starting points, improve specificity): "
+                    f"{json.dumps([e.get('name') for e in ranked[:3]], default=str)}"
+                ),
+                max_tokens=int(config.get("llm_max_tokens", 1200)),
+            )
+            llm_experiments = exp_json.get("experiments") if isinstance(exp_json.get("experiments"), list) else []
+            if llm_experiments and not exp_json.get("_parse_fallback"):
+                # Merge: re-rank the LLM experiments with strategy scoring
+                merged = rank_experiments_by_strategy(
+                    llm_experiments,
+                    state.context.get("scientific_strategy", {}),
+                )
+                # If LLM produced ≥3 valid experiments, prefer them; else merge with ranked fallback
+                state.experiments = merged if len(merged) >= 3 else rank_experiments_by_strategy(
+                    llm_experiments + base_experiments,
+                    state.context.get("scientific_strategy", {}),
+                )
+            else:
+                state.experiments = ranked
+        else:
+            state.experiments = ranked
+        state.experiments = score_experiment_gates(
+            state.experiments,
+            state.context.get("case_profile", {}),
+            state.context.get("evidence_coverage_matrix", {}),
+        )
+        state.context["experiment_gate_plan"] = {
+            "schema": "autosci.experiment_gate_plan.v0.1",
+            "experiments": state.experiments,
+            "top_decision_impact_score": state.experiments[0].get("decision_impact_score") if state.experiments else None,
+        }
         self._record(
             trace,
             "experiment_designer_agent",
@@ -2662,8 +3295,10 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             {
                 "experiments": state.experiments,
                 "scientific_strategy": state.context.get("scientific_strategy", {}),
+                "experiment_gate_plan": state.context.get("experiment_gate_plan", {}),
             },
         )
+        self._emit_checkpoint(state, "experiments_proposed", config)
         return state
 
     def _generate_report(
@@ -2687,9 +3322,12 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "agent_framework": "langgraph",
             "biomedical_context": state.context.get("biomedical_context", {}),
             "objective_classification": state.context.get("objective_classification", {}),
+            "case_profile": state.context.get("case_profile", {}),
             "capability_plan": state.context.get("capability_plan", {}),
             "evaluation_criteria": state.context.get("evaluation_criteria", []),
             "claim_graph": state.context.get("claim_graph", {}),
+            "evidence_coverage_matrix": state.context.get("evidence_coverage_matrix", {}),
+            "experiment_gate_plan": state.context.get("experiment_gate_plan", {}),
             "evidence_hierarchy": state.context.get("evidence_hierarchy", {}),
             "adaptive_tool_plan": state.context.get("adaptive_tool_plan", {}),
             "scientific_strategy": state.context.get("scientific_strategy", {}),
@@ -2699,36 +3337,60 @@ class LangGraphScientificWorkflow(AgentOrchestrator):
             "biotruth_critic": state.context.get("biotruth_critic", {}),
             "contradiction_analysis": state.context.get("contradiction_analysis", {}),
             "open_scientist": {
-                "qworld": state.context.get("qworld", {}),
                 "health": state.context.get("open_scientist_health", {}),
             },
             "llm_calls": state.context.get("llm_calls", []),
         }
         if self._llm_enabled(config):
+            max_tokens = int(config.get("llm_max_tokens", 1200))
+            rich_mode = max_tokens >= 1000
             report_json = self._llm_json(
                 state,
                 config,
                 agent_name="publisher_agent",
                 task="final_report_synthesis",
                 system_prompt=(
-                    "You are a biomedical report publisher. Write a concise final scientific synthesis "
-                    "using only the supplied evidence and explicit guardrails."
+                    "You are a senior biomedical scientist writing the final synthesis for an AI-generated "
+                    "scientific dossier. Produce a precise, evidence-grounded, publication-quality summary. "
+                    "Distinguish established clinical precedence from unresolved questions. Do not assert "
+                    "clinical efficacy or safety without direct clinical evidence in the retrieved data. "
+                    "Never present an established target-drug relationship as a new discovery."
                 ),
                 prompt=(
-                    "Return only JSON with keys title and summary. Do not claim clinical efficacy or safety. "
-                    "If the evidence shows clinical precedence, state it as precedence and then identify the "
-                    "remaining scientific uncertainty rather than treating the target as unvalidated.\n"
-                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:6000]}\n"
-                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 12, 400), default=str)[:5000]}\n"
-                    f"Critique: {json.dumps(state.critique, default=str)[:3000]}\n"
-                    f"Experiments: {json.dumps(state.experiments, default=str)[:3000]}"
+                    "Return only JSON with keys: title, summary"
+                    + (", key_claims" if rich_mode else "")
+                    + ".\n"
+                    f"- title: concise scientific title (10-15 words), name the specific target and disease\n"
+                    f"- summary: {('180-240' if rich_mode else '80-120')} words. "
+                    "Cover: (1) clinical precedence status, (2) key mechanism, "
+                    "(3) primary resistance or unresolved question, (4) ranked next step. "
+                    "Be specific — name targets, variants, drugs, and trial results present in the evidence. "
+                    "Do not invent details absent from the evidence.\n"
+                    + (
+                        "- key_claims: array of 3-4 strings, each a single falsifiable scientific claim "
+                        "directly supported by the retrieved evidence. No efficacy or safety claims.\n"
+                        if rich_mode
+                        else ""
+                    )
+                    + "If the evidence shows clinical precedence, state it as precedence and identify the "
+                    "remaining scientific uncertainty (resistance, safety, patient-selection) rather than "
+                    "treating the target as unvalidated.\n"
+                    f"Hypothesis card: {json.dumps(state.hypothesis_card, default=str)[:5000]}\n"
+                    f"Evidence digest: {json.dumps(self._evidence_digest(state, 12, 400), default=str)[:4000]}\n"
+                    f"Critique: {json.dumps(state.critique, default=str)[:2000]}\n"
+                    f"Experiments: {json.dumps(state.experiments[:4], default=str)[:2500]}"
                 ),
-                max_tokens=800,
+                max_tokens=max_tokens,
             )
             if report_json.get("title"):
                 state.report["title"] = report_json["title"]
             if report_json.get("summary"):
                 state.report["summary"] = report_json["summary"]
+            key_claims = self._string_list(report_json.get("key_claims"))
+            if key_claims:
+                state.report["key_claims"] = key_claims
+                # Also write to hypothesis_card so it flows into the board post content_json
+                state.hypothesis_card["key_claims"] = key_claims
         self._enforce_abstention_on_report(state)
         state.report["report_evaluation"] = evaluate_report_against_criteria(
             state.report,

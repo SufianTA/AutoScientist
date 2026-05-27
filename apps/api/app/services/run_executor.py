@@ -31,10 +31,6 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "require_real_llm": False,
     "model_tool_names": [],
     "real_data_enabled": False,
-    "qworld_enabled": True,
-    "qworld_model": "",
-    "qworld_api_key_env_var": "",
-    "qworld_base_url": "",
     "txagent_enabled": False,
     "persist_memory_enabled": True,
     "sciflow_policy_enabled": False,
@@ -71,13 +67,6 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
     if not isinstance(normalized["model_tool_names"], list):
         normalized["model_tool_names"] = []
     normalized["real_data_enabled"] = bool(normalized.get("real_data_enabled", False))
-    normalized["qworld_enabled"] = bool(normalized.get("qworld_enabled", True))
-    normalized["qworld_model"] = str(normalized.get("qworld_model") or "")
-    normalized["qworld_base_url"] = str(normalized.get("qworld_base_url") or "")
-    normalized["qworld_api_key_env_var"] = validate_env_var_name(
-        normalized.get("qworld_api_key_env_var"),
-        "qworld_api_key_env_var",
-    )
     normalized["txagent_enabled"] = bool(normalized.get("txagent_enabled", False))
     normalized["persist_memory_enabled"] = bool(normalized.get("persist_memory_enabled", True))
     normalized["sciflow_policy_enabled"] = bool(normalized.get("sciflow_policy_enabled", False))
@@ -275,9 +264,12 @@ def persist_orchestrator_result(
         "next_experiments": state.experiments,
         "critique": state.critique,
         "objective_classification": state.context.get("objective_classification", {}),
+        "case_profile": state.context.get("case_profile", {}),
         "capability_plan": state.context.get("capability_plan", {}),
         "evaluation_criteria": state.context.get("evaluation_criteria", []),
         "report_evaluation": state.report.get("report_evaluation", {}),
+        "evidence_coverage_matrix": state.context.get("evidence_coverage_matrix", {}),
+        "experiment_gate_plan": state.context.get("experiment_gate_plan", {}),
         "abstention": state.context.get("abstention", {}),
         "abstention_policy": state.context.get("abstention_policy", {}),
         "actionability_profile": state.context.get("actionability_profile", {}),

@@ -229,3 +229,36 @@ def test_workflow_enforces_abstention_on_hypothesis_and_report() -> None:
     assert state.report["decision"] == "abstain"
     assert state.report["confidence"] <= 0.2
     assert "Abstention policy decision `abstain` is enforced." in state.report["guardrails"]
+
+
+def test_workflow_evidence_batch_scoring_falls_back_after_llm_failure() -> None:
+    workflow = LangGraphScientificWorkflow()
+    state = ResearchRunState(
+        run_id="run_test",
+        objective_id="obj_test",
+        objective="Evaluate EGFR in non-small cell lung carcinoma.",
+    )
+    state.context["biomedical_context"] = {
+        "primary_genes": ["EGFR"],
+        "diseases": ["non-small cell lung carcinoma"],
+    }
+    state.evidence = [
+        {
+            "source": "PubMed: EGFR non-small cell lung carcinoma mechanism",
+            "text": "EGFR non-small cell lung carcinoma mechanism and treatment response literature.",
+        }
+    ]
+
+    def fail_llm_json(*args, **kwargs):
+        raise RuntimeError("transient SSL failure")
+
+    workflow._llm_json = fail_llm_json  # type: ignore[method-assign]
+
+    scored = workflow._score_evidence_with_llm_batch(
+        state,
+        {"llm_provider": "anthropic", "llm_model": "claude-sonnet-4-6"},
+        "EGFR is relevant to non-small cell lung carcinoma.",
+    )
+
+    assert scored[0]["score"]["label"] != ""
+    assert "deterministic fallback used" in state.context["warnings"][0]

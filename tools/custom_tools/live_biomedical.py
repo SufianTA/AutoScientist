@@ -423,7 +423,23 @@ class OpenFDAAdverseEventTool(ScientificTool):
         limit = max(1, min(int(payload.get("limit") or 5), 10))
         search = f'patient.drug.medicinalproduct:"{drug_name}"'
         url = "https://api.fda.gov/drug/event.json?" + urlencode({"search": search, "limit": limit})
-        data = fetch_json(url)
+        try:
+            data = fetch_json(url)
+        except Exception as exc:
+            return ToolResult(
+                status="partial",
+                input=payload,
+                output={
+                    "drug_name": drug_name,
+                    "total_matching_reports": None,
+                    "common_reactions": [],
+                    "reports": [],
+                    "safety_gap": "openFDA adverse-event lookup was unavailable; use PubMed, labels, or trial records for safety context.",
+                },
+                sources=[{"name": "openFDA drug event API", "url": url}],
+                confidence=0.15,
+                warnings=[f"openFDA request failed: {str(exc)[:200]}"],
+            )
         total = int(data.get("meta", {}).get("results", {}).get("total") or 0)
         reactions: dict[str, int] = {}
         serious_reports = 0

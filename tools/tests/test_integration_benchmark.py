@@ -12,9 +12,6 @@ def _args(**overrides: object) -> SimpleNamespace:
         "max_runtime_minutes": 5,
         "tool_budget_usd": 1.0,
         "llm_max_tokens": 64,
-        "qworld_model": "",
-        "qworld_api_key_env_var": "",
-        "disable_qworld": True,
         "require_real_llm": False,
     }
     values.update(overrides)
@@ -75,7 +72,7 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
         },
         "provenance": {
             "agent_steps": [
-                {"state_name": "PLAN_RESEARCH", "output": {"qworld": {"mode": "qworld"}}},
+                {"state_name": "PLAN_RESEARCH", "output": {}},
                 {"state_name": "LLM_CALL_COMPLETED", "output": {}},
             ],
             "tool_calls": [
@@ -87,7 +84,6 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
     health = {
         "tooluniverse": {"available": True},
         "open_scientist": {
-            "qworld": {"available": True},
             "clawinstitute_board": {"available": True},
         },
     }
@@ -95,27 +91,7 @@ def test_value_score_rewards_executed_integrations_and_provenance() -> None:
     integrations = summarize_integrations(result, health)
     assessment = value_score(result, integrations)
 
-    assert integrations["qworld"]["executed"] is True
     assert integrations["tooluniverse"]["executed"] is True
     assert integrations["public_biomedical"]["executed"] is True
     assert assessment["score"] >= 85
     assert assessment["checks"]["auditable_trace"] is True
-
-
-def test_disabled_qworld_is_not_counted_as_executed() -> None:
-    result = {
-        "status": "completed",
-        "report": {"hypothesis": {"title": "h", "text": "t"}, "board_posts": []},
-        "provenance": {
-            "agent_steps": [
-                {"state_name": "CLASSIFY_OBJECTIVE", "output": {"qworld": {"mode": "disabled"}}},
-                {"state_name": "PLAN_RESEARCH", "output": {"objective_classification": {"required_capabilities": ["qworld"]}}},
-            ],
-            "tool_calls": [],
-        },
-    }
-    health = {"open_scientist": {"qworld": {"available": True}}, "tooluniverse": {"available": True}}
-
-    integrations = summarize_integrations(result, health)
-
-    assert integrations["qworld"]["executed"] is False

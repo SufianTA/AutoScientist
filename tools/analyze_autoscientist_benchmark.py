@@ -228,7 +228,7 @@ def mean_tooluniverse_calls(results: list[dict[str, Any]]) -> float:
 
 
 def integration_coverage(results: list[dict[str, Any]]) -> dict[str, Any]:
-    names = ["public_biomedical", "tooluniverse", "qworld", "local_board"]
+    names = ["public_biomedical", "tooluniverse", "local_board"]
     coverage = {}
     for name in names:
         coverage[name] = {

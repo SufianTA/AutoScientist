@@ -68,9 +68,6 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
         "tool_budget_usd": args.tool_budget_usd,
         "evidence_strictness": "strict",
         "real_data_enabled": True,
-        "qworld_enabled": not args.disable_qworld,
-        "qworld_model": args.qworld_model or model or "",
-        "qworld_api_key_env_var": args.qworld_api_key_env_var or api_key_env_var or "",
         "llm_provider": provider,
         "llm_model": model or "",
         "llm_api_key_env_var": api_key_env_var or "",
@@ -104,25 +101,10 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
     sources = {call.get("tool_source") for call in tool_calls}
     public_calls = [call for call in tool_calls if call.get("tool_source") == "live_public_biomedical"]
     tooluniverse_calls = [call for call in tool_calls if call.get("tool_source") == "tooluniverse"]
-    qworld_step = next(
-        (
-            step
-            for step in steps
-            if step.get("state_name") == "PLAN_RESEARCH"
-            and "qworld" in json.dumps(step.get("output", {}), default=str).lower()
-        ),
-        None,
-    )
-    qworld_mode = (qworld_step or {}).get("output", {}).get("qworld", {}).get("mode")
     return {
         "anthropic_llm": {
             "configured": bool(os.getenv("ANTHROPIC_KEY") or os.getenv("ANTHROPIC_API_KEY")),
             "executed": any(step.get("state_name") == "LLM_CALL_COMPLETED" for step in steps),
-        },
-        "qworld": {
-            "healthy": bool(health.get("open_scientist", {}).get("qworld", {}).get("available")),
-            "executed": qworld_step is not None and qworld_mode == "qworld",
-            "mode": qworld_mode,
         },
         "tooluniverse": {
             "healthy": bool(health.get("tooluniverse", {}).get("available")),
@@ -146,7 +128,10 @@ def summarize_integrations(result: dict[str, Any], health: dict[str, Any]) -> di
     }
 
 
-def report_experiments(report: dict[str, Any]) -> list[dict[str, Any]]:
+def report_experiments(
+    report: dict[str, Any],
+    full_result: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     direct = report.get("experiments") or report.get("next_experiments")
     if isinstance(direct, list) and direct:
         return direct
@@ -155,8 +140,15 @@ def report_experiments(report: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         content = post.get("content", {})
         experiments = content.get("next_experiments")
-        if isinstance(experiments, list):
+        if isinstance(experiments, list) and experiments:
             return experiments
+    # Provenance fallback: scan agent step outputs for the PROPOSE_EXPERIMENTS step
+    if full_result:
+        for step in full_result.get("provenance", {}).get("agent_steps", []):
+            if "PROPOSE_EXPERIMENTS" in str(step.get("state_name", "")).upper():
+                exps = step.get("output", {}).get("experiments")
+                if isinstance(exps, list) and exps:
+                    return exps
     return []
 
 
@@ -186,7 +178,7 @@ def value_score(result: dict[str, Any], integrations: dict[str, Any]) -> dict[st
     report = result.get("report", {})
     evidence = report.get("evidence", [])
     hypothesis = report.get("hypothesis", {})
-    experiments = report_experiments(report)
+    experiments = report_experiments(report, result)
     guardrails = report.get("guardrails", [])
     steps = result_agent_steps(result)
     tool_calls = result_tool_calls(result)
@@ -293,7 +285,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
         "hypothesis": result.get("report", {}).get("hypothesis", {}),
         "evidence_count": len(result.get("report", {}).get("evidence", [])),
         "guardrails": result.get("report", {}).get("guardrails", []),
-        "experiments": report_experiments(result.get("report", {})),
+        "experiments": report_experiments(result.get("report", {}), result),
         "tool_calls": result.get("provenance", {}).get("tool_calls", []),
     }
 
@@ -322,9 +314,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--llm-api-key-env-var", default="")
     parser.add_argument("--llm-max-tokens", type=int, default=256)
-    parser.add_argument("--qworld-model", default="")
-    parser.add_argument("--qworld-api-key-env-var", default="")
-    parser.add_argument("--disable-qworld", action="store_true")
     parser.add_argument("--agent-count", type=int, default=6)
     parser.add_argument("--max-runtime-minutes", type=int, default=30)
     parser.add_argument("--tool-budget-usd", type=float, default=10.0)

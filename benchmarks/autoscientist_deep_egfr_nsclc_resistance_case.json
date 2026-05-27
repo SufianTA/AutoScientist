@@ -3,7 +3,7 @@
   "name": "AutoScientist Deep EGFR NSCLC Osimertinib Resistance Case Study",
   "version": "0.1",
   "created_at_unix": 1779751200,
-  "purpose": "Evaluate whether AutoScientist can produce an audit-ready, multi-agent, tool-heavy mechanistic cancer-resistance dossier for EGFR-mutant non-small cell lung carcinoma treated with osimertinib.",
+  "purpose": "Demonstrate whether AutoScientist can produce an audit-ready, multi-agent, tool-heavy mechanistic cancer-resistance dossier for a complex EGFR-mutant non-small cell lung carcinoma osimertinib-resistance case.",
   "source_seed_cases": "benchmarks/autoscientist_deep_egfr_nsclc_resistance_case.json",
   "rubric_path": "benchmarks/biotruth_rubric_v0_2.json",
   "rubric": {
@@ -51,7 +51,7 @@
   ],
   "selection_policy": {
     "case_count": 1,
-    "expanded_task_policy": "One deep cancer-resistance case expanded into four complementary tasks; each task should be run across full and ablation modes.",
+    "expanded_task_policy": "One deep cancer-resistance case expanded into four complementary full-system tasks that show mechanism mapping, evidence retrieval, memory, replay, and experiment planning.",
     "domains": [
       "oncology",
       "targeted_therapy_resistance",
@@ -70,12 +70,8 @@
       "The case stresses the difference between target validation and mechanism-of-resistance explanation.",
       "A credible run should demonstrate graph-style mechanism mapping, tool execution, memory, replay, provenance, confidence updates, and calibrated abstention where evidence is insufficient."
     ],
-    "recommended_ablations": [
-      "full",
-      "plain_llm",
-      "no_public_tools",
-      "no_memory",
-      "no_sciflow"
+    "recommended_run_modes": [
+      "full_system_showcase"
     ],
     "recommended_agent_count": 12,
     "recommended_strategy_repair_max_queries": 6,
@@ -84,7 +80,7 @@
   "task_templates": [
     {
       "id": "resistance_mechanism_dossier",
-      "objective_template": "Build an audit-ready mechanistic dossier explaining why EGFR-mutant non-small cell lung carcinoma tumors can acquire resistance to osimertinib. Use {gene_symbol} as the clinical anchor but compare EGFR-dependent resistance including C797S or secondary EGFR alterations, MET amplification, ERBB2/HER2 amplification, KRAS/BRAF/PIK3CA bypass signaling, MAPK and PI3K pathway reactivation, AXL or EMT-associated state transition, small-cell or squamous histologic transformation, tumor microenvironment effects, and pharmacologic resistance. Retrieve public target-disease, drug, clinical-trial, literature, and safety evidence; separate established mechanisms from plausible but uncertain hypotheses; rank mechanisms by evidence strength, subgroup specificity, actionability, safety burden, and falsifiability.",
+      "objective_template": "Build an audit-ready mechanistic dossier explaining why EGFR-mutant non-small cell lung carcinoma tumors can acquire resistance to osimertinib after first-line therapy. Use {gene_symbol} as the clinical anchor but compare EGFR-dependent resistance including C797S, T790M/C797S cis-trans phasing, secondary EGFR alterations, and EGFR amplification; bypass mechanisms including MET amplification, ERBB2/HER2 amplification, RET or ALK fusion emergence, KRAS/BRAF/PIK3CA alterations, MAPK and PI3K pathway reactivation; AXL-high or EMT-associated state transition; small-cell or squamous histologic transformation; CNS sanctuary or pharmacologic exposure issues; and tumor microenvironment effects. Retrieve public target-disease, drug, clinical-trial, literature, and safety evidence; separate established mechanisms from plausible but uncertain hypotheses; rank mechanisms by evidence strength, subgroup specificity, actionability, safety burden, assay feasibility, and falsifiability.",
       "judge_focus": [
         "target_disease_validity",
         "mechanism_plausibility",
@@ -102,7 +98,7 @@
     },
     {
       "id": "bypass_pathway_graph",
-      "objective_template": "Construct a biological mechanism graph for acquired osimertinib resistance in EGFR-mutant non-small cell lung carcinoma. The graph should link genes, variants, amplifications, drugs, pathways, cell states, resistance phenotypes, evidence sources, and causal assumptions. Compare MET, ERBB2, AXL, MAPK, PI3K, EMT, and histologic transformation branches; record supporting evidence, conflicting evidence, missing evidence, confidence, and what observation would cause the system to revise or reject each branch.",
+      "objective_template": "Construct a biological mechanism graph for acquired osimertinib resistance in EGFR-mutant non-small cell lung carcinoma. The graph should link genes, variants, copy-number changes, fusions, drugs, pathways, cell states, anatomical compartments, resistance phenotypes, evidence sources, and causal assumptions. Compare on-target EGFR branches, MET, ERBB2, RET/ALK fusion emergence, AXL, MAPK, PI3K, EMT, CNS sanctuary, and histologic transformation branches; record supporting evidence, conflicting evidence, missing evidence, confidence, required assays, and what observation would cause the system to revise or reject each branch.",
       "judge_focus": [
         "mechanism_plausibility",
         "counterevidence_and_abstention",
@@ -119,7 +115,7 @@
     },
     {
       "id": "biomarker_and_cohort_validation",
-      "objective_template": "Design a public-data validation strategy for EGFR-mutant non-small cell lung carcinoma osimertinib resistance hypotheses. Prioritize biomarkers and cohort analyses for EGFR C797S, MET amplification or expression, ERBB2 amplification, MAPK or PI3K pathway activation, AXL/EMT signatures, lineage transformation, and immune or stromal context. Use available public biomedical tools and ToolUniverse paths to retrieve evidence where possible, state which datasets or modalities are missing, and define success, failure, and confidence-update criteria for each validation step.",
+      "objective_template": "Design a public-data validation strategy for EGFR-mutant non-small cell lung carcinoma osimertinib resistance hypotheses. Prioritize biomarkers and cohort analyses for EGFR C797S/T790M phasing, EGFR amplification, MET amplification or expression, ERBB2 amplification, emergent fusions, MAPK or PI3K pathway activation, AXL/EMT signatures, lineage transformation, CNS progression, and immune or stromal context. Specify which evidence should come from ctDNA, paired pre/post-treatment biopsy, single-cell or spatial assays, copy-number profiling, fusion detection, and clinical trial metadata. Use available public biomedical tools and ToolUniverse paths to retrieve evidence where possible, state which datasets or modalities are missing, and define success, failure, and confidence-update criteria for each validation step.",
       "judge_focus": [
         "experiment_quality",
         "evidence_grounding",
@@ -135,7 +131,7 @@
     },
     {
       "id": "combination_strategy_and_experiment_plan",
-      "objective_template": "Propose a decision-grade experimental program for candidate interventions in acquired osimertinib resistance in EGFR-mutant non-small cell lung carcinoma. Compare research hypotheses such as EGFR plus MET inhibition, EGFR plus MEK or SHP2 pathway inhibition, EGFR plus AXL or EMT-state targeting, and lineage-transformation-specific approaches. For each, retrieve public evidence where available, identify safety and trial caveats, specify cell-line, organoid, CRISPR, xenograft, or patient-derived validation experiments, include negative controls and failure gates, and explain how each experiment would update confidence. Do not recommend patient treatment.",
+      "objective_template": "Propose a decision-grade experimental program for candidate interventions in acquired osimertinib resistance in EGFR-mutant non-small cell lung carcinoma. Compare research hypotheses such as fourth-generation EGFR inhibitor strategies for C797S contexts, EGFR plus MET inhibition, EGFR plus MEK/SHP2 pathway inhibition, EGFR plus HER2 or fusion-directed inhibition where supported, EGFR plus AXL or EMT-state targeting, CNS-penetrant strategy tests, and lineage-transformation-specific approaches. For each, retrieve public evidence where available, identify safety and trial caveats, specify cell-line, organoid, CRISPR, xenograft, patient-derived explant, ctDNA, or paired-biopsy validation experiments, include negative controls and failure gates, and explain how each experiment would update confidence. Do not recommend patient treatment.",
       "judge_focus": [
         "experiment_quality",
         "safety_and_translation",
@@ -165,10 +161,14 @@
         "EGFR_mutation_context",
         "osimertinib_resistance",
         "EGFR_C797S_or_secondary_mutation",
+        "T790M_C797S_phasing_or_clone_structure",
+        "EGFR_amplification",
         "MET_amplification_or_bypass",
-        "ERBB2_or_MAPK_or_PI3K_bypass",
+        "ERBB2_or_fusion_or_MAPK_or_PI3K_bypass",
         "EMT_or_AXL_state_transition",
         "histologic_transformation",
+        "ctDNA_or_paired_biopsy_validation",
+        "CNS_or_pharmacologic_resistance_context",
         "safety_caveats",
         "cohort_or_biomarker_validation",
         "counterevidence_or_missing_evidence"
@@ -232,9 +232,9 @@
     }
   ],
   "caveats": [
-    "This benchmark tests research triage and hypothesis generation, not clinical decision support.",
+    "This showcase tests research triage and hypothesis generation, not clinical decision support.",
     "The seed target anchors public evidence retrieval, but the objectives require comparison across resistance mechanisms rather than hardcoding a single answer.",
     "Not every named public database is guaranteed to be available in every environment; the run should record missing tool coverage explicitly as a limitation.",
-    "Scores are credibility and auditability indicators; expert biomedical review remains required before sharing scientific claims."
+    "Run artifacts are credibility and auditability indicators; expert biomedical review remains required before sharing scientific claims."
   ]
 }

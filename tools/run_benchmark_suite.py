@@ -24,7 +24,7 @@ BENCHMARK_CASES = [
             "using single-cell transcriptomics reasoning, public biomedical evidence, safety "
             "concerns, and next experiment proposals."
         ),
-        "expected_capabilities": ["tooluniverse", "public_biomedical", "qworld"],
+        "expected_capabilities": ["tooluniverse", "public_biomedical"],
     },
     {
         "id": "pcsk9_fh_drug_repurposing",
@@ -33,7 +33,7 @@ BENCHMARK_CASES = [
             "Evaluate PCSK9-centered therapeutic hypotheses for familial hypercholesterolemia, "
             "including drug repurposing evidence, mechanism, contraindication risks, and validation experiments."
         ),
-        "expected_capabilities": ["tooluniverse", "public_biomedical", "qworld"],
+        "expected_capabilities": ["tooluniverse", "public_biomedical"],
     },
     {
         "id": "acvr1_fop_failed_hypothesis",
@@ -42,7 +42,7 @@ BENCHMARK_CASES = [
             "Generate and critique therapeutic hypotheses for ACVR1-driven fibrodysplasia ossificans "
             "progressiva, explicitly identifying weak or failed hypothesis branches and safer next experiments."
         ),
-        "expected_capabilities": ["tooluniverse", "public_biomedical", "qworld"],
+        "expected_capabilities": ["tooluniverse", "public_biomedical"],
     },
     {
         "id": "cftr_cystic_fibrosis_evidence",
@@ -51,7 +51,7 @@ BENCHMARK_CASES = [
             "Synthesize CFTR therapeutic hypothesis evidence for cystic fibrosis, rank evidence quality, "
             "and propose experiments that would reduce uncertainty."
         ),
-        "expected_capabilities": ["tooluniverse", "public_biomedical", "qworld"],
+        "expected_capabilities": ["tooluniverse", "public_biomedical"],
     },
     {
         "id": "tnf_ibd_safety",
@@ -60,7 +60,7 @@ BENCHMARK_CASES = [
             "Assess TNF-pathway intervention hypotheses for inflammatory bowel disease with attention to "
             "mechanistic support, safety limitations, literature provenance, and validation strategy."
         ),
-        "expected_capabilities": ["tooluniverse", "public_biomedical", "qworld"],
+        "expected_capabilities": ["tooluniverse", "public_biomedical"],
     },
 ]
 
@@ -73,9 +73,6 @@ def suite_args(base: argparse.Namespace, case: dict[str, Any]) -> SimpleNamespac
         llm_model=base.llm_model,
         llm_api_key_env_var=base.llm_api_key_env_var,
         llm_max_tokens=base.llm_max_tokens,
-        qworld_model=base.qworld_model,
-        qworld_api_key_env_var=base.qworld_api_key_env_var,
-        disable_qworld=base.disable_qworld,
         agent_count=base.agent_count,
         max_runtime_minutes=base.max_runtime_minutes,
         tool_budget_usd=base.tool_budget_usd,
@@ -206,7 +203,7 @@ def build_suite_summary(
 
 
 def aggregate_integrations(artifacts: list[dict[str, Any]]) -> dict[str, Any]:
-    keys = ["anthropic_llm", "qworld", "tooluniverse", "public_biomedical", "local_board"]
+    keys = ["anthropic_llm", "tooluniverse", "public_biomedical", "local_board"]
     coverage = {}
     for key in keys:
         executed = 0
@@ -280,9 +277,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--llm-api-key-env-var", default="")
     parser.add_argument("--llm-max-tokens", type=int, default=192)
-    parser.add_argument("--qworld-model", default="")
-    parser.add_argument("--qworld-api-key-env-var", default="")
-    parser.add_argument("--disable-qworld", action="store_true")
     parser.add_argument("--agent-count", type=int, default=2)
     parser.add_argument("--max-runtime-minutes", type=int, default=5)
     parser.add_argument("--tool-budget-usd", type=float, default=1.0)

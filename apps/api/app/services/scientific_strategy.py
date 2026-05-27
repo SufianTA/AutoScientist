@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import re
 from collections import Counter
 from typing import Any
@@ -56,6 +57,116 @@ def rank_experiments_by_strategy(
     ranked.extend(_gap_driven_experiments(gaps, existing_gap_ids={gap_id for item in ranked for gap_id in item["addresses_gaps"]}))
     ranked = sorted(ranked, key=lambda item: item["priority_score"], reverse=True)
     return ranked[:6]
+
+
+def calibrate_scientific_strategy_with_review(
+    strategy: dict[str, Any],
+    *,
+    evidence: list[dict[str, Any]],
+    critique: dict[str, Any] | None = None,
+    abstention_policy: dict[str, Any] | None = None,
+    biotruth_critic: dict[str, Any] | None = None,
+    actionability_profile: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Apply post-review calibration so readiness cannot outrun reviewer findings."""
+
+    calibrated = copy.deepcopy(strategy or {})
+    readiness = dict(calibrated.get("readiness") or {})
+    base_score = int(readiness.get("score") or 0)
+    gaps = list(calibrated.get("gaps") or [])
+    notes: list[str] = []
+    penalty = 0
+
+    critique = critique or {}
+    severity = str(critique.get("severity") or "").lower()
+    if severity in SEVERITY_PENALTY:
+        severity_penalty = {"high": 18, "medium": 10, "low": 4}[severity]
+        penalty += severity_penalty
+        notes.append(f"Reviewer critique severity `{severity}` reduced readiness by {severity_penalty} points.")
+        if severity == "high":
+            gaps.append(
+                _gap(
+                    "reviewer_high_severity_concern",
+                    "medium",
+                    str(critique.get("critique") or "Reviewer identified high-severity scientific concerns.")[:500],
+                    ["repair overclaims with direct supporting evidence", "soften unsupported claim boundaries"],
+                    "Do not label the dossier validation-ready until the reviewer concern is resolved.",
+                )
+            )
+
+    label_counts = Counter()
+    for item in evidence:
+        score = item.get("score", {}) if isinstance(item.get("score"), dict) else {}
+        label_counts[str(item.get("support_label") or score.get("label") or "unlabeled").lower()] += 1
+    total_labeled = sum(label_counts.values())
+    irrelevant_count = label_counts.get("irrelevant", 0)
+    if total_labeled and irrelevant_count / total_labeled >= 0.25:
+        irrelevance_penalty = min(16, round((irrelevant_count / total_labeled) * 30))
+        penalty += irrelevance_penalty
+        notes.append(
+            f"{irrelevant_count}/{total_labeled} evidence items were labeled irrelevant; readiness reduced by {irrelevance_penalty} points."
+        )
+        gaps.append(
+            _gap(
+                "evidence_relevance_noise",
+                "medium",
+                "A material fraction of retrieved evidence was judged irrelevant to the claim boundary.",
+                ["tighten entity-specific retrieval and rerank evidence relevance"],
+                "Filter or replace irrelevant evidence before treating the dossier as validation-ready.",
+            )
+        )
+
+    abstention_policy = abstention_policy or {}
+    if abstention_policy.get("abstention_required") or str(abstention_policy.get("decision") or "").lower() in {"abstain", "conflicting"}:
+        penalty += 25
+        notes.append("Abstention/conflict policy requires conservative readiness calibration.")
+
+    biotruth_critic = biotruth_critic or {}
+    verdict = str(biotruth_critic.get("verdict") or "").lower()
+    weighted = biotruth_critic.get("weighted_score")
+    if verdict in {"abstain", "conflicting"}:
+        penalty += 20
+        notes.append(f"Biomedical critic verdict `{verdict}` reduced readiness.")
+    elif isinstance(weighted, (int, float)) and weighted < 65:
+        penalty += 10
+        notes.append(f"Biomedical critic weighted score {weighted} reduced readiness.")
+
+    actionability_profile = actionability_profile or {}
+    actionability = str(actionability_profile.get("actionability") or actionability_profile.get("decision") or "").lower()
+    if actionability in {"not_actionable", "insufficient", "low"}:
+        penalty += 10
+        notes.append("Actionability review found the dossier insufficiently actionable.")
+
+    new_score = max(0, min(100, base_score - penalty))
+    supportive_count = (
+        label_counts.get("strong_support", 0)
+        + label_counts.get("mechanistic_relevance", 0)
+        + label_counts.get("supports", 0)
+    )
+    if not abstention_policy.get("abstention_required") and supportive_count >= 5 and new_score < 65:
+        new_score = 65
+        notes.append("Multiple supportive evidence records kept the calibrated dossier at experiment-ready floor.")
+
+    if abstention_policy.get("abstention_required") or new_score < 65:
+        new_tier = "hypothesis_only"
+    elif severity == "high" or any(gap.get("severity") == "medium" for gap in gaps) or new_score < 82:
+        new_tier = "experiment_ready_with_gaps"
+    else:
+        new_tier = "validation_ready"
+
+    readiness.update(
+        {
+            "score": new_score,
+            "tier": new_tier,
+            "uncalibrated_score": base_score,
+            "calibration_notes": notes,
+            "rationale": _readiness_rationale(new_tier, gaps),
+        }
+    )
+    calibrated["readiness"] = readiness
+    calibrated["gaps"] = gaps
+    calibrated["next_action"] = _next_action(new_tier, gaps)
+    return calibrated
 
 
 def _evidence_profile(evidence: list[dict[str, Any]]) -> dict[str, Any]:
@@ -211,6 +322,19 @@ def _evidence_gaps(
     return gaps
 
 
+_GAP_RECOMMENDED_TOOL: dict[str, str] = {
+    "insufficient_literature_depth": "pubmed_literature_search_tool",
+    "missing_target_disease_association": "tooluniverse_query_tool",
+    "missing_intervention_specific_evidence": "pubchem_compound_lookup_tool",
+    "missing_safety_evidence": "pubmed_literature_search_tool",
+    "missing_cell_context_evidence": "pubmed_literature_search_tool",
+    "missing_falsification_search": "pubmed_literature_search_tool",
+    "claim_graph_evidence_gap": "tooluniverse_query_tool",
+    "reviewer_high_severity_concern": "pubmed_literature_search_tool",
+    "evidence_relevance_noise": "pubmed_literature_search_tool",
+}
+
+
 def _gap(
     gap_id: str,
     severity: str,
@@ -225,6 +349,7 @@ def _gap(
         "needed_evidence": _needed_evidence(gap_id),
         "follow_up_queries": follow_up_queries,
         "experiment_implication": experiment_implication,
+        "recommended_tool": _GAP_RECOMMENDED_TOOL.get(gap_id),
     }
 
 
@@ -237,6 +362,8 @@ def _needed_evidence(gap_id: str) -> str:
         "missing_cell_context_evidence": "cell-type, transcriptomic, perturbation, or disease-state evidence",
         "missing_falsification_search": "contradictory, null, failed, or negative evidence",
         "claim_graph_evidence_gap": "claim-specific supporting evidence or explicit claim softening",
+        "reviewer_high_severity_concern": "direct evidence resolving reviewer-identified overclaim or contradiction",
+        "evidence_relevance_noise": "higher-precision retrieval with irrelevant records filtered from the claim boundary",
     }
     return labels.get(gap_id, "additional evidence")
 
@@ -251,17 +378,17 @@ def _recommended_followups(gaps: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _next_action(readiness_tier: str, gaps: list[dict[str, Any]]) -> dict[str, Any]:
     if not gaps:
-        return {"action": "prepare_validation_plan", "reason": "No major deterministic evidence gaps were detected."}
+        return {"action": "prepare_validation_plan", "rationale": "No major deterministic evidence gaps were detected."}
     high_gaps = [gap for gap in gaps if gap["severity"] == "high"]
     if high_gaps:
         return {
             "action": "repair_high_severity_evidence_gaps",
-            "reason": high_gaps[0]["rationale"],
+            "rationale": high_gaps[0]["rationale"],
             "first_gap": high_gaps[0]["id"],
         }
     return {
         "action": "run_falsification_and_depth_pass",
-        "reason": f"Readiness is {readiness_tier}; remaining gaps should be challenged before confidence increases.",
+        "rationale": f"Readiness is {readiness_tier}; remaining gaps should be challenged before confidence increases.",
         "first_gap": gaps[0]["id"],
     }
 

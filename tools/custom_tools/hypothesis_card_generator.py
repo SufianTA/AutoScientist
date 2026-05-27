@@ -43,25 +43,124 @@ def confidence_from_evidence(evidence: list[dict]) -> float:
     return round(max(0.05, clinical_or_public_floor, min(score, 0.86)), 2)
 
 
+# ── Biological-class inference ────────────────────────────────────────────────
+# Each tuple: (list of indicator terms, label).  Ordered most-specific first.
+
+_BIO_CLASS_RULES: list[tuple[list[str], str]] = [
+    (["receptor tyrosine kinase", "rtk activity"], "receptor tyrosine kinase"),
+    (["tyrosine kinase", "protein tyrosine kinase", "jak kinase", "src kinase"], "tyrosine kinase"),
+    (["serine/threonine kinase", "serine-threonine kinase", "ser/thr kinase"], "serine/threonine kinase"),
+    (["protein kinase", "kinase activity", "kinase domain"], "kinase"),
+    (["small gtpase", "gtpase", "gtp binding", "g-protein", "ras superfamily", "ras-related"], "GTPase"),
+    (["transcription factor", "dna-binding protein", "transcriptional activator",
+      "transcriptional repressor", "zinc finger protein"], "transcription factor"),
+    (["tumor suppressor", "growth suppressor"], "tumor suppressor"),
+    (["dna repair", "homologous recombination", "mismatch repair",
+      "nucleotide excision", "double-strand break"], "DNA repair factor"),
+    (["cyclin-dependent kinase", "cdk inhibitor", "cell cycle regulator"], "cell cycle regulator"),
+    (["dehydrogenase", "isomerase", "oxidoreductase", "transferase",
+      "hydroxylase", "metabolic enzyme"], "metabolic enzyme"),
+    (["ion channel", "membrane transporter", "chloride channel", "potassium channel",
+      "sodium channel", "abc transporter"], "ion channel/transporter"),
+    (["cytokine receptor", "growth factor receptor", "hormone receptor"], "receptor"),
+    (["interleukin", "interferon", "chemokine", "tumor necrosis factor",
+      "cytokine"], "cytokine/immune mediator"),
+    (["phosphatase activity", "tyrosine phosphatase", "phosphatase"], "phosphatase"),
+    (["e3 ubiquitin ligase", "deubiquitinase", "ubiquitin", "proteasomal"], "ubiquitin pathway factor"),
+    (["histone methyltransferase", "histone demethylase", "acetyltransferase",
+      "deacetylase", "chromatin remodeling", "epigenetic"], "epigenetic regulator"),
+    (["proto-oncogene", "oncogene", "transforming protein"], "oncogene"),
+    (["apoptosis regulator", "pro-apoptotic", "anti-apoptotic", "bcl-2 family"], "apoptosis regulator"),
+    (["cell adhesion molecule", "integrin", "cadherin", "extracellular matrix"], "cell adhesion factor"),
+    (["g protein-coupled receptor", "gpcr", "seven-transmembrane"], "GPCR"),
+]
+
+# ── Alteration / variant context ──────────────────────────────────────────────
+
+_ALTERATION_RULES: list[tuple[list[str], str]] = [
+    (["fusion protein", " fused to", "gene fusion", "chromosomal translocation",
+      "rearrangement"], "fusion"),
+    (["gene amplification", "high-level amplification", "copy number gain"], "amplification"),
+    (["exon 14 skipping", "exon skipping", "splice site mutation"], "exon-skip mutation"),
+    (["homozygous deletion", "biallelic loss", "haploinsufficiency",
+      "loss of heterozygosity"], "loss"),
+    (["gain-of-function", "activating mutation", "constitutive activation",
+      "oncogenic mutation"], "activating mutation"),
+    (["loss-of-function", "inactivating mutation", "truncating mutation",
+      "frameshift mutation"], "inactivating mutation"),
+    (["overexpression", "protein overexpression"], "overexpression"),
+]
+
+# ── Therapeutic/mechanism context ─────────────────────────────────────────────
+
+_MECHANISM_CONTEXT_RULES: list[tuple[list[str], str]] = [
+    (["acquired resistance", "resistance mechanism", "bypass resistance",
+      "secondary mutation", "resistance bypass"], "oncogenic signaling, resistance mechanisms, and bypass vulnerabilities"),
+    (["covalent inhibitor", "switch ii pocket", "irreversible inhibitor",
+      "covalent bond"], "oncogenic signaling and covalent inhibitor resistance"),
+    (["synthetic lethality", "parp inhibitor", "homologous recombination deficiency",
+      "hrd"], "DNA damage response and synthetic lethality"),
+    (["differentiation block", "differentiation arrest",
+      "myeloid differentiation"], "oncometabolite production and differentiation block"),
+    (["immune checkpoint", "tumor microenvironment", "pd-l1", "pd-1",
+      "immune evasion"], "oncogenic signaling and immune microenvironment dysregulation"),
+    (["combination therapy", "combination strategy",
+      "combination rationale", "synergistic"], "disease-relevant pathway inhibition and combination strategy"),
+    (["fda-approved", "approved drug", "clinically validated",
+      "clinical precedence", "phase 2", "phase 3",
+      "phase iii", "randomized trial"], "clinically validated pathway inhibition and residual resistance questions"),
+    (["kinase inhibitor", "targeted therapy",
+      "tyrosine kinase inhibitor"], "oncogenic kinase activation and targeted inhibition"),
+    (["tumor suppressor loss", "loss of function", "haploinsufficiency",
+      "biallelic"], "tumor suppressor pathway deregulation"),
+    (["cell cycle arrest", "g1 arrest", "rb phosphorylation",
+      "cell cycle checkpoint"], "cell cycle dysregulation and targeted inhibition"),
+    (["pathway activation", "signal transduction",
+      "downstream signaling", "constitutive signaling"], "oncogenic pathway activation and therapeutic targeting"),
+]
+
+
+def _classify_from_rules(search: str, rules: list[tuple[list[str], str]], default: str) -> str:
+    for terms, label in rules:
+        if any(t in search for t in terms):
+            return label
+    return default
+
+
 def mechanism_phrase(target: str, evidence: list[dict]) -> str:
-    combined = " ".join(
-        [
-            target,
-            *[
-                str(item.get("text", ""))
-                for item in evidence[:8]
-            ],
-        ]
-    ).lower()
-    if "acvr1" in target.lower() or "bmp" in combined or "ossification" in combined:
-        return f"{target}-linked BMP/activin pathway signaling"
-    if "pcsk9" in target.lower() or "ldlr" in combined or "cholesterol" in combined:
-        return f"{target}-linked LDL receptor and cholesterol-clearance biology"
-    if "cftr" in target.lower() or "cystic fibrosis" in combined:
-        return f"{target}-linked epithelial ion-transport biology"
-    if any(term in combined for term in ["cytokine", "inflammatory", "immune", "interleukin"]):
-        return f"{target}-linked inflammatory and immune-cell signaling"
-    return f"{target}-linked disease mechanism"
+    """
+    Derive a mechanism phrase from gene annotation and evidence context.
+
+    Works for any biological target.  Detects:
+      1. Biological class  — from gene annotation and evidence text
+      2. Alteration type   — fusion, amplification, mutation, etc.
+      3. Therapeutic context — resistance, combination, clinical precedence, etc.
+
+    No per-gene name hardcoding; all classification is done on evidence content.
+    """
+    # Build text corpus for classification
+    ev_texts = [str(item.get("text", "")).lower() for item in evidence[:12]]
+    combined = " ".join([target.lower(), *ev_texts])
+
+    # Prefer gene annotation (NCBI Gene carries the richest biological description)
+    gene_ann = ""
+    for item in evidence[:12]:
+        if "ncbi" in str(item.get("source", "")).lower():
+            text = str(item.get("text", "")).lower()
+            if target.lower() in text:
+                gene_ann = text
+                break
+    search = f"{combined} {gene_ann}"
+
+    bio_class = _classify_from_rules(search, _BIO_CLASS_RULES, "regulatory factor")
+    alteration = _classify_from_rules(search, _ALTERATION_RULES, "")
+    mech_context = _classify_from_rules(
+        search, _MECHANISM_CONTEXT_RULES,
+        "disease-relevant pathway dysregulation and therapeutic hypothesis",
+    )
+
+    target_part = f"{target} {alteration}".strip() if alteration else target
+    return f"{target_part} {bio_class}-mediated {mech_context}"
 
 
 def extract_citations(evidence: list[dict], target: str) -> list[dict]:
@@ -180,8 +279,11 @@ class HypothesisCardGeneratorTool(ScientificTool):
             contradictions.append(
                 "Safety/intervention literature was retrieved, so translational risk remains an active uncertainty."
             )
-        has_precedence = "No explicit clinical-precedence evidence" not in precedence
         status = str(clinical_status.get("status", "speculative_or_insufficient"))
+        has_precedence = status == "established_or_clinically_precedented" or (
+            "No explicit clinical-precedence evidence" not in precedence
+            and status != "speculative_or_insufficient"
+        )
         if status == "established_or_clinically_precedented":
             status_framing = (
                 f"{target} has established or clinically precedented target-disease grounding for {disease}. "

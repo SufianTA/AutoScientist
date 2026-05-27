@@ -20,7 +20,7 @@ DEFAULT_TEMPLATES = [
     "repurposing_and_safety_triage",
     "decision_grade_experiment_plan",
 ]
-DEFAULT_ABLATIONS = ["full", "plain_llm", "no_public_tools", "no_memory", "no_sciflow"]
+DEFAULT_ABLATIONS = ["full"]
 
 
 def build_pipeline_argv(args: argparse.Namespace) -> list[str]:
@@ -89,8 +89,6 @@ def build_pipeline_argv(args: argparse.Namespace) -> list[str]:
     ]
     if args.strict_real_run:
         argv.append("--strict-real-run")
-    if args.disable_qworld:
-        argv.append("--disable-qworld")
     if args.judge_llm_provider:
         argv.extend(["--judge-llm-provider", args.judge_llm_provider])
     if args.judge_llm_model:
@@ -182,7 +180,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-full-mean-score", type=float, default=85.0)
     parser.add_argument("--min-neural-holdout-top1", type=float, default=0.5)
     parser.add_argument("--min-state-graph-nodes", type=int, default=100)
-    parser.add_argument("--disable-qworld", action="store_true", default=True)
     parser.add_argument("--strict-real-run", action="store_true", default=True)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)

@@ -380,9 +380,6 @@ def benchmark_run_config(args: argparse.Namespace) -> dict[str, Any]:
         max_runtime_minutes=args.max_runtime_minutes,
         tool_budget_usd=args.tool_budget_usd,
         llm_max_tokens=args.llm_max_tokens,
-        qworld_model=args.qworld_model,
-        qworld_api_key_env_var=args.qworld_api_key_env_var,
-        disable_qworld=args.disable_qworld,
         require_real_llm=args.require_real_llm,
         persist_memory_enabled=True,
         sciflow_policy_enabled=args.enable_sciflow_policy,
@@ -409,7 +406,6 @@ def apply_ablation(config: dict[str, Any], ablation: str) -> None:
         config["real_data_enabled"] = False
         config["persist_memory_enabled"] = False
         config["sciflow_policy_enabled"] = False
-        config["qworld_enabled"] = False
         config["strategy_repair_enabled"] = False
 
 
@@ -812,9 +808,6 @@ def missing_required_integrations(result: dict[str, Any], required_integrations:
             info = integrations.get("tooluniverse", {})
             if not info.get("executed") or ("success_count" in info and int(info.get("success_count") or 0) <= 0):
                 missing.append(name)
-        elif name == "qworld":
-            if not integrations.get("qworld", {}).get("executed"):
-                missing.append(name)
         elif name == "local_board":
             if not integrations.get("local_board", {}).get("executed"):
                 missing.append(name)
@@ -838,8 +831,6 @@ def missing_expected_integrations(result: dict[str, Any]) -> list[str]:
         mapped.add("public_biomedical")
     if "tooluniverse" in expected:
         mapped.add("tooluniverse")
-    if "qworld" in expected:
-        mapped.add("qworld")
     if "sciflow_policy" in expected:
         mapped.add("sciflow_policy")
     return missing_required_integrations(result, mapped)
@@ -1165,9 +1156,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--llm-model", default="mock-scientist")
     parser.add_argument("--llm-api-key-env-var", default="")
     parser.add_argument("--llm-max-tokens", type=int, default=192)
-    parser.add_argument("--qworld-model", default="")
-    parser.add_argument("--qworld-api-key-env-var", default="")
-    parser.add_argument("--disable-qworld", action="store_true")
     parser.add_argument("--agent-count", type=int, default=3)
     parser.add_argument("--max-runtime-minutes", type=int, default=5)
     parser.add_argument("--tool-budget-usd", type=float, default=1.0)

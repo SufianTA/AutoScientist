@@ -110,10 +110,13 @@ def build_report(run_id: str, db: Session) -> dict:
             for post in posts
         ],
         "objective_classification": hypothesis_post_content.get("objective_classification", {}),
+        "case_profile": hypothesis_post_content.get("case_profile", {}),
         "capability_plan": hypothesis_post_content.get("capability_plan", {}),
         "evaluation_criteria": hypothesis_post_content.get("evaluation_criteria", []),
         "report_evaluation": hypothesis_post_content.get("report_evaluation", {}),
         "claim_graph": hypothesis_post_content.get("claim_graph", {}),
+        "evidence_coverage_matrix": hypothesis_post_content.get("evidence_coverage_matrix", {}),
+        "experiment_gate_plan": hypothesis_post_content.get("experiment_gate_plan", {}),
         "abstention": hypothesis_post_content.get("abstention", {}),
         "abstention_policy": hypothesis_post_content.get("abstention_policy", {}),
         "actionability_profile": hypothesis_post_content.get("actionability_profile", {}),
@@ -124,6 +127,7 @@ def build_report(run_id: str, db: Session) -> dict:
         "scientific_strategy": hypothesis_post_content.get("scientific_strategy", {}),
         "next_experiments": next_experiments,
         "experiments": next_experiments,
+        "key_claims": hypothesis_post_content.get("key_claims", []),
         "guardrails": guardrails,
     }
 
@@ -151,6 +155,12 @@ def render_markdown_report(report: dict) -> str:
     ]
     for item in hypothesis_post.get("scientific_assessment", []):
         lines.append(f"- {ascii_safe(item)}")
+    # Key claims from final LLM synthesis (present when LLM path ran with rich_mode)
+    key_claims = report.get("key_claims") or []
+    if key_claims:
+        lines.extend(["", "## Key Scientific Claims", ""])
+        for claim in key_claims:
+            lines.append(f"- {ascii_safe(claim)}")
     classification = report.get("objective_classification", {})
     if classification:
         lines.extend(["", "## Objective Classification", ""])
@@ -159,6 +169,24 @@ def render_markdown_report(report: dict) -> str:
         lines.append(f"- Risk level: `{classification.get('risk_level', 'unknown')}`")
         if classification.get("required_capabilities"):
             lines.append(f"- Capabilities: {', '.join(classification['required_capabilities'])}")
+    case_profile = report.get("case_profile", {})
+    if case_profile:
+        lines.extend(["", "## Case Capability Plan", ""])
+        branches = case_profile.get("mechanism_branches", [])
+        assays = case_profile.get("validation_assays", [])
+        capabilities = case_profile.get("capability_demonstrations", [])
+        if branches:
+            lines.append("**Mechanism branches to resolve:**")
+            for branch in branches[:10]:
+                lines.append(f"- `{branch.get('id', 'branch')}`: {ascii_safe(branch.get('label', ''))}")
+        if assays:
+            lines.append("")
+            lines.append("**Validation assays requested by the case:**")
+            for assay in assays[:8]:
+                lines.append(f"- {ascii_safe(assay)}")
+        if capabilities:
+            lines.append("")
+            lines.append(f"**Capabilities exercised:** {', '.join(capabilities)}")
     evaluation = report.get("report_evaluation", {})
     if evaluation:
         lines.extend(["", "## Evaluation Criteria", ""])
@@ -216,21 +244,96 @@ def render_markdown_report(report: dict) -> str:
                 f"- Recommended follow-up tool: `{recommendation.get('tool_name', 'not recorded')}` "
                 f"for `{recommendation.get('gap_id', 'unclassified_gap')}`"
             )
+    # ── Scientific Strategy ──────────────────────────────────────────────────────
     strategy = report.get("scientific_strategy", {})
     if strategy:
         readiness = strategy.get("readiness", {})
         lines.extend(["", "## Scientific Strategy", ""])
-        lines.append(f"- Readiness: `{readiness.get('tier', 'not recorded')}` ({readiness.get('score', 'n/a')}/100)")
+        tier = readiness.get("tier", "not recorded")
+        score = readiness.get("score", "n/a")
+        tier_label = {
+            # values emitted by scientific_strategy.py
+            "validation_ready": "**Validation ready**",
+            "experiment_ready_with_gaps": "**Experiment ready (with gaps)**",
+            "hypothesis_only": "**Hypothesis only**",
+            # legacy / alternate names kept for compatibility
+            "ready_for_validation": "**Ready for validation**",
+            "evidence_building": "**Evidence building**",
+            "early_planning": "**Early planning**",
+            "insufficient": "**Insufficient evidence**",
+        }.get(str(tier), f"`{tier}`")
+        lines.append(f"**Readiness tier:** {tier_label} ({score}/100)")
         if readiness.get("rationale"):
-            lines.append(f"- Rationale: {ascii_safe(readiness.get('rationale'))}")
+            lines.append(f"> {ascii_safe(readiness.get('rationale'))}")
         next_action = strategy.get("next_action", {})
         if next_action:
-            lines.append(f"- Next action: `{next_action.get('action', 'not recorded')}`")
-        for gap in strategy.get("gaps", [])[:6]:
+            lines.append(f"\n**Recommended next action:** `{next_action.get('action', 'not recorded')}`")
+            # strategy emits "reason"; guard against both "rationale" and "reason"
+            na_rationale = next_action.get("rationale") or next_action.get("reason", "")
+            if na_rationale:
+                lines.append(f"> {ascii_safe(na_rationale)}")
+        gaps = strategy.get("gaps", [])
+        if gaps:
+            lines.append("\n**Evidence gaps identified:**\n")
+            severity_icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}
+            for gap in gaps[:8]:
+                icon = severity_icon.get(str(gap.get("severity", "")), "•")
+                lines.append(
+                    f"- {icon} **{gap.get('id', '?')}** ({gap.get('severity', '?')}): "
+                    f"{ascii_safe(gap.get('rationale', ''))}"
+                )
+                if gap.get("recommended_tool"):
+                    lines.append(f"  - Recommended tool: `{gap.get('recommended_tool')}`")
+
+    # ── Claim Graph ──────────────────────────────────────────────────────────────
+    claim_graph = report.get("claim_graph", {})
+    if claim_graph and claim_graph.get("claims"):
+        lines.extend(["", "## Claim Graph", ""])
+        lines.append(
+            f"*{len(claim_graph.get('claims', []))} claims mapped across "
+            f"{claim_graph.get('evidence_count', 0)} evidence items.*"
+        )
+        lines.append("")
+        for claim in claim_graph.get("claims", []):
+            boundary = claim.get("claim_boundary", "unknown")
+            boundary_badge = {
+                "computational_prioritization": "`computational`",
+                "preclinical_hypothesis": "`preclinical`",
+                "clinical_efficacy_forbidden": "`⚠ no efficacy claim`",
+                "safety_claim_forbidden": "`⚠ no safety claim`",
+                "abstain": "`abstain`",
+            }.get(boundary, f"`{boundary}`")
+            lines.append(f"### Claim {claim.get('id', '?')} — {boundary_badge}")
+            lines.append(f"> {ascii_safe(claim.get('text', ''))}")
+            support_srcs = claim.get("supporting_evidence_sources", [])
+            contra_srcs = claim.get("contradictory_evidence_sources", [])
+            gap_srcs = claim.get("evidence_gaps", [])
+            if support_srcs:
+                lines.append(f"- ✅ **Supporting:** {', '.join(support_srcs[:6])}")
+            if contra_srcs:
+                lines.append(f"- ❌ **Contradicting:** {', '.join(contra_srcs[:4])}")
+            if gap_srcs:
+                lines.append(f"- ⬜ **Gaps / irrelevant:** {', '.join(gap_srcs[:4])}")
+            lines.append("")
+
+    coverage = report.get("evidence_coverage_matrix", {})
+    if coverage and coverage.get("requirements"):
+        lines.extend(["", "## Evidence Coverage Matrix", ""])
+        lines.append(
+            f"Coverage score: `{coverage.get('coverage_score')}` "
+            f"({coverage.get('covered_count', 0)} covered, "
+            f"{coverage.get('partial_count', 0)} partial, "
+            f"{coverage.get('missing_count', 0)} missing)"
+        )
+        lines.extend(["", "| Requirement | Status | Matched sources |", "| --- | --- | --- |"])
+        for row in coverage.get("requirements", [])[:12]:
+            sources = ", ".join(row.get("matched_sources", [])[:6]) or "none"
             lines.append(
-                f"- Gap: `{gap.get('id')}` ({gap.get('severity')}): "
-                f"{ascii_safe(gap.get('rationale', ''))}"
+                f"| {ascii_safe(row.get('label', row.get('id', '')))} | "
+                f"`{row.get('status')}` | {ascii_safe(sources)} |"
             )
+
+    # ── Candidate Intervention Summary ───────────────────────────────────────────
     lines.extend(
         [
             "",
@@ -242,76 +345,166 @@ def render_markdown_report(report: dict) -> str:
                     "No candidate intervention summary generated.",
                 )
             ),
-            "",
-            "## Evidence",
+        ]
+    )
+
+    # ── Evidence with article highlights ────────────────────────────────────────
+    lines.extend(["", "## Evidence", ""])
+    # Collect PubMed article titles for highlights
+    article_titles: list[tuple[str, str, str]] = []  # (title, pmid, source_label)
+    for item in report["evidence"]:
+        structured = item.get("structured") or {}
+        if isinstance(structured, dict):
+            for article in structured.get("articles", []):
+                t = article.get("title", "")
+                pmid = article.get("pmid", "")
+                if t:
+                    article_titles.append((t, pmid, item.get("source", "")))
+    if article_titles:
+        lines.append("### Retrieved Literature Highlights\n")
+        for title, pmid, src in article_titles[:10]:
+            pmid_link = f" (PMID [{pmid}](https://pubmed.ncbi.nlm.nih.gov/{pmid}/))" if pmid else ""
+            lines.append(f"- {ascii_safe(title)}{pmid_link}")
+        lines.append("")
+
+    lines.extend(
+        [
+            "### Evidence Summary Table",
             "",
             "| Source | Label | Score | Evidence |",
             "| --- | --- | --- | --- |",
         ]
     )
     for item in report["evidence"]:
-        text = ascii_safe(item["text"]).replace("|", "\\|").replace("\n", " ")
+        text = ascii_safe(item["text"]).replace("|", "\\|").replace("\n", " ")[:300]
         lines.append(
             f"| {item['source']} | {item['support_label']} | {item['support_score']} | {text} |"
         )
-    lines.extend(["", "## Citations And Retrieved Records", ""])
-    for citation in hypothesis_post.get("citations", []):
-        label = ascii_safe(citation.get("title") or citation.get("source"))
-        url = citation.get("url", "")
-        details = []
-        for key in ("pmid", "cid", "gene_id", "journal", "pubdate"):
-            if citation.get(key):
-                details.append(f"{key}: {citation[key]}")
-        suffix = f" ({'; '.join(details)})" if details else ""
-        lines.append(f"- [{label}]({url}){suffix}")
-    lines.extend(["", "## Limitations", ""])
-    for limitation in hypothesis_post.get("limitations", []):
-        lines.append(f"- {ascii_safe(limitation)}")
+
+    # ── Citations ────────────────────────────────────────────────────────────────
+    citations = hypothesis_post.get("citations", [])
+    if citations:
+        lines.extend(["", "## Citations and Retrieved Records", ""])
+        for citation in citations:
+            label = ascii_safe(citation.get("title") or citation.get("source"))
+            url = citation.get("url", "")
+            details = []
+            for key in ("pmid", "cid", "gene_id", "journal", "pubdate"):
+                if citation.get(key):
+                    details.append(f"{key}: {citation[key]}")
+            suffix = f" ({'; '.join(details)})" if details else ""
+            lines.append(f"- [{label}]({url}){suffix}")
+
+    # ── Limitations ──────────────────────────────────────────────────────────────
+    limitations = hypothesis_post.get("limitations", [])
+    if limitations:
+        lines.extend(["", "## Limitations", ""])
+        for limitation in limitations:
+            lines.append(f"- {ascii_safe(limitation)}")
+
+    # ── Agent Debate ─────────────────────────────────────────────────────────────
     debate = hypothesis_post.get("agent_debate", {})
     if debate:
-        lines.extend(["", "## Agent Debate And Revision", ""])
-        lines.append(f"Collaboration model: `{debate.get('collaboration_model', 'not recorded')}`")
-        lines.append("")
+        lines.extend(["", "## Scientist Panel Debate", ""])
+        collab = debate.get("collaboration_model", "not recorded")
+        lines.append(f"*Collaboration model: `{collab}`*\n")
+        vote_icon = {
+            "support": "✅ support",
+            "support_with_limits": "✅ support with limits",
+            "revise": "🔄 revise",
+            "abstain": "⛔ abstain",
+        }
         for position in debate.get("scientist_positions", []):
-            lines.append(
-                f"- **{position.get('agent_name')}** ({position.get('vote', 'review')}): "
-                f"{ascii_safe(position.get('position', ''))}"
-            )
+            vote = position.get("vote", "review")
+            icon = vote_icon.get(vote, f"◻ {vote}")
+            lines.append(f"### {position.get('agent_name', 'agent')} — {icon}")
+            if position.get("discipline"):
+                lines.append(f"*Discipline: {position.get('discipline')}*\n")
+            if position.get("position"):
+                lines.append(f"{ascii_safe(position.get('position', ''))}\n")
+            concerns = position.get("concerns", [])
+            if concerns:
+                lines.append("**Concerns:**")
+                for concern in concerns[:4]:
+                    lines.append(f"- {ascii_safe(concern)}")
+                lines.append("")
+            followups = position.get("requested_followups", [])
+            if followups:
+                lines.append("**Requested follow-ups:**")
+                for f in followups[:3]:
+                    lines.append(f"- {ascii_safe(f)}")
+                lines.append("")
         adjudication = debate.get("pi_adjudication", {})
         if adjudication:
-            lines.extend(["", "PI adjudication:", ""])
+            lines.append("### PI Adjudication\n")
+            if adjudication.get("final_confidence") is not None:
+                lines.append(f"**Final confidence:** `{adjudication.get('final_confidence')}`\n")
             if adjudication.get("rationale"):
-                lines.append(f"- Rationale: {ascii_safe(adjudication.get('rationale'))}")
+                lines.append(f"{ascii_safe(adjudication.get('rationale'))}\n")
             for item in adjudication.get("softened_or_rejected_claims", []):
-                lines.append(f"- Softened/rejected: {ascii_safe(item)}")
-    lines.extend(["", "## Proposed Next Experiments", ""])
-    for experiment in hypothesis_post.get("next_experiments", []):
-        lines.append(
-            f"- {ascii_safe(experiment.get('name'))} "
-            f"[{experiment.get('type')}; feasibility: {experiment.get('feasibility')}; "
-            f"information gain: {experiment.get('expected_information_gain')}]"
-        )
-    lines.extend(["", "## Research Board Posts", ""])
-    for post in report["board_posts"]:
-        content = post["content"]
-        lines.extend([f"### {post['post_type']} by {post['agent_author']}", ""])
-        if post["post_type"] == "hypothesis":
-            lines.append(f"- Title: {ascii_safe(content.get('title', 'not available'))}")
-            lines.append(f"- Confidence: {content.get('confidence', 'not available')}")
-            if content.get("critique"):
-                critique = content["critique"]
-                if isinstance(critique, dict):
-                    lines.append(f"- Critique: {ascii_safe(critique.get('critique', critique))}")
-            lines.append("- Full raw board content is available in the JSON report/provenance export.")
-        elif post["post_type"] == "critique":
-            lines.append(f"- Severity: {content.get('severity', 'not available')}")
-            lines.append(f"- Critique: {ascii_safe(content.get('critique', content))}")
-            if content.get("recommended_fix"):
-                lines.append(f"- Recommended fix: {ascii_safe(content.get('recommended_fix'))}")
-        else:
-            lines.append("- Full raw board content is available in the JSON report/provenance export.")
-        lines.append("")
-    lines.extend(["## Guardrails", ""])
+                lines.append(f"- ⚠ Softened/rejected: {ascii_safe(item)}")
+
+    # ── Proposed Experiments ─────────────────────────────────────────────────────
+    experiments = hypothesis_post.get("next_experiments", [])
+    if experiments:
+        lines.extend(["", "## Proposed Next Experiments", ""])
+        for idx, experiment in enumerate(experiments, start=1):
+            exp_type = experiment.get("type", "unknown")
+            feasibility = experiment.get("feasibility", "?")
+            gain = experiment.get("expected_information_gain", "?")
+            cost = experiment.get("cost", "?")
+            lines.append(f"### Experiment {idx}: {ascii_safe(experiment.get('name', '—'))}")
+            lines.append(f"**Type:** `{exp_type}` | **Cost:** `{cost}` | "
+                         f"**Feasibility:** `{feasibility}` | **Expected information gain:** `{gain}`\n")
+            decision_gate = experiment.get("decision_gate")
+            if decision_gate:
+                lines.append(f"**Decision gate:** {ascii_safe(decision_gate)}\n")
+            success_criteria = experiment.get("success_criteria", [])
+            if success_criteria:
+                lines.append("**Success criteria:**")
+                for criterion in success_criteria:
+                    lines.append(f"- {ascii_safe(criterion)}")
+                lines.append("")
+            failure_modes = experiment.get("failure_modes", [])
+            if failure_modes:
+                lines.append("**Failure modes to watch:**")
+                for mode in failure_modes:
+                    lines.append(f"- {ascii_safe(mode)}")
+                lines.append("")
+            if experiment.get("decision_impact_score") is not None:
+                lines.append(
+                    f"**Gate score:** `{experiment.get('decision_impact_score')}` "
+                    f"({experiment.get('gate_quality', 'not scored')})\n"
+                )
+            gate_reasons = experiment.get("gate_reasons", [])
+            if gate_reasons:
+                lines.append("**Gate improvements:**")
+                for reason in gate_reasons:
+                    lines.append(f"- {ascii_safe(reason)}")
+                lines.append("")
+
+    # ── Critique ─────────────────────────────────────────────────────────────────
+    critique_post = next(
+        (post for post in report["board_posts"] if post.get("post_type") == "critique"), None
+    )
+    if critique_post:
+        content = critique_post.get("content", {})
+        critique_text = content.get("critique") if isinstance(content, dict) else str(content)
+        severity = content.get("severity") if isinstance(content, dict) else None
+        if critique_text:
+            lines.extend(["", "## Critique and Refinement", ""])
+            if severity:
+                lines.append(f"**Severity:** `{severity}`\n")
+            lines.append(ascii_safe(str(critique_text)))
+            recommended_fix = content.get("recommended_fix") if isinstance(content, dict) else None
+            if recommended_fix:
+                lines.append(f"\n**Recommended fix:** {ascii_safe(recommended_fix)}")
+
+    # ── Guardrails ───────────────────────────────────────────────────────────────
+    lines.extend(["", "## Guardrails", ""])
     for guardrail in report["guardrails"]:
         lines.append(f"- {guardrail}")
+    lines.append("")
+    lines.append("---")
+    lines.append("*Generated by AutoScientist. Candidate hypothesis only. Requires experimental validation.*")
     return "\n".join(lines) + "\n"

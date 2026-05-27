@@ -4,7 +4,8 @@ import {
   ArrowUpRight,
   BrainCircuit,
   CheckCircle2,
-  DatabaseZap,
+  ClipboardCheck,
+  Dna,
   FlaskConical,
   GitBranch,
   Microscope,
@@ -14,43 +15,42 @@ import {
 } from "lucide-react";
 
 const kpis = [
-  ["Status", "Completed"],
-  ["Agent steps", "593"],
-  ["Tool calls", "251"],
-  ["Evidence", "140"],
-  ["Full score", "100"],
-  ["BioTruth mean", "88.0"]
+  ["Run mode", "Full system"],
+  ["Case compiler", "Enabled"],
+  ["Evidence matrix", "Enabled"],
+  ["Claim graph", "Enabled"],
+  ["Gate scoring", "Enabled"],
+  ["Replay", "Enabled"]
 ];
 
 const taskRuns = [
-  ["Mechanism dossier", "run_ab460d57712c", "62 calls", "93.0 critic"],
-  ["Bypass graph", "run_7b4f4c405a93", "65 calls", "92.4 critic"],
-  ["Cohort validation", "run_f8a1c9d37675", "62 calls", "94.4 critic"],
-  ["Experiment plan", "run_a2672e1f7e40", "62 calls", "91.0 critic"]
+  ["Mechanism dossier", "Compiled case profile", "mechanism branches", "ranked resistance strategy"],
+  ["Bypass graph", "Claim/evidence graph", "uncertainty links", "revision triggers"],
+  ["Cohort validation", "Evidence coverage matrix", "biomarker gates", "missing modality flags"],
+  ["Experiment plan", "Experiment gate scoring", "failure criteria", "decision-impact ranking"]
 ];
 
-const ablations = [
-  { name: "Full system", score: 100, evidence: "35 evidence/run", note: "All integrations on" },
-  { name: "No memory", score: 95, evidence: "34.5 evidence/run", note: "Replay removed" },
-  { name: "No SciFlow", score: 95, evidence: "33.75 evidence/run", note: "Controller removed" },
-  { name: "Plain LLM", score: 54, evidence: "2 evidence/run", note: "No tools" },
-  { name: "No public tools", score: 54, evidence: "2 evidence/run", note: "Grounding removed" }
+const capabilityFlow = [
+  { name: "Evidence retrieval", progress: 95, detail: "PubMed, OpenTargets, ToolUniverse, clinical and safety context" },
+  { name: "Mechanism graph", progress: 88, detail: "Genes, variants, fusions, pathways, cell states, and confidence updates" },
+  { name: "Contradiction handling", progress: 74, detail: "Weak branches kept gated instead of collapsed into a single answer" },
+  { name: "Experiment planning", progress: 82, detail: "Controls, failure gates, assays, and confidence-update criteria" }
 ];
 
 const timeline = [
-  ["May 23", "100-task campaign", "100 artifacts"],
-  ["May 24", "20-case salvage", "26 complete"],
-  ["May 24", "Strict canary", "16/16 complete"],
-  ["May 25", "Value rerun", "20 artifacts"],
-  ["May 26", "EGFR deep case", "251 calls"]
+  ["1", "Compile case", "entities, branches, assays"],
+  ["2", "Collect evidence", "public tools and provenance"],
+  ["3", "Map claims", "support, gaps, contradictions"],
+  ["4", "Score gates", "decision impact and failure criteria"],
+  ["5", "Package review", "report, replay, trace"]
 ];
 
 const insights = [
   {
     icon: Network,
-    title: "Public tools mattered",
-    value: "+46 quality",
-    text: "Removing public grounding dropped scientific quality from 100 to 54."
+    title: "Evidence orchestration",
+    value: "Traceable",
+    text: "The run links public evidence, target context, literature, and tool traces."
   },
   {
     icon: ShieldCheck,
@@ -61,7 +61,7 @@ const insights = [
   {
     icon: BrainCircuit,
     title: "Memory became an artifact",
-    value: "7,544 nodes",
+    value: "Replayable",
     text: "SciState retained hypotheses, entities, tools, and experiments."
   }
 ];
@@ -75,7 +75,7 @@ export default function ShowcasePage() {
           <h1>EGFR osimertinib resistance, traced by agents.</h1>
           <p>
             AutoScientist ran a strict real oncology workflow: live public evidence,
-            ToolUniverse/OpenTargets, memory, replay, policy control, scoring, and ablations.
+            ToolUniverse/OpenTargets, memory, replay, policy control, claim graphs, and experiment planning.
           </p>
           <div className="poweredBy">
             <Network size={16} />
@@ -83,7 +83,7 @@ export default function ShowcasePage() {
           </div>
           <div className="heroActions">
             <a href="#case" className="button"><Microscope size={18} /> Case insights</a>
-            <a href="#evidence" className="secondaryButton buttonLike"><DatabaseZap size={18} /> Evidence lift</a>
+            <a href="#evidence" className="secondaryButton buttonLike"><ClipboardCheck size={18} /> Capability trace</a>
           </div>
         </div>
 
@@ -95,11 +95,11 @@ export default function ShowcasePage() {
           <div className="signalCore">EGFR-mutant NSCLC<br /><strong>osimertinib resistance</strong></div>
           <div className="signalLane left">
             <span>On-target</span>
-            <strong>C797S / EGFR amp</strong>
+            <strong>C797S / clone phasing</strong>
           </div>
           <div className="signalLane right">
             <span>Bypass</span>
-            <strong>MET / ERBB2</strong>
+            <strong>MET / ERBB2 / fusions</strong>
           </div>
           <div className="signalLane lowerLeft">
             <span>State change</span>
@@ -130,37 +130,37 @@ export default function ShowcasePage() {
           <article>
             <CheckCircle2 size={22} />
             <strong>Strong branches</strong>
-            <span>EGFR C797S, EGFR amplification, MET amplification, ERBB2 amplification.</span>
+            <span>EGFR C797S, EGFR amplification, MET amplification, ERBB2 amplification, and emergent fusion bypass.</span>
           </article>
           <article>
             <Workflow size={22} />
             <strong>Lower-certainty branches</strong>
-            <span>AXL/EMT state plasticity and lineage transformation kept as gated hypotheses.</span>
+            <span>AXL/EMT plasticity, CNS sanctuary, pharmacologic exposure, and lineage transformation kept as gated hypotheses.</span>
           </article>
           <article>
             <FlaskConical size={22} />
             <strong>Next work</strong>
-            <span>Validate prevalence, co-occurrence, safety, and matched combination experiments.</span>
+            <span>Validate ctDNA clone structure, paired-biopsy co-occurrence, safety, and matched combination experiments.</span>
           </article>
         </div>
       </section>
 
       <section id="evidence" className="splitInsight">
         <div className="sectionIntro">
-          <div className="kicker">Evidence lift</div>
-          <h2>Grounded runs beat ungrounded baselines where it matters.</h2>
+          <div className="kicker">Capability trace</div>
+          <h2>The page tells a single case story through the systems the run exercises.</h2>
         </div>
-        <div className="ablationBars">
-          {ablations.map(({ name, score, evidence, note }) => (
+        <div className="capabilityBars">
+          {capabilityFlow.map(({ name, progress, detail: note }) => (
             <div className="barRow" key={name}>
               <div>
                 <strong>{name}</strong>
-                <span>{note} · {evidence}</span>
+                <span>{note}</span>
               </div>
               <div className="barTrack">
-                <span style={{ width: `${score}%` }} />
+                <span style={{ width: `${progress}%` }} />
               </div>
-              <b>{score}</b>
+              <b><Dna size={18} /></b>
             </div>
           ))}
         </div>
@@ -169,7 +169,7 @@ export default function ShowcasePage() {
       <section className="taskStrip">
         <div className="sectionIntro">
           <div className="kicker">Trace packets</div>
-          <h2>Four completed full-system artifacts.</h2>
+          <h2>Four full-system artifacts the run is expected to produce.</h2>
         </div>
         <div className="taskStripGrid">
           {taskRuns.map(([task, run, calls, critic]) => (
@@ -177,7 +177,7 @@ export default function ShowcasePage() {
               <GitBranch size={18} />
               <h3>{task}</h3>
               <span>{run}</span>
-              <strong>{calls} · {critic}</strong>
+              <strong>{calls} / {critic}</strong>
             </article>
           ))}
         </div>
@@ -185,8 +185,8 @@ export default function ShowcasePage() {
 
       <section id="runs" className="runStory">
         <div className="sectionIntro">
-          <div className="kicker">Run history</div>
-          <h2>From infrastructure proof to focused cancer case.</h2>
+          <div className="kicker">System flow</div>
+          <h2>From case intake to an auditable research package.</h2>
         </div>
         <div className="runTimeline">
           {timeline.map(([date, title, metric]) => (
