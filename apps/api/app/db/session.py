@@ -22,22 +22,44 @@ def _ensure_sqlite_columns() -> None:
     if not settings.database_url.startswith("sqlite"):
         return
     inspector = inspect(engine)
-    if "runs" not in inspector.get_table_names():
+    tables = set(inspector.get_table_names())
+    if "runs" not in tables:
         return
-    existing = {column["name"] for column in inspector.get_columns("runs")}
-    columns = {
-        "run_config_json": "JSON DEFAULT '{}'",
-        "agent_count": "INTEGER DEFAULT 6",
-        "max_runtime_minutes": "INTEGER DEFAULT 30",
-        "estimated_cost_usd": "FLOAT DEFAULT 0.0",
-        "account_id": "VARCHAR",
-        "payment_status": "VARCHAR(40) DEFAULT 'not_required'",
-        "queued_at": "DATETIME",
+    table_columns = {
+        "runs": {
+            "run_config_json": "JSON DEFAULT '{}'",
+            "agent_count": "INTEGER DEFAULT 6",
+            "max_runtime_minutes": "INTEGER DEFAULT 30",
+            "estimated_cost_usd": "FLOAT DEFAULT 0.0",
+            "account_id": "VARCHAR",
+            "payment_status": "VARCHAR(40) DEFAULT 'not_required'",
+            "queued_at": "DATETIME",
+            "project_id": "VARCHAR",
+        },
+        "objectives": {
+            "project_id": "VARCHAR",
+        },
+        "tool_calls": {
+            "project_id": "VARCHAR",
+        },
+        "evidence_items": {
+            "project_id": "VARCHAR",
+        },
+        "hypotheses": {
+            "project_id": "VARCHAR",
+        },
+        "board_posts": {
+            "project_id": "VARCHAR",
+        },
     }
     with engine.begin() as connection:
-        for name, ddl in columns.items():
-            if name not in existing:
-                connection.execute(text(f"ALTER TABLE runs ADD COLUMN {name} {ddl}"))
+        for table, columns in table_columns.items():
+            if table not in tables:
+                continue
+            existing = {column["name"] for column in inspector.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in existing:
+                    connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
 
 
 def get_db() -> Generator[Session, None, None]:

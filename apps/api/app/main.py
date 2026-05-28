@@ -6,7 +6,7 @@ from app.env import load_environment
 load_environment()
 
 from app.db.session import init_db
-from app.routes import billing, board, frameworks, memory, models, objectives, reports, runs, score, tools
+from app.routes import billing, board, frameworks, memory, models, objectives, projects, reports, runs, score, tools
 
 
 app = FastAPI(title="BioAutoScientist API", version="0.1.0")
@@ -32,6 +32,7 @@ def health() -> dict:
 
 
 app.include_router(objectives.router)
+app.include_router(projects.router)
 app.include_router(runs.router)
 app.include_router(tools.router)
 app.include_router(board.router)

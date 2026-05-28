@@ -40,6 +40,7 @@ dev = [
 [project.scripts]
 bioautosci = "app.services.local_runner:main"
 bioautosci-worker = "app.services.queue_worker:main"
+claw-project = "tools.claw_project:main"
 
 [tool.setuptools]
 include-package-data = true

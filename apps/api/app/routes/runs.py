@@ -13,12 +13,14 @@ from app.services.run_executor import (
     execute_run_by_id,
     normalize_run_config,
 )
+from app.services.project_workspace import get_project
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
 
 class RunCreate(BaseModel):
-    objective_id: str
+    objective_id: str | None = None
+    project_id: str | None = None
     execute_demo: bool = True
     run_config: dict[str, Any] = Field(default_factory=dict)
 
@@ -45,12 +47,21 @@ def create_run(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> dict:
-    objective = db.get(Objective, payload.objective_id)
+    objective = db.get(Objective, payload.objective_id) if payload.objective_id else None
+    project = get_project(db, payload.project_id) if payload.project_id else None
+    if objective is None and project is not None:
+        objective = (
+            db.query(Objective)
+            .filter(Objective.project_id == project.id)
+            .order_by(Objective.created_at.asc())
+            .first()
+        )
     if objective is None:
         raise HTTPException(status_code=404, detail="Objective not found")
 
     try:
-        config = normalize_run_config(payload.run_config)
+        project_config = {"project_id": project.id, "project_slug": project.slug, "project_mode": project.mode} if project else {}
+        config = normalize_run_config({**payload.run_config, **project_config})
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     run = create_run_record(db, objective, config)
@@ -138,6 +149,7 @@ def serialize_run(run: Run) -> dict:
     return {
         "id": run.id,
         "objective_id": run.objective_id,
+        "project_id": run.project_id,
         "status": run.status,
         "current_state": run.current_state,
         "run_config": run.run_config_json,

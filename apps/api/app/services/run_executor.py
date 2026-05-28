@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.models import AgentStep, BoardPost, EvidenceItem, Hypothesis, ModelTool, Objective, Run, ToolCall
 from app.db.session import SessionLocal
 from app.services.open_scientist_adapters import OpenScientistCapabilityRegistry
+from app.services.project_workspace import attach_run_to_project, create_project_version, get_project, record_checkpoint
 from app.services.scientific_memory import persist_scientific_memory
 from app.security import validate_env_var_name
 from agents.app.runtime import build_agent_runtime
@@ -39,6 +40,10 @@ DEFAULT_RUN_CONFIG: dict[str, Any] = {
     "sciflow_policy_min_score": 0.15,
     "strategy_repair_enabled": True,
     "strategy_repair_max_queries": 2,
+    "project_id": "",
+    "project_slug": "",
+    "project_mode": "",
+    "cloud_campaign_enabled": False,
 }
 
 
@@ -81,6 +86,10 @@ def normalize_run_config(config: dict[str, Any] | None) -> dict[str, Any]:
         0,
         min(int(normalized.get("strategy_repair_max_queries", 2)), 5),
     )
+    normalized["project_id"] = str(normalized.get("project_id") or "")
+    normalized["project_slug"] = str(normalized.get("project_slug") or "")
+    normalized["project_mode"] = str(normalized.get("project_mode") or "")
+    normalized["cloud_campaign_enabled"] = bool(normalized.get("cloud_campaign_enabled", False))
     return normalized
 
 
@@ -116,6 +125,7 @@ def create_run_record(db: Session, objective: Objective, config: dict[str, Any])
     status = "queued" if normalized["execution_mode"] in {"background", "queued"} else "running"
     run = Run(
         objective_id=objective.id,
+        project_id=normalized.get("project_id") or objective.project_id,
         status=status,
         run_config_json=normalized,
         agent_count=normalized["agent_count"],
@@ -125,6 +135,10 @@ def create_run_record(db: Session, objective: Objective, config: dict[str, Any])
         started_at=datetime.utcnow() if status == "running" else None,
     )
     db.add(run)
+    if run.project_id:
+        project = get_project(db, run.project_id)
+        if project is not None:
+            attach_run_to_project(db, run, project)
     db.commit()
     db.refresh(run)
     return run
@@ -155,6 +169,17 @@ def execute_run(
     run.status = "running"
     run.started_at = run.started_at or datetime.utcnow()
     run.run_config_json = resolve_model_tool_configs(db, run.run_config_json)
+    if run.project_id:
+        project = get_project(db, run.project_id)
+        if project is not None:
+            record_checkpoint(
+                db,
+                project,
+                run_id=run.id,
+                checkpoint_type="run_started",
+                phase=run.current_state,
+                state={"objective_id": objective.id, "run_config": run.run_config_json},
+            )
     db.commit()
     orchestrator = None
     try:
@@ -176,6 +201,28 @@ def execute_run(
         run.current_state = state.current_state.value
         run.completed_at = datetime.utcnow()
         run.final_confidence = state.report["confidence"]
+        if run.project_id:
+            project = get_project(db, run.project_id)
+            if project is not None:
+                record_checkpoint(
+                    db,
+                    project,
+                    run_id=run.id,
+                    checkpoint_type="run_completed",
+                    phase=run.current_state,
+                    state={
+                        "final_confidence": run.final_confidence,
+                        "evidence_count": len(state.evidence),
+                        "tool_call_count": len(state.tool_outputs),
+                    },
+                )
+                create_project_version(
+                    db,
+                    project,
+                    summary=f"Completed run {run.id} with confidence {run.final_confidence}.",
+                    status="run_completed_snapshot",
+                    commit=False,
+                )
     except Exception as exc:
         run.status = "failed"
         run.completed_at = datetime.utcnow()
@@ -202,6 +249,17 @@ def execute_run(
                 error=str(exc),
             )
         )
+        if run.project_id:
+            project = get_project(db, run.project_id)
+            if project is not None:
+                record_checkpoint(
+                    db,
+                    project,
+                    run_id=run.id,
+                    checkpoint_type="run_failed",
+                    phase=run.current_state,
+                    state={"error": str(exc)},
+                )
     db.commit()
     db.refresh(run)
     return run
@@ -231,6 +289,7 @@ def persist_orchestrator_result(
         result = output["result"]
         db.add(
             ToolCall(
+                project_id=run.project_id,
                 run_id=run.id,
                 tool_name=output["tool_name"],
                 tool_source=output.get("tool_source", "custom"),
@@ -243,6 +302,7 @@ def persist_orchestrator_result(
     for evidence in state.evidence:
         db.add(
             EvidenceItem(
+                project_id=run.project_id,
                 run_id=run.id,
                 source=evidence["source"],
                 evidence_text=evidence["text"],
@@ -252,6 +312,7 @@ def persist_orchestrator_result(
             )
         )
     hypothesis = Hypothesis(
+        project_id=run.project_id,
         run_id=run.id,
         title=state.hypothesis_card["title"],
         hypothesis_text=state.hypothesis_card["hypothesis"],
@@ -290,6 +351,7 @@ def persist_orchestrator_result(
     db.add(
         BoardPost(
             post_type="hypothesis",
+            project_id=run.project_id,
             run_id=run.id,
             hypothesis_id=hypothesis.id,
             agent_author="publisher_agent",
@@ -299,6 +361,7 @@ def persist_orchestrator_result(
     db.add(
         BoardPost(
             post_type="critique",
+            project_id=run.project_id,
             run_id=run.id,
             hypothesis_id=hypothesis.id,
             agent_author="critic_agent",

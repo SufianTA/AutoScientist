@@ -22,6 +22,7 @@ class Objective(Base):
     objective_text: Mapped[str] = mapped_column(Text)
     constraints_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_by: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    project_id: Mapped[str | None] = mapped_column(ForeignKey("claw_projects.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     runs: Mapped[list["Run"]] = relationship(back_populates="objective")
 
@@ -31,6 +32,7 @@ class Run(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("run"))
     objective_id: Mapped[str] = mapped_column(ForeignKey("objectives.id"))
+    project_id: Mapped[str | None] = mapped_column(ForeignKey("claw_projects.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(40), default="created")
     current_state: Mapped[str] = mapped_column(String(80), default="INTAKE_OBJECTIVE")
     run_config_json: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -64,6 +66,7 @@ class ToolCall(Base):
     __tablename__ = "tool_calls"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("toolcall"))
+    project_id: Mapped[str | None] = mapped_column(ForeignKey("claw_projects.id"), nullable=True)
     run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
     step_id: Mapped[str | None] = mapped_column(ForeignKey("agent_steps.id"), nullable=True)
     tool_name: Mapped[str] = mapped_column(String(160))
@@ -79,6 +82,7 @@ class EvidenceItem(Base):
     __tablename__ = "evidence_items"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("ev"))
+    project_id: Mapped[str | None] = mapped_column(ForeignKey("claw_projects.id"), nullable=True)
     run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"))
     source: Mapped[str] = mapped_column(String(160))
     source_url_or_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
@@ -93,6 +97,7 @@ class Hypothesis(Base):
     __tablename__ = "hypotheses"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("hyp"))
+    project_id: Mapped[str | None] = mapped_column(ForeignKey("claw_projects.id"), nullable=True)
     run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"))
     title: Mapped[str] = mapped_column(String(255))
     hypothesis_text: Mapped[str] = mapped_column(Text)
@@ -106,6 +111,7 @@ class BoardPost(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("post"))
     post_type: Mapped[str] = mapped_column(String(80))
+    project_id: Mapped[str | None] = mapped_column(ForeignKey("claw_projects.id"), nullable=True)
     run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
     hypothesis_id: Mapped[str | None] = mapped_column(ForeignKey("hypotheses.id"), nullable=True)
     agent_author: Mapped[str] = mapped_column(String(120))
@@ -281,6 +287,85 @@ class AgentRoleMemory(Base):
     last_run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
     memory_json: Mapped[dict] = mapped_column(JSON, default=dict)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ClawProject(Base):
+    __tablename__ = "claw_projects"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("proj"))
+    slug: Mapped[str] = mapped_column(String(160), unique=True)
+    title: Mapped[str] = mapped_column(String(255))
+    objective_text: Mapped[str] = mapped_column(Text)
+    mode: Mapped[str] = mapped_column(String(80), default="quick_triage")
+    status: Mapped[str] = mapped_column(String(80), default="active")
+    cloud_enabled: Mapped[bool] = mapped_column(default=False)
+    config_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    budget_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    state_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_by: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ProjectCheckpoint(Base):
+    __tablename__ = "project_checkpoints"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("ckpt"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("claw_projects.id"))
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    checkpoint_type: Mapped[str] = mapped_column(String(80))
+    phase: Mapped[str] = mapped_column(String(120), default="unknown")
+    state_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    counters_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ProjectTask(Base):
+    __tablename__ = "project_tasks"
+    __table_args__ = (UniqueConstraint("project_id", "idempotency_key", name="uq_project_task_key"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("ptask"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("claw_projects.id"))
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    task_type: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(80), default="pending")
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    idempotency_key: Mapped[str] = mapped_column(String(255))
+    input_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    output_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ProjectVersion(Base):
+    __tablename__ = "project_versions"
+    __table_args__ = (UniqueConstraint("project_id", "version", name="uq_project_version"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("pver"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("claw_projects.id"))
+    version: Mapped[str] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(80), default="snapshot")
+    summary: Mapped[str] = mapped_column(Text, default="")
+    snapshot_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_by: Mapped[str] = mapped_column(String(120), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ProjectHumanReview(Base):
+    __tablename__ = "project_human_reviews"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("hreview"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("claw_projects.id"))
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    reviewer: Mapped[str] = mapped_column(String(120), default="human")
+    review_type: Mapped[str] = mapped_column(String(80), default="comment")
+    target_type: Mapped[str] = mapped_column(String(80), default="project")
+    target_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    decision: Mapped[str] = mapped_column(String(80), default="comment")
+    comment: Mapped[str] = mapped_column(Text, default="")
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class WorkflowPolicyExample(Base):
